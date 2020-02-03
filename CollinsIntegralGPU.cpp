@@ -1,16 +1,30 @@
 ﻿#include <iostream>
 #include <Windows.h>
+#include <vector>
 
 using namespace std;
 
-inline void error(const std::string& s)
+inline void error(const string& s)
 {
 	throw runtime_error(s);
 }
 
 double funcGauss2D(double a, int n1, double* xy, double** func, double sigma) {
 	double h = 2 * a / n1;
+	double xyValue = -a;
+	double* func1D = new double[n1];
 
+	for (int i = 0; i < n1; i++) {
+		xy[i] = xyValue;
+		func1D[i] = (exp(-(xyValue * xyValue) / (2 * sigma * sigma)));
+		xyValue += h;
+	}
+
+	for (int i = 0; i < n1; i++) {
+		for (int j = 0; j < n1; j++) {
+			func[i][j] = func1D[i] * func1D[j];
+		}
+	}
 	return h;
 }
 
@@ -20,6 +34,7 @@ void collins2D(double a, double b, double A, double B, double C, double D, int n
 	for (int i = 0; i < n1; i++) {
 		func[i] = new double[n1];
 	}
+
 	double h;
 	cout << "Входная функция:" << "\nГауссов пучок (1): ";
 	string select;
@@ -30,12 +45,16 @@ void collins2D(double a, double b, double A, double B, double C, double D, int n
 		cin >> sigma;
 		h = funcGauss2D(a, n1, xy, func, sigma);
 	}
+
+	cout << "Введите имя файла результатов: ";
+	string nameFile;
+	cin >> nameFile;
 }
 
 int main()
 {
-    SetConsoleCP(1251);
-    SetConsoleOutputCP(1251);
+	SetConsoleCP(1251);
+	SetConsoleOutputCP(1251);
 
 	try {
 		cout << "Расчёт одномерного интеграла Коллинза…" << endl;
