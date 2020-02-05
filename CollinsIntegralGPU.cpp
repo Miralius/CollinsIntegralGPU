@@ -9,31 +9,29 @@ inline void error(const string& s)
 	throw runtime_error(s);
 }
 
-double funcGauss2D(double a, int n1, double* xy, double** func, double sigma) {
+double funcGauss2D(double a, int n1, vector<double>& xy, vector<vector<double>>& func, double sigma) {
 	double h = 2 * a / n1;
 	double xyValue = -a;
-	double* func1D = new double[n1];
+	vector<double> func1D;
 
 	for (int i = 0; i < n1; i++) {
-		xy[i] = xyValue;
-		func1D[i] = (exp(-(xyValue * xyValue) / (2 * sigma * sigma)));
+		xy.push_back(xyValue);
+		func1D.push_back((exp(-(xyValue * xyValue) / (2 * sigma * sigma))));
 		xyValue += h;
 	}
 
 	for (int i = 0; i < n1; i++) {
+		func.push_back(vector<double>());
 		for (int j = 0; j < n1; j++) {
-			func[i][j] = func1D[i] * func1D[j];
+			func.at(i).push_back(func1D.at(i) * func1D.at(j));
 		}
 	}
 	return h;
 }
 
 void collins2D(double a, double b, double A, double B, double C, double D, int n1, int n2, double n, double wavelength) {
-	double* xy = new double[n1];
-	double** func = new double* [n1 * n1];
-	for (int i = 0; i < n1; i++) {
-		func[i] = new double[n1];
-	}
+	vector<double> xy;
+	vector<vector<double>> func;
 
 	double h;
 	cout << "Входная функция:" << "\nГауссов пучок (1): ";
