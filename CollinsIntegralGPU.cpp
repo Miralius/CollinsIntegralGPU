@@ -2,11 +2,48 @@
 #include <Windows.h>
 #include <vector>
 
+constexpr auto PI = 3.1415926535897932384626433832795;
+
 using namespace std;
 
 inline void error(const string& s)
 {
 	throw runtime_error(s);
+}
+
+class Complex {
+private:
+	double value[2];
+	
+public:
+	double real() const {
+		return value[0];
+	}
+	
+	double imag() const { 
+		return value[1];
+	}
+
+	Complex() {
+		value[0] = 0;
+		value[1] = 0;
+	}
+	
+	Complex& operator=(const double right) {
+		value[0] = right;
+		value[1] = 0;
+		return *this;
+	}
+};
+
+void vortex(vector<vector<double>> func, double n, int n1, vector<double> xy, vector<vector<Complex>>& funcVortex) {
+	
+	
+	/*parallel_for_each(e,
+		[=](index<2> idx) restrict(cpu, amp) {
+			result[idx] = f[idx] * iexp(n * ((idx[1] < (n1 / 2)) ? atan2(-x[idx[1]], x[idx[0]]) : (atan2(-x[idx[1]], x[idx[0]]) + 2 * Pi)));
+		});
+	result.synchronize();*/
 }
 
 double funcGauss2D(double a, int n1, vector<double>& xy, vector<vector<double>>& func, double sigma) {
@@ -43,6 +80,8 @@ void collins2D(double a, double b, double A, double B, double C, double D, int n
 		cin >> sigma;
 		h = funcGauss2D(a, n1, xy, func, sigma);
 	}
+
+	vector<vector<Complex>> complex;
 
 	cout << "Введите имя файла результатов: ";
 	string nameFile;
