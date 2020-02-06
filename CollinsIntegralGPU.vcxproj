@@ -221,9 +221,6 @@
   <ItemGroup>
     <None Include="Kernel.cl" />
   </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Complex.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

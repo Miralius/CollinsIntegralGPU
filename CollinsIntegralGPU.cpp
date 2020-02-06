@@ -1,7 +1,7 @@
 ﻿#include <iostream>
 #include <Windows.h>
 #include <vector>
-#include "Complex.h"
+#include <complex>
 
 constexpr auto PI = 3.1415926535897932384626433832795;
 
@@ -12,15 +12,11 @@ inline void error(const string& s)
 	throw runtime_error(s);
 }
 
-Complex iexp(double obj) {
-	return Complex(cos(obj), sin(obj));
-}
-
-void vortex(vector<vector<double>> func, double n, int n1, vector<double> xy, vector<vector<Complex>>& funcVortex) {
+void vortex(vector<vector<double>> func, double n, int n1, vector<double> xy, vector<vector<complex<double>>>& funcVortex) {
 	for (int i = 0; i < n1; i++) {
-		funcVortex.push_back(vector<Complex>());
+		funcVortex.push_back(vector<complex<double>>());
 		for (int j = 0; j < n1; j++) {
-			funcVortex.at(i).push_back(func.at(i).at(j) * iexp(n * ((j < (n1 / 2)) ? atan2(-xy.at(i), xy.at(j)) : (atan2(-xy.at(i), xy.at(j)) + 2 * PI))));
+			funcVortex.at(i).push_back(func.at(i).at(j) * exp(complex<double>(0, (n * ((j < (n1 / 2)) ? atan2(-xy.at(i), xy.at(j)) : (atan2(-xy.at(i), xy.at(j)) + 2 * PI))))));
 		}
 	}
 }
@@ -45,11 +41,11 @@ double funcGauss2D(double a, int n1, vector<double>& xy, vector<vector<double>>&
 	return h;
 }
 
-void integrating2D_B0(double b, double n2, vector<vector<Complex>> funcVortex, double wavelength, double C, double D) {
+void integrating2D_B0(double b, double n2, vector<vector<complex<double>>> funcVortex, double wavelength, double C, double D) {
 
 }
 
-void integrating2D(double b, double n2, double h, vector<vector<Complex>> funcVortex, vector<double> xy, double wavelength, double A, double B, double D, vector<vector<Complex>>& outputField) {
+void integrating2D(double b, double n2, double h, vector<vector<complex<double>>> funcVortex, vector<double> xy, double wavelength, double A, double B, double D, vector<vector<complex<double>>>& outputField) {
 
 }
 
@@ -57,7 +53,7 @@ void collins2D(double a, double b, double A, double B, double C, double D, int n
 	vector<double> xy;
 	vector<vector<double>> input;
 
-	double h;
+	double h{};
 	cout << "Входная функция:" << "\nГауссов пучок (1): ";
 	string select;
 	cin >> select;
@@ -68,10 +64,10 @@ void collins2D(double a, double b, double A, double B, double C, double D, int n
 		h = funcGauss2D(a, n1, xy, input, sigma);
 	}
 
-	vector<vector<Complex>> funcVortex;
+	vector<vector<complex<double>>> funcVortex;
 	vortex(input, n, n1, xy, funcVortex);
 
-	vector<vector<Complex>> outputField;
+	vector<vector<complex<double>>> outputField;
 	if (abs(B) < DBL_EPSILON) {
 		integrating2D_B0(b, n2, funcVortex, wavelength, C, D);
 	} else integrating2D(b, n2, h, funcVortex, xy, wavelength, A, B, D, outputField);
