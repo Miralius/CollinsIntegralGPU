@@ -28,6 +28,17 @@ public:
 		value[0] = 0;
 		value[1] = 0;
 	}
+
+	Complex(double obj1, double obj2) {
+		value[0] = obj1;
+		value[1] = obj2;
+	}
+
+	Complex& operator=(const Complex right) {
+		value[0] = right.real();
+		value[1] = right.imag();
+		return *this;
+	}
 	
 	Complex& operator=(const double right) {
 		value[0] = right;
@@ -36,14 +47,21 @@ public:
 	}
 };
 
+Complex operator*(const double& left, const Complex& right) {
+	return Complex(right.real() * left, right.imag() * left);
+}
+
+Complex iexp(double obj) {
+	return Complex(cos(obj), sin(obj));
+}
+
 void vortex(vector<vector<double>> func, double n, int n1, vector<double> xy, vector<vector<Complex>>& funcVortex) {
-	
-	
-	/*parallel_for_each(e,
-		[=](index<2> idx) restrict(cpu, amp) {
-			result[idx] = f[idx] * iexp(n * ((idx[1] < (n1 / 2)) ? atan2(-x[idx[1]], x[idx[0]]) : (atan2(-x[idx[1]], x[idx[0]]) + 2 * Pi)));
-		});
-	result.synchronize();*/
+	for (int i = 0; i < n1; i++) {
+		funcVortex.push_back(vector<Complex>());
+		for (int j = 0; j < n1; j++) {
+			funcVortex.at(i).push_back(func.at(i).at(j) * iexp(n * ((j < (n1 / 2)) ? atan2(-xy.at(i), xy.at(j)) : (atan2(-xy.at(i), xy.at(j)) + 2 * PI))));
+		}
+	}
 }
 
 double funcGauss2D(double a, int n1, vector<double>& xy, vector<vector<double>>& func, double sigma) {
@@ -81,7 +99,8 @@ void collins2D(double a, double b, double A, double B, double C, double D, int n
 		h = funcGauss2D(a, n1, xy, func, sigma);
 	}
 
-	vector<vector<Complex>> complex;
+	vector<vector<Complex>> funcVortex;
+	vortex(func, n, n1, xy, funcVortex);
 
 	cout << "Введите имя файла результатов: ";
 	string nameFile;
