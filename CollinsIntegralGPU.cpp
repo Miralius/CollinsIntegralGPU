@@ -1,6 +1,7 @@
 ﻿#include <iostream>
 #include <Windows.h>
 #include <vector>
+#include "Complex.h"
 
 constexpr auto PI = 3.1415926535897932384626433832795;
 
@@ -9,46 +10,6 @@ using namespace std;
 inline void error(const string& s)
 {
 	throw runtime_error(s);
-}
-
-class Complex {
-private:
-	double value[2];
-	
-public:
-	double real() const {
-		return value[0];
-	}
-	
-	double imag() const { 
-		return value[1];
-	}
-
-	Complex() {
-		value[0] = 0;
-		value[1] = 0;
-	}
-
-	Complex(double obj1, double obj2) {
-		value[0] = obj1;
-		value[1] = obj2;
-	}
-
-	Complex& operator=(const Complex right) {
-		value[0] = right.real();
-		value[1] = right.imag();
-		return *this;
-	}
-	
-	Complex& operator=(const double right) {
-		value[0] = right;
-		value[1] = 0;
-		return *this;
-	}
-};
-
-Complex operator*(const double& left, const Complex& right) {
-	return Complex(right.real() * left, right.imag() * left);
 }
 
 Complex iexp(double obj) {
@@ -84,9 +45,17 @@ double funcGauss2D(double a, int n1, vector<double>& xy, vector<vector<double>>&
 	return h;
 }
 
+void integrating2D_B0(double b, double n2, vector<vector<Complex>> funcVortex, double wavelength, double C, double D) {
+
+}
+
+void integrating2D(double b, double n2, double h, vector<vector<Complex>> funcVortex, vector<double> xy, double wavelength, double A, double B, double D, vector<vector<Complex>>& outputField) {
+
+}
+
 void collins2D(double a, double b, double A, double B, double C, double D, int n1, int n2, double n, double wavelength) {
 	vector<double> xy;
-	vector<vector<double>> func;
+	vector<vector<double>> input;
 
 	double h;
 	cout << "Входная функция:" << "\nГауссов пучок (1): ";
@@ -96,11 +65,16 @@ void collins2D(double a, double b, double A, double B, double C, double D, int n
 		cout << "Введите параметр сигма:" << "\nsigma = ";
 		double sigma;
 		cin >> sigma;
-		h = funcGauss2D(a, n1, xy, func, sigma);
+		h = funcGauss2D(a, n1, xy, input, sigma);
 	}
 
 	vector<vector<Complex>> funcVortex;
-	vortex(func, n, n1, xy, funcVortex);
+	vortex(input, n, n1, xy, funcVortex);
+
+	vector<vector<Complex>> outputField;
+	if (abs(B) < DBL_EPSILON) {
+		integrating2D_B0(b, n2, funcVortex, wavelength, C, D);
+	} else integrating2D(b, n2, h, funcVortex, xy, wavelength, A, B, D, outputField);
 
 	cout << "Введите имя файла результатов: ";
 	string nameFile;
