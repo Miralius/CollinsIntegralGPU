@@ -41,7 +41,7 @@ vector<double> calcPoints(double interval, double count, double D) {
 vector<vector<double>> functionGauss(vector<double> xy, double sigma) {
 	vector<double> function1D;
 	for (int i = 0; i < xy.size(); i++) {
-		function1D.push_back((exp(-pow(xy.at(i), 2) / (2 * pow(sigma, 2)))));
+		function1D.push_back((exp(-(xy.at(i) * xy.at(i)) / (2 * sigma * sigma))));
 	}
 
 	vector<vector<double>> input;
@@ -66,19 +66,33 @@ vector<vector<complex<double>>> vortex(vector<vector<double>> func, vector<doubl
 	return functionVortex;
 }
 
-vector<vector<complex<double>>> collinsWhenBEqualsToZero(vector<vector<complex<double>>> functionVortex, vector<double> uv, vector<vector<double>> matrixABCD, double b, double n2, double wavelength, double h) {
+vector<vector<complex<double>>> collins(vector<vector<complex<double>>> functionVortex, vector<double> uv, vector<vector<double>> matrixABCD, double wavelength) {
 	double k = 2 * PI / wavelength;
 
 	vector<vector<complex<double>>> output;
 	for (int u = 0; u < uv.size(); u++) {
 		output.push_back(vector<complex<double>>());
 		for (int v = 0; v < uv.size(); v++) {
-			output.at(u).push_back(sqrt(matrixABCD.at(1).at(1)) * functionVortex.at(u).at(v) * exp(complex<double>(0, (k * matrixABCD.at(1).at(0) * matrixABCD.at(1).at(1) * pow((uv.at(u) + uv.at(v)), 2)) / 2)));
+			output.at(u).push_back(sqrt(matrixABCD.at(1).at(1)) * functionVortex.at(u).at(v) * exp(complex<double>(0, (k * matrixABCD.at(1).at(0) * matrixABCD.at(1).at(1) * (uv.at(u) + uv.at(v)) * (uv.at(u) + uv.at(v))) / 2)));
 		}
 	}
 	return output;
 }
 
+vector<vector<complex<double>>> collins(vector<vector<complex<double>>> functionVortex, vector<double> xy, vector<double> uv, vector<vector<double>> matrixABCD, double wavelength, double h) {
+	double k = 2 * PI / wavelength;
+	vector<vector<complex<double>>> output;
+	for (int x = 0; x < xy.size(); x++) {
+		for (int y = 0; y < xy.size(); y++) {
+			for (int u = 0; u < uv.size(); u++) {
+				output.push_back(vector<complex<double>>());
+				for (int v = 0; v < uv.size(); v++) {
+					output.at(u).push_back(complex<double>(0, -k / (2 * PI * matrixABCD.at(0).at(1))) * h * h); // не закончен!
+				}
+			}
+		}
+	}
+}
 
 int main()
 {
