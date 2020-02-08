@@ -98,6 +98,28 @@ vector<vector<complex<double>>> collins(vector<vector<complex<double>>> function
 	return output;
 }
 
+vector<vector<double>> abs(vector<vector<complex<double>>> field) {
+	vector<vector<double>> absField;
+	for (int i = 0; i < field.size(); i++) {
+		absField.push_back(vector<double>());
+		for (int j = 0; j < field.size(); j++) {
+			absField.at(i).push_back(abs(field.at(i).at(j)));
+		}
+	}
+	return absField;
+}
+
+vector<vector<double>> arg(vector<vector<complex<double>>> field) {
+	vector<vector<double>> argField;
+	for (int i = 0; i < field.size(); i++) {
+		argField.push_back(vector<double>());
+		for (int j = 0; j < field.size(); j++) {
+			argField.at(i).push_back(arg(field.at(i).at(j)));
+		}
+	}
+	return argField;
+}
+
 int main()
 {
 	SetConsoleCP(1251);
@@ -160,6 +182,11 @@ int main()
 			cin >> wavelength;
 			double h = 2 * a / n1;
 			vector<vector<complex<double>>> output = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? collins(functionVortex, uv, matrixABCD, wavelength) : collins(functionVortex, xy, uv, matrixABCD, wavelength, h);
+
+			vector<vector<double>> absInput = abs(functionVortex);
+			vector<vector<double>> absOutput = abs(output);
+			vector<vector<double>> argInput = arg(functionVortex);
+			vector<vector<double>> argOutput = arg(output);
 
 			cout << "Продолжить расчёты? Для выхода ввести 0" << endl;
 		}
