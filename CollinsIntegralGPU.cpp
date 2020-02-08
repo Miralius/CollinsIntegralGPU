@@ -82,16 +82,20 @@ vector<vector<complex<double>>> collins(vector<vector<complex<double>>> function
 vector<vector<complex<double>>> collins(vector<vector<complex<double>>> functionVortex, vector<double> xy, vector<double> uv, vector<vector<double>> matrixABCD, double wavelength, double h) {
 	double k = 2 * PI / wavelength;
 	vector<vector<complex<double>>> output;
-	for (int x = 0; x < xy.size(); x++) {
-		for (int y = 0; y < xy.size(); y++) {
-			for (int u = 0; u < uv.size(); u++) {
-				output.push_back(vector<complex<double>>());
-				for (int v = 0; v < uv.size(); v++) {
-					output.at(u).push_back(complex<double>(0, -k / (2 * PI * matrixABCD.at(0).at(1))) * h * h); // не закончен!
+	for (int u = 0; u < uv.size(); u++) {
+		output.push_back(vector<complex<double>>());
+		for (int v = 0; v < uv.size(); v++) {
+			complex<double> value = 0;
+			for (int x = 0; x < xy.size(); x++) {
+				for (int y = 0; y < xy.size(); y++) {
+					value += functionVortex.at(x).at(y) * exp(complex<double>(0, ((k / (2 * matrixABCD.at(0).at(1))) * 
+						(matrixABCD.at(0).at(0) * (xy.at(x) * xy.at(x) + xy.at(y) + xy.at(y)) - 2 * (xy.at(x) * uv.at(u) + xy.at(y) * uv.at(v)) + matrixABCD.at(1).at(1) * (uv.at(u) * uv.at(u) + uv.at(v) * uv.at(v))))));
 				}
 			}
+			output.at(u).push_back(complex<double>(0, -k / (2 * PI * matrixABCD.at(0).at(1))) * value * h * h);
 		}
 	}
+	return output;
 }
 
 int main()
@@ -155,6 +159,7 @@ int main()
 			double wavelength;
 			cin >> wavelength;
 			double h = 2 * a / n1;
+			vector<vector<complex<double>>> output = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? collins(functionVortex, uv, matrixABCD, wavelength) : collins(functionVortex, xy, uv, matrixABCD, wavelength, h);
 
 			cout << "Продолжить расчёты? Для выхода ввести 0" << endl;
 		}
