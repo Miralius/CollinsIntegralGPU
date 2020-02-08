@@ -89,10 +89,10 @@ vector<vector<complex<double>>> collins(vector<vector<complex<double>>> function
 			for (int x = 0; x < xy.size(); x++) {
 				for (int y = 0; y < xy.size(); y++) {
 					value += functionVortex.at(x).at(y) * exp(complex<double>(0, ((k / (2 * matrixABCD.at(0).at(1))) * 
-						(matrixABCD.at(0).at(0) * (xy.at(x) * xy.at(x) + xy.at(y) + xy.at(y)) - 2 * (xy.at(x) * uv.at(u) + xy.at(y) * uv.at(v)) + matrixABCD.at(1).at(1) * (uv.at(u) * uv.at(u) + uv.at(v) * uv.at(v))))));
+						(matrixABCD.at(0).at(0) * (xy.at(x) * xy.at(x) + xy.at(y) * xy.at(y)) - 2 * (xy.at(x) * uv.at(u) + xy.at(y) * uv.at(v)) + matrixABCD.at(1).at(1) * (uv.at(u) * uv.at(u) + uv.at(v) * uv.at(v))))));
 				}
 			}
-			output.at(u).push_back(complex<double>(0, -k / (2 * PI * matrixABCD.at(0).at(1))) * value * h * h);
+			output.at(u).push_back(complex<double>(0, -(k / (2 * PI * matrixABCD.at(0).at(1)))) * value * h * h);
 		}
 	}
 	return output;
