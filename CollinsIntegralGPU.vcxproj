@@ -215,6 +215,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BMP.cpp" />
     <ClCompile Include="CollinsIntegralGPU.cpp" />
     <ClCompile Include="Source.cpp" />
   </ItemGroup>

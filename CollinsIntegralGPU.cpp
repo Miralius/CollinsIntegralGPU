@@ -2,6 +2,7 @@
 #include <Windows.h>
 #include <vector>
 #include <complex>
+#include "BMP.cpp"
 
 constexpr auto PI = 3.1415926535897932384626433832795;
 
@@ -220,6 +221,8 @@ int main()
 			vector<vector<char>> absOutput = doubleToCharMonochrome(abs(output));
 			vector<vector<char>> argInput = doubleToCharMonochrome(arg(functionVortex));
 			vector<vector<char>> argOutput = doubleToCharMonochrome(arg(output));
+
+			writeFileBMP(absInput);
 
 			cout << "Продолжить расчёты? Для выхода ввести 0" << endl;
 		}
