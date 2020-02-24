@@ -120,6 +120,39 @@ vector<vector<double>> arg(vector<vector<complex<double>>> field) {
 	return argField;
 }
 
+double minimum(vector<vector<double>> field) {
+	double minValue = DBL_MAX;
+	for (int i = 0; i < field.size(); i++) {
+		for (int j = 0; j < field.size(); j++) {
+			minValue = min(minValue, field.at(i).at(j));
+		}
+	}
+	return minValue;
+}
+
+double maximum(vector<vector<double>> field) {
+	double maxValue = DBL_MIN;
+	for (int i = 0; i < field.size(); i++) {
+		for (int j = 0; j < field.size(); j++) {
+			maxValue = max(maxValue, field.at(i).at(j));
+		}
+	}
+	return maxValue;
+}
+
+vector<vector<char>> doubleToCharMonochrome(vector<vector<double>> field) {
+	vector<vector<char>> output;
+	double minValue = minimum(field);
+	double maxValue = maximum(field);
+	for (int i = 0; i < field.size(); i++) {
+		output.push_back(vector<char>());
+		for (int j = 0; j < field.size(); j++) {
+			output.at(i).push_back(round((field.at(i).at(j) - minValue) * 255 / (maxValue - minValue)));
+		}
+	}
+	return output;
+}
+
 int main()
 {
 	SetConsoleCP(1251);
@@ -183,10 +216,10 @@ int main()
 			double h = 2 * a / n1;
 			vector<vector<complex<double>>> output = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? collins(functionVortex, uv, matrixABCD, wavelength) : collins(functionVortex, xy, uv, matrixABCD, wavelength, h);
 
-			vector<vector<double>> absInput = abs(functionVortex);
-			vector<vector<double>> absOutput = abs(output);
-			vector<vector<double>> argInput = arg(functionVortex);
-			vector<vector<double>> argOutput = arg(output);
+			vector<vector<char>> absInput = doubleToCharMonochrome(abs(functionVortex));
+			vector<vector<char>> absOutput = doubleToCharMonochrome(abs(output));
+			vector<vector<char>> argInput = doubleToCharMonochrome(arg(functionVortex));
+			vector<vector<char>> argOutput = doubleToCharMonochrome(arg(output));
 
 			cout << "Продолжить расчёты? Для выхода ввести 0" << endl;
 		}
