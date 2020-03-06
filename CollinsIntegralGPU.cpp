@@ -2,7 +2,6 @@
 #include <Windows.h>
 #include <vector>
 #include <complex>
-#include "BMP.cpp"
 
 constexpr auto PI = 3.1415926535897932384626433832795;
 
@@ -141,14 +140,14 @@ double maximum(vector<vector<double>> field) {
 	return maxValue;
 }
 
-vector<vector<char>> doubleToCharMonochrome(vector<vector<double>> field) {
-	vector<vector<char>> output;
+char* doubleToCharMonochrome(vector<vector<double>> field) {
+	if (field.size() < 1) error("Задан неверный размер массива!");
+	char* output = new char[field.size() * field.size()];
 	double minValue = minimum(field);
 	double maxValue = maximum(field);
 	for (int i = 0; i < field.size(); i++) {
-		output.push_back(vector<char>());
 		for (int j = 0; j < field.size(); j++) {
-			output.at(i).push_back(round((field.at(i).at(j) - minValue) * 255 / (maxValue - minValue)));
+			output[i * (field.size()) + j] = (char) round((field.at(i).at(j) - minValue) * 255 / (maxValue - minValue));
 		}
 	}
 	return output;
@@ -217,12 +216,12 @@ int main()
 			double h = 2 * a / n1;
 			vector<vector<complex<double>>> output = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? collins(functionVortex, uv, matrixABCD, wavelength) : collins(functionVortex, xy, uv, matrixABCD, wavelength, h);
 
-			vector<vector<char>> absInput = doubleToCharMonochrome(abs(functionVortex));
-			vector<vector<char>> absOutput = doubleToCharMonochrome(abs(output));
-			vector<vector<char>> argInput = doubleToCharMonochrome(arg(functionVortex));
-			vector<vector<char>> argOutput = doubleToCharMonochrome(arg(output));
+			char* absInput = doubleToCharMonochrome(abs(functionVortex));
+			char* absOutput = doubleToCharMonochrome(abs(output));
+			char* argInput = doubleToCharMonochrome(arg(functionVortex));
+			char* argOutput = doubleToCharMonochrome(arg(output));
 
-			writeFileBMP(absInput);
+			//writeFileBMP(n1);
 
 			cout << "Продолжить расчёты? Для выхода ввести 0" << endl;
 		}
