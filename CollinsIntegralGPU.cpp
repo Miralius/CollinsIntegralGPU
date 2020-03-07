@@ -16,55 +16,67 @@ inline void error(const string& s)
 class BMP
 {
 	struct BMPFILEHEADER {
-		WORD    bfType;
-		DWORD   bfSize;
-		WORD    bfReserved1;
-		WORD    bfReserved2;
-		DWORD   bfOffBits;
+		unsigned short  bfType;
+		unsigned long   bfSize;
+		unsigned short  bfReserved1;
+		unsigned short  bfReserved2;
+		unsigned long   bfOffBits;
 	};
 	struct BMPINFOHEADER {
-		DWORD      biSize;
-		LONG       biWidth;
-		LONG       biHeight;
-		WORD       biPlanes;
-		WORD       biBitCount;
-		DWORD      biCompression;
-		DWORD      biSizeImage;
-		LONG       biXPelsPerMeter;
-		LONG       biYPelsPerMeter;
-		DWORD      biClrUsed;
-		DWORD      biClrImportant;
+		unsigned long   biSize;
+		long            biWidth;
+		long            biHeight;
+		unsigned short  biPlanes;
+		unsigned short  biBitCount;
+		unsigned long   biCompression;
+		unsigned long   biSizeImage;
+		long            biXPelsPerMeter;
+		long            biYPelsPerMeter;
+		unsigned long   biClrUsed;
+		unsigned long   biClrImportant;
 	};
+	unsigned short countRGBChannel = 4;
 
 private:
 	BMPFILEHEADER bmpFileHeader;
 	BMPINFOHEADER bmpInfoHeader;
-	vector<vector<byte>> pixels;
+	vector<vector<unsigned char>> pixels;
 
 public:
 	BMPFILEHEADER bmpFH() const { return bmpFileHeader; }
 	BMPINFOHEADER bmpIH() const { return bmpInfoHeader; }
-	vector<vector<byte>> pxls() const { return pixels; }
+	vector<vector<unsigned char>> pxls() const { return pixels; }
 
 	BMP() {
 		bmpFileHeader = { 0, 0, 0, 0, 0 };
-		bmpInfoHeader = { sizeof(BMPINFOHEADER), 0, 0, 1, (WORD)32, BI_RGB, 0, 0, 0, 0, 0 };
+		bmpInfoHeader = { sizeof(BMPINFOHEADER), 0, 0, 1, (unsigned short)(countRGBChannel * 8), BI_RGB, 0, 0, 0, 0, 0 };
 	}
 
-	BMP(vector<vector<byte>> picture) {
-		bmpFileHeader = { 0x04D42, ((picture.size() * picture.size() * 32) / 8) + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER), 0, 0, sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) };
-		bmpInfoHeader = { sizeof(BMPINFOHEADER), picture.size(), picture.size(), 1, (WORD)32, BI_RGB, 0, 0, 0, 0, 0 };
-		for (int i = picture.size(); i > 0; i--) {
-			pixels.push_back(vector<byte>());
+	BMP(vector<vector<unsigned char>> picture) {
+		bmpFileHeader = { 0x04D42, (unsigned long)((picture.size() * picture.size() * countRGBChannel) + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER)), 0, 0, (unsigned long)(sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER)) };
+		bmpInfoHeader = { sizeof(BMPINFOHEADER), (long)picture.size(), (long)picture.size(), 1, (unsigned short)(countRGBChannel * 8), BI_RGB, 0, 0, 0, 0, 0 };
+		for (int i = (int)(picture.size() - 1); i >= 0; i--) {
+			pixels.push_back(vector<unsigned char>());
 			for (int j = 0; j < picture.size(); j++) {
-				pixels.at(i).push_back(picture.at(i).at(j)); //blue channel
-				pixels.at(i).push_back(picture.at(i).at(j)); //green channel
-				pixels.at(i).push_back(picture.at(i).at(j)); //red channel
-				pixels.at(i).push_back((byte)255); //reserved channel
+				pixels.back().push_back(picture.at(i).at(j)); //blue channel
+				pixels.back().push_back(picture.at(i).at(j)); //green channel
+				pixels.back().push_back(picture.at(i).at(j)); //red channel
+				pixels.back().push_back(255); //reserved channel
 			}
 		}
 	}
 };
+
+template <typename T> ostream& operator<<(ostream& output, const vector<vector<T>>& data)
+{
+	string pixels = "";
+	for (int i = 0; i < data.size(); i++) {
+		for (int j = 0; j < data.size(); j++) {
+			pixels += data.at(i).at(j);
+		}
+	}
+	return output << pixels;
+}
 
 ostream& operator<<(ostream& output, const BMP& data) {
 	return output << data.bmpFH().bfType << data.bmpFH().bfSize << data.bmpFH().bfReserved1 << data.bmpFH().bfReserved2 << data.bmpFH().bfOffBits
@@ -201,17 +213,24 @@ double maximum(vector<vector<double>> field) {
 	return maxValue;
 }
 
-vector<vector<byte>> fieldToMonochrome(vector<vector<double>> field) {
+vector<vector<unsigned char>> fieldToMonochrome(vector<vector<double>> field) {
 	double minValue = minimum(field);
 	double maxValue = maximum(field);
-	vector<vector<byte>> pixels;
+	vector<vector<unsigned char>> pixels;
 	for (int i = 0; i < field.size(); i++) {
-		pixels.push_back(vector<byte>());
+		pixels.push_back(vector<unsigned char>());
 		for (int j = 0; j < field.size(); j++) {
-			pixels.at(i).push_back(round((field.at(i).at(j) - minValue) * 255 / (maxValue - minValue)));
+			pixels.at(i).push_back((unsigned char)round((field.at(i).at(j) - minValue) * 255 / (maxValue - minValue)));
 		}
 	}
 	return pixels;
+}
+
+template <typename T> void writingFile(T data, string nameFile)
+{
+	ofstream output(nameFile, ios::binary | ios::trunc | ios::out);
+	if (!output) error("Запись в файл " + nameFile + " невозможна!");
+	output << data << endl;
 }
 
 void writeFileBMP(int n) {
@@ -318,12 +337,15 @@ int main()
 			double h = 2 * a / n1;
 			vector<vector<complex<double>>> output = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? collins(functionVortex, uv, matrixABCD, wavelength) : collins(functionVortex, xy, uv, matrixABCD, wavelength, h);
 
-			/*BMP absInput(abs(functionVortex));
-			BMP absOutput(abs(output));
-			BMP argInput(arg(functionVortex));
-			BMP argOutput(arg(output));*/
+			BMP absInput(fieldToMonochrome(abs(functionVortex)));
+			BMP absOutput(fieldToMonochrome(abs(output)));
+			BMP argInput(fieldToMonochrome(arg(functionVortex)));
+			BMP argOutput(fieldToMonochrome(arg(output)));
 
-			writeFileBMP(n1);
+			writingFile<BMP>(absInput, "absInput.bmp");
+			writingFile<BMP>(absOutput, "absOutput.bmp");
+			writingFile<BMP>(argInput, "argInput.bmp");
+			writingFile<BMP>(argOutput, "argOutput.bmp");
 
 			cout << "Продолжить расчёты? Для выхода ввести 0" << endl;
 		}
