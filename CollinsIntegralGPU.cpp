@@ -1,4 +1,5 @@
 ﻿#include <iostream>
+#include <fstream>
 #include <Windows.h>
 #include <vector>
 #include <complex>
@@ -141,13 +142,15 @@ double maximum(vector<vector<double>> field) {
 }
 
 char* doubleToCharMonochrome(vector<vector<double>> field) {
-	if (field.size() < 1) error("Задан неверный размер массива!");
 	char* output = new char[field.size() * field.size()];
 	double minValue = minimum(field);
 	double maxValue = maximum(field);
 	for (int i = 0; i < field.size(); i++) {
 		for (int j = 0; j < field.size(); j++) {
+#pragma warning(push)
+#pragma warning(disable:6386)
 			output[i * (field.size()) + j] = (char) round((field.at(i).at(j) - minValue) * 255 / (maxValue - minValue));
+#pragma warning(pop)
 		}
 	}
 	return output;
