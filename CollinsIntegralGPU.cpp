@@ -13,6 +13,66 @@ inline void error(const string& s)
 	throw runtime_error(s);
 }
 
+class BMP
+{
+	struct BMPFILEHEADER {
+		WORD    bfType;
+		DWORD   bfSize;
+		WORD    bfReserved1;
+		WORD    bfReserved2;
+		DWORD   bfOffBits;
+	};
+	struct BMPINFOHEADER {
+		DWORD      biSize;
+		LONG       biWidth;
+		LONG       biHeight;
+		WORD       biPlanes;
+		WORD       biBitCount;
+		DWORD      biCompression;
+		DWORD      biSizeImage;
+		LONG       biXPelsPerMeter;
+		LONG       biYPelsPerMeter;
+		DWORD      biClrUsed;
+		DWORD      biClrImportant;
+	};
+
+private:
+	BMPFILEHEADER bmpFileHeader;
+	BMPINFOHEADER bmpInfoHeader;
+	vector<vector<byte>> pixels;
+
+public:
+	BMPFILEHEADER bmpFH() const { return bmpFileHeader; }
+	BMPINFOHEADER bmpIH() const { return bmpInfoHeader; }
+	vector<vector<byte>> pxls() const { return pixels; }
+
+	BMP() {
+		bmpFileHeader = { 0, 0, 0, 0, 0 };
+		bmpInfoHeader = { sizeof(BMPINFOHEADER), 0, 0, 1, (WORD)32, BI_RGB, 0, 0, 0, 0, 0 };
+	}
+
+	BMP(vector<vector<byte>> picture) {
+		bmpFileHeader = { 0x04D42, ((picture.size() * picture.size() * 32) / 8) + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER), 0, 0, sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) };
+		bmpInfoHeader = { sizeof(BMPINFOHEADER), picture.size(), picture.size(), 1, (WORD)32, BI_RGB, 0, 0, 0, 0, 0 };
+		for (int i = picture.size(); i > 0; i--) {
+			pixels.push_back(vector<byte>());
+			for (int j = 0; j < picture.size(); j++) {
+				pixels.at(i).push_back(picture.at(i).at(j)); //blue channel
+				pixels.at(i).push_back(picture.at(i).at(j)); //green channel
+				pixels.at(i).push_back(picture.at(i).at(j)); //red channel
+				pixels.at(i).push_back((byte)255); //reserved channel
+			}
+		}
+	}
+};
+
+ostream& operator<<(ostream& output, const BMP& data) {
+	return output << data.bmpFH().bfType << data.bmpFH().bfSize << data.bmpFH().bfReserved1 << data.bmpFH().bfReserved2 << data.bmpFH().bfOffBits
+		<< data.bmpIH().biSize << data.bmpIH().biWidth << data.bmpIH().biHeight << data.bmpIH().biPlanes << data.bmpIH().biBitCount
+		<< data.bmpIH().biCompression << data.bmpIH().biSizeImage << data.bmpIH().biXPelsPerMeter << data.bmpIH().biYPelsPerMeter
+		<< data.bmpIH().biClrUsed << data.bmpIH().biClrImportant << data.pxls();
+}
+
 vector<double> calcPoints(double interval, double count) {
 	double pointValue = -interval;
 	vector<double> points;
@@ -141,19 +201,58 @@ double maximum(vector<vector<double>> field) {
 	return maxValue;
 }
 
-char* doubleToCharMonochrome(vector<vector<double>> field) {
-	char* output = new char[field.size() * field.size()];
+vector<vector<byte>> fieldToMonochrome(vector<vector<double>> field) {
 	double minValue = minimum(field);
 	double maxValue = maximum(field);
+	vector<vector<byte>> pixels;
 	for (int i = 0; i < field.size(); i++) {
+		pixels.push_back(vector<byte>());
 		for (int j = 0; j < field.size(); j++) {
-#pragma warning(push)
-#pragma warning(disable:6386)
-			output[i * (field.size()) + j] = (char) round((field.at(i).at(j) - minValue) * 255 / (maxValue - minValue));
-#pragma warning(pop)
+			pixels.at(i).push_back(round((field.at(i).at(j) - minValue) * 255 / (maxValue - minValue)));
 		}
 	}
-	return output;
+	return pixels;
+}
+
+void writeFileBMP(int n) {
+	HDC hdc = CreateDC(TEXT("DISPLAY"), NULL, NULL, NULL);
+	HDC hdcCompatible = CreateCompatibleDC(hdc);
+	DWORD dwWidth(n), dwHeight(n), dwBPP(GetDeviceCaps(hdc, BITSPIXEL)), dwNumColors(0);
+	byte pBits[] = {20, 40, 60, 255, 80, 100, 120, 255, 140, 160, 180, 255, 200, 220, 240, 255};
+	//HBITMAP bitmap;
+	BITMAPINFO bmInfo;
+	BITMAPFILEHEADER bmfh;
+	bmfh.bfType = 0x04D42;
+	bmfh.bfSize = ((dwWidth * dwHeight * dwBPP) / 8) + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + (dwNumColors * sizeof(RGBQUAD));
+	bmfh.bfReserved1 = 0;
+	bmfh.bfReserved2 = 0;
+	bmfh.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + (dwNumColors * sizeof(RGBQUAD));
+	bmInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+	bmInfo.bmiHeader.biWidth = dwWidth;
+	bmInfo.bmiHeader.biHeight = dwHeight;
+	bmInfo.bmiHeader.biPlanes = 1;
+	bmInfo.bmiHeader.biBitCount = (WORD)dwBPP;
+	bmInfo.bmiHeader.biCompression = BI_RGB;
+	bmInfo.bmiHeader.biSizeImage = 0;
+	bmInfo.bmiHeader.biXPelsPerMeter = 0;
+	bmInfo.bmiHeader.biYPelsPerMeter = 0;
+	bmInfo.bmiHeader.biClrUsed = dwNumColors;
+	bmInfo.bmiHeader.biClrImportant = dwNumColors;
+	
+	//bitmap = CreateDIBSection(hdc, &bmInfo, DIB_PAL_COLORS, &pBits, NULL, 0);
+	//SetDIBits(hdc, bitmap, 0, n, &field, &bmInfo, DIB_PAL_COLORS);
+	//HGDIOBJ gdiobj = SelectObject(hdcCompatible, (HGDIOBJ)bitmap);
+	//BitBlt(hdcCompatible, 0, 0, dwWidth, dwHeight, hdc, 0, 0, SRCCOPY);
+	
+	ofstream file;
+	file.open("image.bmp", ios::binary | ios::trunc | ios::out);
+	file.write((char*)&bmfh, sizeof(BITMAPFILEHEADER));
+	file.write((char*)&bmInfo, sizeof(BITMAPINFOHEADER));
+	file.write((char*)pBits, (dwWidth * dwHeight * dwBPP) / 8);
+
+	//DeleteObject(bitmap);
+	DeleteDC(hdcCompatible);
+	DeleteDC(hdc);
 }
 
 int main()
@@ -219,12 +318,12 @@ int main()
 			double h = 2 * a / n1;
 			vector<vector<complex<double>>> output = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? collins(functionVortex, uv, matrixABCD, wavelength) : collins(functionVortex, xy, uv, matrixABCD, wavelength, h);
 
-			char* absInput = doubleToCharMonochrome(abs(functionVortex));
-			char* absOutput = doubleToCharMonochrome(abs(output));
-			char* argInput = doubleToCharMonochrome(arg(functionVortex));
-			char* argOutput = doubleToCharMonochrome(arg(output));
+			/*BMP absInput(abs(functionVortex));
+			BMP absOutput(abs(output));
+			BMP argInput(arg(functionVortex));
+			BMP argOutput(arg(output));*/
 
-			//writeFileBMP(n1);
+			writeFileBMP(n1);
 
 			cout << "Продолжить расчёты? Для выхода ввести 0" << endl;
 		}
