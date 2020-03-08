@@ -21,14 +21,14 @@ inline void error(const string& s)
 	throw runtime_error(s);
 }
 
-void processing(int NOW, int MAX, unsigned int seconds)
+void processing(int NOW, int MAX, int seconds)
 {
 	float proc, nowf, maxf;
 	if (NOW == MAX) proc = 100.;
 	else
 	{
-		nowf = NOW;
-		maxf = MAX;
+		nowf = (float)NOW;
+		maxf = (float)MAX;
 		proc = trunc(10000 * (nowf / maxf)) / 100;
 	}
 	cout << '\r' << "Выполнено: " << setw(6) << proc << "% " << setw(6) << seconds << " секунд";
@@ -165,12 +165,12 @@ vector<vector<complex<double>>> collins(vector<vector<complex<double>>> function
 
 vector<vector<complex<double>>> collins(vector<vector<complex<double>>> functionVortex, vector<double> xy, vector<double> uv, vector<vector<double>> matrixABCD, double wavelength, double h) {
 	double k = 2 * PI / wavelength;
-	int i(clock() / CLOCKS_PER_SEC), j(0);
+	int startTime(clock() / CLOCKS_PER_SEC), progress(0);
 	vector<vector<complex<double>>> output;
 	for (int u = 0; u < uv.size(); u++) {
+		processing(++progress, (int)uv.size(), clock() / CLOCKS_PER_SEC - startTime);
 		output.push_back(vector<complex<double>>());
 		for (int v = 0; v < uv.size(); v++) {
-			processing(++j, uv.size() * uv.size(), clock() / CLOCKS_PER_SEC - i);
 			complex<double> value = 0;
 			for (int x = 0; x < xy.size(); x++) {
 				for (int y = 0; y < xy.size(); y++) {
@@ -300,14 +300,15 @@ int main()
 				error("Не выбрана входная функция!");
 			}
 
-			cout << "Введите число завихрения световой волны:" << "\nn = ";
+			cout << "Введите топологический заряд:" << "\nn = ";
 			double n;
 			cin >> n;
 			vector<vector<complex<double>>> functionVortex = vortex(input, xy, n);
 
-			cout << "Введите длину волны света:" << "\nwavelength = ";
+			cout << "Введите длину волны света (нм):" << "\nwavelength = ";
 			double wavelength;
 			cin >> wavelength;
+			wavelength /= 1000000;
 			double h = 2 * a / n1;
 			vector<vector<complex<double>>> output = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? collins(functionVortex, uv, matrixABCD, wavelength) : collins(functionVortex, xy, uv, matrixABCD, wavelength, h);
 
