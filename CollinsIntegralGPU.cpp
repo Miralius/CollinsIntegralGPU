@@ -45,10 +45,10 @@ public:
 		bmpInfoHeader = { {BMPINFOHEADERsize, 4}, {(int)picture.size(), 4}, {(int)picture.size(), 4}, {1, 2}, {countRGBChannel * 8, 2}, {BI_RGB, 4}, {0, 4}, {0, 4}, {0, 4}, {0, 4}, {0, 4} };
 		for (int i = (int)(picture.size() - 1); i >= 0; i--) {
 			pixels.push_back(vector<unsigned char>());
-			for (int j = 0; j < picture.size(); j++) {
-				pixels.back().push_back(picture.at(i).at(j)); //blue channel
-				pixels.back().push_back(picture.at(i).at(j)); //green channel
-				pixels.back().push_back(picture.at(i).at(j)); //red channel
+			for (unsigned char value : picture.at(i)) {
+				pixels.back().push_back(value); //blue channel
+				pixels.back().push_back(value); //green channel
+				pixels.back().push_back(value); //red channel
 				pixels.back().push_back(255); //reserved channel
 			}
 		}
@@ -56,23 +56,19 @@ public:
 
 	vector<unsigned char> serialize() {
 		vector<unsigned char> serializedBMP;
-		//serializedBMP.reserve(bmpFileHeader.at(1).at(0));
-		//vector<unsigned char>::iterator iterator = serializedBMP.begin();
+		serializedBMP.reserve(bmpFileHeader.at(1).at(0));
 		for (vector<int> data : bmpFileHeader) {
 			for (unsigned char byte : toBinary(data)) {
-				//*iterator++ = byte;
 				serializedBMP.push_back(byte);
 			}
 		}
 		for (vector<int> data : bmpInfoHeader) {
 			for (unsigned char byte : toBinary(data)) {
-				//*iterator++ = byte;
 				serializedBMP.push_back(byte);
 			}
 		}
 		for (vector<unsigned char> data : pixels) {
 			for (unsigned char byte : data) {
-				//*iterator++ = byte;
 				serializedBMP.push_back(byte);
 			}
 		}
@@ -108,8 +104,8 @@ vector<double> calcPoints(double interval, double count, double D) {
 
 vector<vector<double>> functionGauss(vector<double> xy, double sigma) {
 	vector<double> function1D;
-	for (int i = 0; i < xy.size(); i++) {
-		function1D.push_back((exp(-(xy.at(i) * xy.at(i)) / (2 * sigma * sigma))));
+	for (double value : xy) {
+		function1D.push_back((exp(-(value * value) / (2 * sigma * sigma))));
 	}
 
 	vector<vector<double>> input;
@@ -156,8 +152,7 @@ vector<vector<complex<double>>> collins(vector<vector<complex<double>>> function
 			complex<double> value = 0;
 			for (int x = 0; x < xy.size(); x++) {
 				for (int y = 0; y < xy.size(); y++) {
-					value += functionVortex.at(x).at(y) * exp(complex<double>(0, ((k / (2 * matrixABCD.at(0).at(1))) * 
-						(matrixABCD.at(0).at(0) * (xy.at(x) * xy.at(x) + xy.at(y) * xy.at(y)) - 2 * (xy.at(x) * uv.at(u) + xy.at(y) * uv.at(v)) + matrixABCD.at(1).at(1) * (uv.at(u) * uv.at(u) + uv.at(v) * uv.at(v))))));
+					value += functionVortex.at(x).at(y) * exp(complex<double>(0, ((k / (2 * matrixABCD.at(0).at(1))) * (matrixABCD.at(0).at(0) * (xy.at(x) * xy.at(x) + xy.at(y) * xy.at(y)) - 2 * (xy.at(x) * uv.at(u) + xy.at(y) * uv.at(v)) + matrixABCD.at(1).at(1) * (uv.at(u) * uv.at(u) + uv.at(v) * uv.at(v))))));
 				}
 			}
 			output.at(u).push_back(complex<double>(0, -(k / (2 * PI * matrixABCD.at(0).at(1)))) * value * h * h);
@@ -168,10 +163,10 @@ vector<vector<complex<double>>> collins(vector<vector<complex<double>>> function
 
 vector<vector<double>> abs(vector<vector<complex<double>>> field) {
 	vector<vector<double>> absField;
-	for (int i = 0; i < field.size(); i++) {
+	for (vector<complex<double>> row : field) {
 		absField.push_back(vector<double>());
-		for (int j = 0; j < field.size(); j++) {
-			absField.at(i).push_back(abs(field.at(i).at(j)));
+		for (complex<double> value : row) {
+			absField.back().push_back(abs(value));
 		}
 	}
 	return absField;
@@ -179,10 +174,10 @@ vector<vector<double>> abs(vector<vector<complex<double>>> field) {
 
 vector<vector<double>> arg(vector<vector<complex<double>>> field) {
 	vector<vector<double>> argField;
-	for (int i = 0; i < field.size(); i++) {
+	for (vector<complex<double>> row : field) {
 		argField.push_back(vector<double>());
-		for (int j = 0; j < field.size(); j++) {
-			argField.at(i).push_back(arg(field.at(i).at(j)));
+		for (complex<double> value : row) {
+			argField.back().push_back(arg(value));
 		}
 	}
 	return argField;
@@ -190,9 +185,9 @@ vector<vector<double>> arg(vector<vector<complex<double>>> field) {
 
 double minimum(vector<vector<double>> field) {
 	double minValue = DBL_MAX;
-	for (int i = 0; i < field.size(); i++) {
-		for (int j = 0; j < field.size(); j++) {
-			minValue = min(minValue, field.at(i).at(j));
+	for (vector<double> row : field) {
+		for (double value : row) {
+			minValue = min(minValue, value);
 		}
 	}
 	return minValue;
@@ -200,9 +195,9 @@ double minimum(vector<vector<double>> field) {
 
 double maximum(vector<vector<double>> field) {
 	double maxValue = DBL_MIN;
-	for (int i = 0; i < field.size(); i++) {
-		for (int j = 0; j < field.size(); j++) {
-			maxValue = max(maxValue, field.at(i).at(j));
+	for (vector<double> row : field) {
+		for (double value : row) {
+			maxValue = max(maxValue, value);
 		}
 	}
 	return maxValue;
@@ -212,10 +207,10 @@ vector<vector<unsigned char>> fieldToMonochrome(vector<vector<double>> field) {
 	double minValue = minimum(field);
 	double maxValue = maximum(field);
 	vector<vector<unsigned char>> pixels;
-	for (int i = 0; i < field.size(); i++) {
+	for (vector<double> row : field) {
 		pixels.push_back(vector<unsigned char>());
-		for (int j = 0; j < field.size(); j++) {
-			pixels.at(i).push_back((unsigned char)round((field.at(i).at(j) - minValue) * 255 / (maxValue - minValue)));
+		for (double value : row) {
+			pixels.back().push_back((unsigned char)round((value - minValue) * 255 / (maxValue - minValue)));
 		}
 	}
 	return pixels;
@@ -226,7 +221,9 @@ void writingFile(BMP picture, string nameFile)
 	ofstream output(nameFile, ios::binary | ios::trunc | ios::out);
 	vector<unsigned char> data = picture.serialize();
 	if (!output) error("Запись в файл " + nameFile + " невозможна!");
-	for (int i = 0; i < data.size(); i++) output << data.at(i);
+	for (unsigned char value : data) {
+		output << value;
+	}
 }
 
 int main()
