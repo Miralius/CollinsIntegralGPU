@@ -1,9 +1,16 @@
 ﻿#include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <Windows.h>
 #include <vector>
 #include <complex>
 #include <iterator>
+#include <ctime>
+#ifdef __APPLE__
+#include <OpenCL/opencl.h>
+#else
+#include <CL/cl.h>
+#endif
 
 constexpr auto PI = 3.1415926535897932384626433832795;
 
@@ -12,6 +19,19 @@ using namespace std;
 inline void error(const string& s)
 {
 	throw runtime_error(s);
+}
+
+void processing(int NOW, int MAX, unsigned int seconds)
+{
+	float proc, nowf, maxf;
+	if (NOW == MAX) proc = 100.;
+	else
+	{
+		nowf = NOW;
+		maxf = MAX;
+		proc = trunc(10000 * (nowf / maxf)) / 100;
+	}
+	cout << '\r' << "Выполнено: " << setw(6) << proc << "% " << setw(6) << seconds << " секунд";
 }
 
 class BMP
@@ -145,10 +165,12 @@ vector<vector<complex<double>>> collins(vector<vector<complex<double>>> function
 
 vector<vector<complex<double>>> collins(vector<vector<complex<double>>> functionVortex, vector<double> xy, vector<double> uv, vector<vector<double>> matrixABCD, double wavelength, double h) {
 	double k = 2 * PI / wavelength;
+	int i(clock() / CLOCKS_PER_SEC), j(0);
 	vector<vector<complex<double>>> output;
 	for (int u = 0; u < uv.size(); u++) {
 		output.push_back(vector<complex<double>>());
 		for (int v = 0; v < uv.size(); v++) {
+			processing(++j, uv.size() * uv.size(), clock() / CLOCKS_PER_SEC - i);
 			complex<double> value = 0;
 			for (int x = 0; x < xy.size(); x++) {
 				for (int y = 0; y < xy.size(); y++) {
@@ -299,7 +321,7 @@ int main()
 			writingFile(argInput, "argInput.bmp");
 			writingFile(argOutput, "argOutput.bmp");
 
-			cout << "Продолжить расчёты? Для выхода ввести 0" << endl;
+			cout << endl << "Результаты записаны! Продолжить расчёты? Для выхода ввести 0" << endl;
 		}
 	}
 	catch (runtime_error & e) {

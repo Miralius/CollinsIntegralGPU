@@ -16,7 +16,7 @@
 //
 //    // Create the two input vectors
 //    int i;
-//    const int LIST_SIZE = 1024;
+//    const int LIST_SIZE = 1024*1024;
 //    int* A = (int*)malloc(sizeof(int) * LIST_SIZE);
 //    int* B = (int*)malloc(sizeof(int) * LIST_SIZE);
 //    for (i = 0; i < LIST_SIZE; i++) {
@@ -120,8 +120,8 @@
 //        LIST_SIZE * sizeof(int), C, 0, NULL, NULL);
 //    printf("after copying\n");
 //    // Display the result to the screen
-//    for (i = 0; i < LIST_SIZE; i++)
-//        printf("%d + %d = %d\n", A[i], B[i], C[i]);
+//    //for (i = 0; i < LIST_SIZE; i++)
+//    //    printf("%d + %d = %d\n", A[i], B[i], C[i]);
 //
 //    // Clean up
 //    ret = clFlush(command_queue);
