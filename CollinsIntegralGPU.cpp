@@ -3,6 +3,7 @@
 #include <Windows.h>
 #include <vector>
 #include <complex>
+#include <iterator>
 
 constexpr auto PI = 3.1415926535897932384626433832795;
 
@@ -15,46 +16,33 @@ inline void error(const string& s)
 
 class BMP
 {
-	struct BMPFILEHEADER {
-		unsigned short  bfType;
-		unsigned long   bfSize;
-		unsigned short  bfReserved1;
-		unsigned short  bfReserved2;
-		unsigned long   bfOffBits;
-	};
-	struct BMPINFOHEADER {
-		unsigned long   biSize;
-		long            biWidth;
-		long            biHeight;
-		unsigned short  biPlanes;
-		unsigned short  biBitCount;
-		unsigned long   biCompression;
-		unsigned long   biSizeImage;
-		long            biXPelsPerMeter;
-		long            biYPelsPerMeter;
-		unsigned long   biClrUsed;
-		unsigned long   biClrImportant;
-	};
-	unsigned short countRGBChannel = 4;
+	int const countRGBChannel = 4;
+	int const BMPFILEHEADERsize = 14;
+	int const BMPINFOHEADERsize = 40;
 
 private:
-	BMPFILEHEADER bmpFileHeader;
-	BMPINFOHEADER bmpInfoHeader;
 	vector<vector<unsigned char>> pixels;
+	//These vectors replace the structs. Each first element — value, each second element — size of type of var.
+	vector<vector<int>> bmpFileHeader;
+	vector<vector<int>> bmpInfoHeader;
+
+	vector<unsigned char> toBinary(vector<int> number) {
+		vector<unsigned char> binary;
+		for (int i = 0; i < number.at(1); i++) {
+			binary.push_back(number.at(0) >> (8 * i));
+		}
+		return binary;
+	}
 
 public:
-	BMPFILEHEADER bmpFH() const { return bmpFileHeader; }
-	BMPINFOHEADER bmpIH() const { return bmpInfoHeader; }
-	vector<vector<unsigned char>> pxls() const { return pixels; }
-
 	BMP() {
-		bmpFileHeader = { 0, 0, 0, 0, 0 };
-		bmpInfoHeader = { sizeof(BMPINFOHEADER), 0, 0, 1, (unsigned short)(countRGBChannel * 8), BI_RGB, 0, 0, 0, 0, 0 };
+		bmpFileHeader = { {0, 2}, {0, 4}, {0, 2}, {0, 2}, {0, 4} };
+		bmpInfoHeader = { {BMPINFOHEADERsize, 4}, {0, 4}, {0, 4}, {1, 2}, {countRGBChannel * 8, 2}, {BI_RGB, 4}, {0, 4}, {0, 4}, {0, 4}, {0, 4}, {0, 4} };
 	}
 
 	BMP(vector<vector<unsigned char>> picture) {
-		bmpFileHeader = { 0x04D42, (unsigned long)((picture.size() * picture.size() * countRGBChannel) + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER)), 0, 0, (unsigned long)(sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER)) };
-		bmpInfoHeader = { sizeof(BMPINFOHEADER), (long)picture.size(), (long)picture.size(), 1, (unsigned short)(countRGBChannel * 8), BI_RGB, 0, 0, 0, 0, 0 };
+		bmpFileHeader = { {0x4D42, 2}, {(int)picture.size() * (int)picture.size() * countRGBChannel + BMPFILEHEADERsize + BMPINFOHEADERsize, 4}, {0, 2}, {0, 2}, {BMPFILEHEADERsize + BMPINFOHEADERsize, 4} };
+		bmpInfoHeader = { {BMPINFOHEADERsize, 4}, {(int)picture.size(), 4}, {(int)picture.size(), 4}, {1, 2}, {countRGBChannel * 8, 2}, {BI_RGB, 4}, {0, 4}, {0, 4}, {0, 4}, {0, 4}, {0, 4} };
 		for (int i = (int)(picture.size() - 1); i >= 0; i--) {
 			pixels.push_back(vector<unsigned char>());
 			for (int j = 0; j < picture.size(); j++) {
@@ -65,25 +53,32 @@ public:
 			}
 		}
 	}
-};
 
-template <typename T> ostream& operator<<(ostream& output, const vector<vector<T>>& data)
-{
-	string pixels = "";
-	for (int i = 0; i < data.size(); i++) {
-		for (int j = 0; j < data.size(); j++) {
-			pixels += data.at(i).at(j);
+	vector<unsigned char> serialize() {
+		vector<unsigned char> serializedBMP;
+		//serializedBMP.reserve(bmpFileHeader.at(1).at(0));
+		//vector<unsigned char>::iterator iterator = serializedBMP.begin();
+		for (vector<int> data : bmpFileHeader) {
+			for (unsigned char byte : toBinary(data)) {
+				//*iterator++ = byte;
+				serializedBMP.push_back(byte);
+			}
 		}
+		for (vector<int> data : bmpInfoHeader) {
+			for (unsigned char byte : toBinary(data)) {
+				//*iterator++ = byte;
+				serializedBMP.push_back(byte);
+			}
+		}
+		for (vector<unsigned char> data : pixels) {
+			for (unsigned char byte : data) {
+				//*iterator++ = byte;
+				serializedBMP.push_back(byte);
+			}
+		}
+		return serializedBMP;
 	}
-	return output << pixels;
-}
-
-ostream& operator<<(ostream& output, const BMP& data) {
-	return output << data.bmpFH().bfType << data.bmpFH().bfSize << data.bmpFH().bfReserved1 << data.bmpFH().bfReserved2 << data.bmpFH().bfOffBits
-		<< data.bmpIH().biSize << data.bmpIH().biWidth << data.bmpIH().biHeight << data.bmpIH().biPlanes << data.bmpIH().biBitCount
-		<< data.bmpIH().biCompression << data.bmpIH().biSizeImage << data.bmpIH().biXPelsPerMeter << data.bmpIH().biYPelsPerMeter
-		<< data.bmpIH().biClrUsed << data.bmpIH().biClrImportant << data.pxls();
-}
+};
 
 vector<double> calcPoints(double interval, double count) {
 	double pointValue = -interval;
@@ -226,52 +221,12 @@ vector<vector<unsigned char>> fieldToMonochrome(vector<vector<double>> field) {
 	return pixels;
 }
 
-template <typename T> void writingFile(T data, string nameFile)
+void writingFile(BMP picture, string nameFile)
 {
 	ofstream output(nameFile, ios::binary | ios::trunc | ios::out);
+	vector<unsigned char> data = picture.serialize();
 	if (!output) error("Запись в файл " + nameFile + " невозможна!");
-	output << data << endl;
-}
-
-void writeFileBMP(int n) {
-	HDC hdc = CreateDC(TEXT("DISPLAY"), NULL, NULL, NULL);
-	HDC hdcCompatible = CreateCompatibleDC(hdc);
-	DWORD dwWidth(n), dwHeight(n), dwBPP(GetDeviceCaps(hdc, BITSPIXEL)), dwNumColors(0);
-	byte pBits[] = {20, 40, 60, 255, 80, 100, 120, 255, 140, 160, 180, 255, 200, 220, 240, 255};
-	//HBITMAP bitmap;
-	BITMAPINFO bmInfo;
-	BITMAPFILEHEADER bmfh;
-	bmfh.bfType = 0x04D42;
-	bmfh.bfSize = ((dwWidth * dwHeight * dwBPP) / 8) + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + (dwNumColors * sizeof(RGBQUAD));
-	bmfh.bfReserved1 = 0;
-	bmfh.bfReserved2 = 0;
-	bmfh.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + (dwNumColors * sizeof(RGBQUAD));
-	bmInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-	bmInfo.bmiHeader.biWidth = dwWidth;
-	bmInfo.bmiHeader.biHeight = dwHeight;
-	bmInfo.bmiHeader.biPlanes = 1;
-	bmInfo.bmiHeader.biBitCount = (WORD)dwBPP;
-	bmInfo.bmiHeader.biCompression = BI_RGB;
-	bmInfo.bmiHeader.biSizeImage = 0;
-	bmInfo.bmiHeader.biXPelsPerMeter = 0;
-	bmInfo.bmiHeader.biYPelsPerMeter = 0;
-	bmInfo.bmiHeader.biClrUsed = dwNumColors;
-	bmInfo.bmiHeader.biClrImportant = dwNumColors;
-	
-	//bitmap = CreateDIBSection(hdc, &bmInfo, DIB_PAL_COLORS, &pBits, NULL, 0);
-	//SetDIBits(hdc, bitmap, 0, n, &field, &bmInfo, DIB_PAL_COLORS);
-	//HGDIOBJ gdiobj = SelectObject(hdcCompatible, (HGDIOBJ)bitmap);
-	//BitBlt(hdcCompatible, 0, 0, dwWidth, dwHeight, hdc, 0, 0, SRCCOPY);
-	
-	ofstream file;
-	file.open("image.bmp", ios::binary | ios::trunc | ios::out);
-	file.write((char*)&bmfh, sizeof(BITMAPFILEHEADER));
-	file.write((char*)&bmInfo, sizeof(BITMAPINFOHEADER));
-	file.write((char*)pBits, (dwWidth * dwHeight * dwBPP) / 8);
-
-	//DeleteObject(bitmap);
-	DeleteDC(hdcCompatible);
-	DeleteDC(hdc);
+	for (int i = 0; i < data.size(); i++) output << data.at(i);
 }
 
 int main()
@@ -342,10 +297,10 @@ int main()
 			BMP argInput(fieldToMonochrome(arg(functionVortex)));
 			BMP argOutput(fieldToMonochrome(arg(output)));
 
-			writingFile<BMP>(absInput, "absInput.bmp");
-			writingFile<BMP>(absOutput, "absOutput.bmp");
-			writingFile<BMP>(argInput, "argInput.bmp");
-			writingFile<BMP>(argOutput, "argOutput.bmp");
+			writingFile(absInput, "absInput.bmp");
+			writingFile(absOutput, "absOutput.bmp");
+			writingFile(argInput, "argInput.bmp");
+			writingFile(argOutput, "argOutput.bmp");
 
 			cout << "Продолжить расчёты? Для выхода ввести 0" << endl;
 		}
