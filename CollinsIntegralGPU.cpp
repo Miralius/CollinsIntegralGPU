@@ -4,13 +4,7 @@
 #include <Windows.h>
 #include <vector>
 #include <complex>
-#include <iterator>
 #include <ctime>
-//#ifdef __APPLE__
-//#include <OpenCL/opencl.h>
-//#else
-//#include <CL/cl.h>
-//#endif
 
 constexpr auto PI = 3.1415926535897932384626433832795;
 
@@ -21,7 +15,7 @@ inline void error(const string& s)
 	throw runtime_error(s);
 }
 
-void processing(int NOW, int MAX, int seconds)
+void processing(int NOW, int MAX, int seconds, int timeLeft)
 {
 	float proc, nowf, maxf;
 	if (NOW == MAX) proc = 100.;
@@ -31,7 +25,7 @@ void processing(int NOW, int MAX, int seconds)
 		maxf = (float)MAX;
 		proc = trunc(10000 * (nowf / maxf)) / 100;
 	}
-	cout << '\r' << "Выполнено: " << setw(6) << proc << "% " << setw(6) << seconds << " секунд";
+	cout << '\r' << "Выполнено " << setw(6) << proc << "%, прошло " << setw(6) << seconds << " секунд, осталось " << setw(6) << timeLeft << " секунд";
 }
 
 class BMP
@@ -135,7 +129,17 @@ vector<vector<double>> functionGauss(vector<double> xy, double sigma) {
 			input.at(i).push_back(function1D.at(i) * function1D.at(j));
 		}
 	}
+	return input;
+}
 
+vector<vector<double>> functionGaussLaguerreWithoutIMPhi(vector<double> xy, double sigma, int n, int m) {
+	vector<vector<double>> input;
+	for (int i = 0; i < xy.size(); i++) {
+		input.push_back(vector<double>());
+		for (int j = 0; j < xy.size(); j++) {
+			input.at(i).push_back((exp(-(xy.at(i) * xy.at(i) + xy.at(j) * xy.at(j)) / (2 * sigma * sigma))) * pow(((sqrt(xy.at(i) * xy.at(i) + xy.at(j) * xy.at(j))) / sigma), m));
+		}
+	}
 	return input;
 }
 
@@ -165,10 +169,10 @@ vector<vector<complex<double>>> collins(vector<vector<complex<double>>> function
 
 vector<vector<complex<double>>> collins(vector<vector<complex<double>>> functionVortex, vector<double> xy, vector<double> uv, vector<vector<double>> matrixABCD, double wavelength, double h) {
 	double k = 2 * PI / wavelength;
-	int startTime(clock() / CLOCKS_PER_SEC), endTime(clock() / CLOCKS_PER_SEC), progress(0);
+	int startTime(clock() / CLOCKS_PER_SEC), endTime(clock() / CLOCKS_PER_SEC), currentTime(clock() / CLOCKS_PER_SEC), progress(0);
 	vector<vector<complex<double>>> output;
 	for (int u = 0; u < uv.size(); u++) {
-		processing(++progress, (int)uv.size(), (endTime - startTime) * ((int)uv.size() - u));
+		processing(++progress, (int)uv.size(), clock() / CLOCKS_PER_SEC - currentTime, (endTime - startTime) * ((int)uv.size() - u));
 		startTime = endTime;
 		output.push_back(vector<complex<double>>());
 		for (int v = 0; v < uv.size(); v++) {
@@ -182,6 +186,35 @@ vector<vector<complex<double>>> collins(vector<vector<complex<double>>> function
 		}
 		endTime = clock() / CLOCKS_PER_SEC;
 	}
+	return output;
+}
+
+vector<vector<complex<double>>> cuCollins(vector<vector<complex<double>>>& functionVortex, vector<double>& xy, vector<double>& uv, vector<vector<double>> matrixABCD, double wavelength, double h) {
+#pragma warning(push)
+#pragma warning(disable:6386)
+	double k = 2 * PI / wavelength;
+	
+	complex<double>** functionVortexTemp = new complex<double>* [functionVortex.size() * functionVortex.size()];
+	for (int i = 0; i < functionVortex.size(); i++) {
+		functionVortexTemp[i] = new complex<double>[functionVortex.size()];
+		for (int j = 0; j < functionVortex.size(); j++) {
+			functionVortexTemp[i][j] = functionVortex.at(i).at(j);
+		}
+	}
+
+	double* xyTemp = new double[xy.size()];
+	for (int i = 0; i < xy.size(); i++) {
+		xyTemp[i] = xy.at(i);
+	}
+
+	double* uvTemp = new double[uv.size()];
+	for (int i = 0; i < uv.size(); i++) {
+		uvTemp[i] = uv.at(i);
+	}
+
+	double* constantStorage = new double[7];
+#pragma warning(pop)
+	vector<vector<complex<double>>> output;
 	return output;
 }
 
@@ -240,8 +273,7 @@ vector<vector<unsigned char>> fieldToMonochrome(vector<vector<double>> field) {
 	return pixels;
 }
 
-void writingFile(BMP picture, string nameFile)
-{
+void writingFile(BMP picture, string nameFile) {
 	ofstream output(nameFile, ios::binary | ios::trunc | ios::out);
 	vector<unsigned char> data = picture.serialize();
 	if (!output) error("Запись в файл " + nameFile + " невозможна!");
@@ -250,8 +282,13 @@ void writingFile(BMP picture, string nameFile)
 	}
 }
 
-int main()
-{
+void wrongInput() {
+	cout << "Неверный ввод! Введите ещё раз!" << endl;
+	cin.clear();
+	cin.ignore(cin.rdbuf()->in_avail(), '\n');
+}
+
+int main() {
 	SetConsoleCP(1251);
 	SetConsoleOutputCP(1251);
 
@@ -260,18 +297,19 @@ int main()
 		while (1) {
 			cout << "Введите пределы интегрирования (a и b):" << "\na = ";
 			double a, b;
-			cin >> a;
+			while (!(cin >> a) || (a < 0)) wrongInput();
 			if (a == 0) break;
 			cout << "b = ";
-			cin >> b;
+			while (!(cin >> b) || !(b > 0)) wrongInput();
 
+			vector<vector<double>> matrixABCD;
+			
 			cout << "Введите коэффициенты ABCD-матрицы: " << endl;
 			double coefficient;
-			vector<vector<double>> matrixABCD;
 			for (int i = 0; i < 2; i++) {
 				matrixABCD.push_back(vector<double>());
 				for (int j = 0; j < 2; j++) {
-					cin >> coefficient;
+					while (!(cin >> coefficient)) wrongInput();
 					matrixABCD.at(i).push_back(coefficient);
 				}
 			}
@@ -281,22 +319,31 @@ int main()
 
 			cout << "Введите количество отсчётов интегрирования (n входного поля и n выходного поля):" << "\nn1 = ";
 			int n1, n2;
-			cin >> n1;
+			while (!(cin >> n1) || !(n1 > 0)) wrongInput();
 			cout << "n2 = ";
-			cin >> n2;
+			while (!(cin >> n2) || !(n2 > 0)) wrongInput();
 
 			vector<double> xy = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? calcPoints(b, n2, matrixABCD.at(1).at(1)) : calcPoints(a, n1);
 			vector<double> uv = calcPoints(b, n2);
 
 			vector<vector<double>> input;
-			cout << "Входная функция:" << "\nГауссов пучок (1): ";
+			cout << "Входная функция:" << "\nГауссов пучок (1)\nМоды Гаусса-Лагерра (n = 0, m) (2): ";
 			string select;
 			cin >> select;
 			if (select == "1") {
 				cout << "Введите параметр сигма:" << "\nsigma = ";
 				double sigma;
-				cin >> sigma;
+				while(!(cin >> sigma) || !(sigma > 0)) wrongInput();
 				input = functionGauss(xy, sigma);
+			}
+			if (select == "2") {
+				cout << "Введите параметр сигма:" << "\nsigma = ";
+				double sigma;
+				while (!(cin >> sigma) || !(sigma > 0)) wrongInput();
+				cout << "Введите целое число m:" << "\nm = ";
+				int m;
+				while (!(cin >> m)) wrongInput();
+				input = functionGaussLaguerreWithoutIMPhi(xy, sigma, 0, abs(m));
 			}
 			else {
 				error("Не выбрана входная функция!");
