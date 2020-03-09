@@ -6,11 +6,11 @@
 #include <complex>
 #include <iterator>
 #include <ctime>
-#ifdef __APPLE__
-#include <OpenCL/opencl.h>
-#else
-#include <CL/cl.h>
-#endif
+//#ifdef __APPLE__
+//#include <OpenCL/opencl.h>
+//#else
+//#include <CL/cl.h>
+//#endif
 
 constexpr auto PI = 3.1415926535897932384626433832795;
 
@@ -165,10 +165,11 @@ vector<vector<complex<double>>> collins(vector<vector<complex<double>>> function
 
 vector<vector<complex<double>>> collins(vector<vector<complex<double>>> functionVortex, vector<double> xy, vector<double> uv, vector<vector<double>> matrixABCD, double wavelength, double h) {
 	double k = 2 * PI / wavelength;
-	int startTime(clock() / CLOCKS_PER_SEC), progress(0);
+	int startTime(clock() / CLOCKS_PER_SEC), endTime(clock() / CLOCKS_PER_SEC), progress(0);
 	vector<vector<complex<double>>> output;
 	for (int u = 0; u < uv.size(); u++) {
-		processing(++progress, (int)uv.size(), clock() / CLOCKS_PER_SEC - startTime);
+		processing(++progress, (int)uv.size(), (endTime - startTime) * ((int)uv.size() - u));
+		startTime = endTime;
 		output.push_back(vector<complex<double>>());
 		for (int v = 0; v < uv.size(); v++) {
 			complex<double> value = 0;
@@ -179,6 +180,7 @@ vector<vector<complex<double>>> collins(vector<vector<complex<double>>> function
 			}
 			output.at(u).push_back(complex<double>(0, -(k / (2 * PI * matrixABCD.at(0).at(1)))) * value * h * h);
 		}
+		endTime = clock() / CLOCKS_PER_SEC;
 	}
 	return output;
 }
