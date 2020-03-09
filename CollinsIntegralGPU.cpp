@@ -301,22 +301,38 @@ int main() {
 			if (a == 0) break;
 			cout << "b = ";
 			while (!(cin >> b) || !(b > 0)) wrongInput();
-
+			cout << "Дробное преобразование Фурье (y или n)?" << "\nОтвет: ";
+			char ff;
+			while (!(cin >> ff) || !(ff == 'y' || ff == 'n')) wrongInput();
 			vector<vector<double>> matrixABCD;
-			
-			cout << "Введите коэффициенты ABCD-матрицы: " << endl;
-			double coefficient;
-			for (int i = 0; i < 2; i++) {
+			if (ff == 'y') {
+				double p, f;
+				cout << "Введите дробный индекс (p) и фокусное расстояние (f, мм):" << "\np = ";
+				while (!(cin >> p)) wrongInput();
+				cout << "f = ";
+				while (!(cin >> f) || !(f > 0)) wrongInput();
 				matrixABCD.push_back(vector<double>());
-				for (int j = 0; j < 2; j++) {
-					while (!(cin >> coefficient)) wrongInput();
-					matrixABCD.at(i).push_back(coefficient);
+				matrixABCD.at(0).push_back(cos(p * PI / 2));
+				matrixABCD.at(0).push_back(f * sin(p * PI / 2));
+				matrixABCD.push_back(vector<double>());
+				matrixABCD.at(1).push_back(-sin(p * PI / 2) / f);
+				matrixABCD.at(1).push_back(cos(p * PI / 2));
+			}
+			else {
+				cout << "Введите коэффициенты ABCD-матрицы: " << endl;
+				double coefficient;
+				for (int i = 0; i < 2; i++) {
+					matrixABCD.push_back(vector<double>());
+					for (int j = 0; j < 2; j++) {
+						while (!(cin >> coefficient)) wrongInput();
+						matrixABCD.at(i).push_back(coefficient);
+					}
+				}
+				if (abs((matrixABCD.at(0).at(0) * matrixABCD.at(1).at(1) - matrixABCD.at(0).at(1) * matrixABCD.at(1).at(0)) - 1) > DBL_EPSILON) {
+					error("Определитель ABCD-матрицы должен быть равен 1");
 				}
 			}
-			if (abs((matrixABCD.at(0).at(0) * matrixABCD.at(1).at(1) - matrixABCD.at(0).at(1) * matrixABCD.at(1).at(0)) - 1) > DBL_EPSILON) {
-				error("Определитель ABCD-матрицы должен быть равен 1");
-			}
-
+			
 			cout << "Введите количество отсчётов интегрирования (n входного поля и n выходного поля):" << "\nn1 = ";
 			int n1, n2;
 			while (!(cin >> n1) || !(n1 > 0)) wrongInput();
