@@ -148,7 +148,7 @@ vector<vector<complex<double>>> vortex(vector<vector<double>> func, vector<doubl
 	for (int i = 0; i < xy.size(); i++) {
 		functionVortex.push_back(vector<complex<double>>());
 		for (int j = 0; j < xy.size(); j++) {
-			functionVortex.at(i).push_back(func.at(i).at(j) * exp(complex<double>(0, (n * ((j < (xy.size() / 2)) ? atan2(-xy.at(i), xy.at(j)) : (atan2(-xy.at(i), xy.at(j)) + 2 * PI))))));
+			functionVortex.at(i).push_back(func.at(i).at(j) * exp(complex<double>(0, (n * ((j < (xy.size() / 2)) ? atan2(-xy.at(i), xy.at(j)) : atan2(-xy.at(i), xy.at(j)) + 2 * PI)))));
 		}
 	}
 	return functionVortex;
@@ -342,6 +342,10 @@ int main() {
 			vector<double> xy = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? calcPoints(b, n2, matrixABCD.at(1).at(1)) : calcPoints(a, n1);
 			vector<double> uv = calcPoints(b, n2);
 
+			cout << "Введите топологический заряд:" << "\nm = ";
+			double m;
+			cin >> m;
+			
 			vector<vector<double>> input;
 			cout << "Входная функция:" << "\nГауссов пучок (1)\nМоды Гаусса-Лагерра (n = 0, m) (2): ";
 			string select;
@@ -352,23 +356,17 @@ int main() {
 				while(!(cin >> sigma) || !(sigma > 0)) wrongInput();
 				input = functionGauss(xy, sigma);
 			}
-			if (select == "2") {
+			else if (select == "2") {
 				cout << "Введите параметр сигма:" << "\nsigma = ";
 				double sigma;
 				while (!(cin >> sigma) || !(sigma > 0)) wrongInput();
-				cout << "Введите целое число m:" << "\nm = ";
-				int m;
-				while (!(cin >> m)) wrongInput();
-				input = functionGaussLaguerreWithoutIMPhi(xy, sigma, 0, abs(m));
+				input = functionGaussLaguerreWithoutIMPhi(xy, sigma, 0, (int)abs(m));
 			}
 			else {
 				error("Не выбрана входная функция!");
 			}
 
-			cout << "Введите топологический заряд:" << "\nn = ";
-			double n;
-			cin >> n;
-			vector<vector<complex<double>>> functionVortex = vortex(input, xy, n);
+			vector<vector<complex<double>>> functionVortex = vortex(input, xy, m);
 
 			cout << "Введите длину волны света (нм):" << "\nwavelength = ";
 			double wavelength;
