@@ -219,10 +219,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CollinsIntegralGPU.cpp" />
-    <ClCompile Include="Source.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Kernel.cl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

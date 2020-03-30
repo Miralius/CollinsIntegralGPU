@@ -3,12 +3,16 @@
 #include <fstream>
 #include <Windows.h>
 #include <vector>
-#include <complex>
 #include <ctime>
+#include <math.h>
+#include <amp.h>
+#include <amp_math.h>
 
 constexpr auto PI = 3.1415926535897932384626433832795;
 
 using namespace std;
+using namespace concurrency;
+using std::vector;
 
 inline void error(const string& s)
 {
@@ -26,6 +30,61 @@ void processing(int NOW, int MAX, int seconds, int timeLeft)
 		proc = trunc(10000 * (nowf / maxf)) / 100;
 	}
 	cout << '\r' << "Выполнено " << setw(6) << proc << "%, прошло " << setw(6) << seconds << " секунд, осталось " << setw(6) << timeLeft << " секунд";
+}
+
+class complex {
+private:
+	double value[2];
+	
+public:
+	double real() const restrict(amp, cpu) { return value[0]; }
+	double imag() const restrict(amp, cpu) { return value[1]; }
+
+	complex() restrict(amp, cpu) {
+		value[0] = 0;
+		value[1] = 0;
+	}
+
+	complex(double setReal, double setImag) restrict(amp, cpu) {
+		value[0] = setReal;
+		value[1] = setImag;
+	}
+
+	complex& operator=(const double _Right) restrict(amp, cpu) {
+
+		value[0] = _Right;
+		value[1] = 0;
+		return *this;
+	}
+
+	complex& operator=(const int _Right) restrict(amp, cpu) {
+
+		value[0] = (double)_Right;
+		value[1] = 0;
+		return *this;
+	}
+
+	complex& operator+=(const complex _Right) restrict(amp, cpu) {
+		value[0] += _Right.real();
+		value[1] += _Right.imag();
+		return *this;
+	}
+};
+
+complex operator*(const complex& _Left, const double& _Right) restrict(amp, cpu) {
+	return complex(_Right * _Left.real(), _Right * _Left.imag());
+}
+
+complex operator*(const double& _Left, const complex& _Right) restrict(amp, cpu) {
+	return complex(_Right.real() * _Left, _Right.imag() * _Left);
+}
+
+complex operator*(const complex& _Left, const complex& _Right) restrict(amp, cpu) {
+	return complex(_Left.real() * _Right.real() - _Left.imag() * _Right.imag(), _Left.real() * _Right.imag() + _Left.imag() * _Right.real());
+}
+
+complex exp(complex obj) restrict(amp, cpu) {
+	return complex(Concurrency::precise_math::exp(obj.real()) * Concurrency::precise_math::cos(obj.imag()), Concurrency::precise_math::exp(obj.real()) * Concurrency::precise_math::sin(obj.imag()));
 }
 
 class BMP
@@ -143,60 +202,60 @@ vector<vector<double>> functionGaussLaguerreWithoutIMPhi(vector<double> xy, doub
 	return input;
 }
 
-vector<vector<complex<double>>> vortex(vector<vector<double>> func, vector<double> xy, double n) {
-	vector<vector<complex<double>>> functionVortex;
+vector<vector<complex>> vortex(vector<vector<double>> func, vector<double> xy, double n) {
+	vector<vector<complex>> functionVortex;
 	for (int i = 0; i < xy.size(); i++) {
-		functionVortex.push_back(vector<complex<double>>());
+		functionVortex.push_back(vector<complex>());
 		for (int j = 0; j < xy.size(); j++) {
-			functionVortex.at(i).push_back(func.at(i).at(j) * exp(complex<double>(0, (n * ((j < (xy.size() / 2)) ? atan2(-xy.at(i), xy.at(j)) : atan2(-xy.at(i), xy.at(j)) + 2 * PI)))));
+			functionVortex.at(i).push_back(func.at(i).at(j) * exp(complex(0, (n * ((j < (xy.size() / 2)) ? atan2(-xy.at(i), xy.at(j)) : atan2(-xy.at(i), xy.at(j)) + 2 * PI)))));
 		}
 	}
 	return functionVortex;
 }
 
-vector<vector<complex<double>>> collins(vector<vector<complex<double>>> functionVortex, vector<double> uv, vector<vector<double>> matrixABCD, double wavelength) {
+vector<vector<complex>> collins(vector<vector<complex>> functionVortex, vector<double> uv, vector<vector<double>> matrixABCD, double wavelength) {
 	double k = 2 * PI / wavelength;
 
-	vector<vector<complex<double>>> output;
+	vector<vector<complex>> output;
 	for (int u = 0; u < uv.size(); u++) {
-		output.push_back(vector<complex<double>>());
+		output.push_back(vector<complex>());
 		for (int v = 0; v < uv.size(); v++) {
-			output.at(u).push_back(sqrt(matrixABCD.at(1).at(1)) * functionVortex.at(u).at(v) * exp(complex<double>(0, (k * matrixABCD.at(1).at(0) * matrixABCD.at(1).at(1) * (uv.at(u) + uv.at(v)) * (uv.at(u) + uv.at(v))) / 2)));
+			output.at(u).push_back(sqrt(matrixABCD.at(1).at(1)) * functionVortex.at(u).at(v) * exp(complex(0, (k * matrixABCD.at(1).at(0) * matrixABCD.at(1).at(1) * (uv.at(u) + uv.at(v)) * (uv.at(u) + uv.at(v))) / 2)));
 		}
 	}
 	return output;
 }
 
-vector<vector<complex<double>>> collins(vector<vector<complex<double>>> functionVortex, vector<double> xy, vector<double> uv, vector<vector<double>> matrixABCD, double wavelength, double h) {
+vector<vector<complex>> collins(vector<vector<complex>> functionVortex, vector<double> xy, vector<double> uv, vector<vector<double>> matrixABCD, double wavelength, double h) {
 	double k = 2 * PI / wavelength;
 	int startTime(clock() / CLOCKS_PER_SEC), endTime(clock() / CLOCKS_PER_SEC), currentTime(clock() / CLOCKS_PER_SEC), progress(0);
-	vector<vector<complex<double>>> output;
+	vector<vector<complex>> output;
 	for (int u = 0; u < uv.size(); u++) {
 		processing(++progress, (int)uv.size(), clock() / CLOCKS_PER_SEC - currentTime, (endTime - startTime) * ((int)uv.size() - u));
 		startTime = endTime;
-		output.push_back(vector<complex<double>>());
+		output.push_back(vector<complex>());
 		for (int v = 0; v < uv.size(); v++) {
-			complex<double> value = 0;
+			complex value = complex(0, 0);
 			for (int x = 0; x < xy.size(); x++) {
 				for (int y = 0; y < xy.size(); y++) {
-					value += functionVortex.at(x).at(y) * exp(complex<double>(0, ((k / (2 * matrixABCD.at(0).at(1))) * (matrixABCD.at(0).at(0) * (xy.at(x) * xy.at(x) + xy.at(y) * xy.at(y)) - 2 * (xy.at(x) * uv.at(u) + xy.at(y) * uv.at(v)) + matrixABCD.at(1).at(1) * (uv.at(u) * uv.at(u) + uv.at(v) * uv.at(v))))));
+					value += functionVortex.at(x).at(y) * exp(complex(0, ((k / (2 * matrixABCD.at(0).at(1))) * (matrixABCD.at(0).at(0) * (xy.at(x) * xy.at(x) + xy.at(y) * xy.at(y)) - 2 * (xy.at(x) * uv.at(u) + xy.at(y) * uv.at(v)) + matrixABCD.at(1).at(1) * (uv.at(u) * uv.at(u) + uv.at(v) * uv.at(v))))));
 				}
 			}
-			output.at(u).push_back(complex<double>(0, -(k / (2 * PI * matrixABCD.at(0).at(1)))) * value * h * h);
+			output.at(u).push_back(complex(0, -(k / (2 * PI * matrixABCD.at(0).at(1)))) * value * h * h);
 		}
 		endTime = clock() / CLOCKS_PER_SEC;
 	}
 	return output;
 }
 
-vector<vector<complex<double>>> cuCollins(vector<vector<complex<double>>>& functionVortex, vector<double>& xy, vector<double>& uv, vector<vector<double>> matrixABCD, double wavelength, double h) {
+vector<vector<complex>> cuCollins(vector<vector<complex>>& functionVortex, vector<double>& xy, vector<double>& uv, vector<vector<double>> matrixABCD, double wavelength, double h) {
 #pragma warning(push)
 #pragma warning(disable:6386)
 	double k = 2 * PI / wavelength;
 	
-	complex<double>** functionVortexTemp = new complex<double>* [functionVortex.size() * functionVortex.size()];
+	complex** functionVortexTemp = new complex* [functionVortex.size() * functionVortex.size()];
 	for (int i = 0; i < functionVortex.size(); i++) {
-		functionVortexTemp[i] = new complex<double>[functionVortex.size()];
+		functionVortexTemp[i] = new complex[functionVortex.size()];
 		for (int j = 0; j < functionVortex.size(); j++) {
 			functionVortexTemp[i][j] = functionVortex.at(i).at(j);
 		}
@@ -214,27 +273,76 @@ vector<vector<complex<double>>> cuCollins(vector<vector<complex<double>>>& funct
 
 	double* constantStorage = new double[7];
 #pragma warning(pop)
-	vector<vector<complex<double>>> output;
+	vector<vector<complex>> output;
 	return output;
 }
 
-vector<vector<double>> abs(vector<vector<complex<double>>> field) {
+vector<vector<complex>> ampCollins(vector<vector<complex>> functionVortex, vector<double> xy, vector<double> uv, vector<vector<double>> matrixABCD, double wavelength, double h) {
+	double k = 2 * PI / wavelength;
+	vector<vector<complex>> output;
+	vector<complex> funcVortex;
+	vector<double> abcd;
+	for (vector<double> row : matrixABCD) {
+		for (double value : row) {
+			abcd.push_back(value);
+		}
+	}
+	for (vector<complex> row : functionVortex) {
+		for (complex value : row) {
+			funcVortex.push_back(value);
+		}
+	}
+	vector<complex> results;
+	for (int i = 0; i < uv.size() * uv.size(); i++) {
+		results.push_back(complex(0, 0));
+	}
+	const int dim[4] = { (int)uv.size(), (int)uv.size() };
+	
+	Concurrency::extent<2> e(dim);
+	array_view<complex, 2> vort((int)functionVortex.size(), (int)functionVortex.size(), funcVortex);
+	array_view<double> xx((int)xy.size(), xy);
+	array_view<double> uu((int)uv.size(), uv);
+	array_view<double> params((int)abcd.size(), abcd);
+	array_view<complex, 2> r((int)uv.size(), (int)uv.size(), results);
+	r.discard_data();
+	
+	parallel_for_each(e, [=](Concurrency::index<2> idx) restrict(amp, cpu) {
+			for (unsigned int x = 0; x < xx.extent.size(); x++) {
+				for (unsigned int y = 0; y < xx.extent.size(); y++) {
+					r[idx[0]][idx[1]] += vort[x][y] * exp(complex(0, ((k / (2 * params[1])) * (params[0] * (xx[x] * xx[x] + xx[y] * xx[y]) - 2 * (xx[x] * uu[idx[0]] + xx[y] * uu[idx[1]]) + params[3] * (uu[idx[0]] * uu[idx[0]] + uu[idx[1]] * uu[idx[1]])))));
+				}
+			}	
+		}
+	);
+	r.synchronize();
+
+	for (int u = 0; u < uv.size(); u++) {
+		output.push_back(vector<complex>());
+		for (int v = 0; v < uv.size(); v++) {
+			output.at(u).push_back(complex(0, -(k / (2 * PI * matrixABCD.at(0).at(1)))) * results.at(u * uv.size() + v) * h * h);
+		}
+	}
+
+	return output;
+}
+
+vector<vector<double>> abs(vector<vector<complex>> field) {
 	vector<vector<double>> absField;
-	for (vector<complex<double>> row : field) {
+	for (vector<complex> row : field) {
 		absField.push_back(vector<double>());
-		for (complex<double> value : row) {
-			absField.back().push_back(abs(value));
+		for (complex value : row) {
+			absField.back().push_back(sqrt(value.real() * value.real() + value.imag() * value.imag()));
 		}
 	}
 	return absField;
 }
 
-vector<vector<double>> arg(vector<vector<complex<double>>> field) {
+vector<vector<double>> arg(vector<vector<complex>> field) {
 	vector<vector<double>> argField;
-	for (vector<complex<double>> row : field) {
+	for (vector<complex> row : field) {
 		argField.push_back(vector<double>());
-		for (complex<double> value : row) {
-			argField.back().push_back(arg(value));
+		for (complex value : row) {
+			argField.back().push_back(atan2(value.imag(), value.real()));
 		}
 	}
 	return argField;
@@ -366,14 +474,14 @@ int main() {
 				error("Не выбрана входная функция!");
 			}
 
-			vector<vector<complex<double>>> functionVortex = vortex(input, xy, m);
+			vector<vector<complex>> functionVortex = vortex(input, xy, m);
 
 			cout << "Введите длину волны света (нм):" << "\nwavelength = ";
 			double wavelength;
 			cin >> wavelength;
 			wavelength /= 1000000;
 			double h = 2 * a / n1;
-			vector<vector<complex<double>>> output = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? collins(functionVortex, uv, matrixABCD, wavelength) : collins(functionVortex, xy, uv, matrixABCD, wavelength, h);
+			vector<vector<complex>> output = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? collins(functionVortex, uv, matrixABCD, wavelength) : ampCollins(functionVortex, xy, uv, matrixABCD, wavelength, h);
 
 			BMP absInput(fieldToMonochrome(abs(functionVortex)));
 			BMP absOutput(fieldToMonochrome(abs(output)));

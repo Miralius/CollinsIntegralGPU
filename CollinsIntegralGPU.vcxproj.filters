@@ -18,13 +18,5 @@
     <ClCompile Include="CollinsIntegralGPU.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Kernel.cl">
-      <Filter>Source Files</Filter>
-    </None>
   </ItemGroup>
 </Project>
