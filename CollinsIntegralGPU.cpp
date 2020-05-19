@@ -4,6 +4,7 @@
 #include <Windows.h>
 #include <vector>
 #include <ctime>
+#include <complex.h>
 #include <math.h>
 #include <amp.h>
 #include <amp_math.h>
@@ -296,7 +297,7 @@ vector<vector<complex>> ampCollins(vector<vector<complex>> functionVortex, vecto
 	for (int i = 0; i < uv.size() * uv.size(); i++) {
 		results.push_back(complex(0, 0));
 	}
-	const int dim[4] = { (int)uv.size(), (int)uv.size() };
+	const int dim[2] = { (int)uv.size(), (int)uv.size() };
 	
 	Concurrency::extent<2> e(dim);
 	array_view<complex, 2> vort((int)functionVortex.size(), (int)functionVortex.size(), funcVortex);
@@ -481,7 +482,27 @@ int main() {
 			cin >> wavelength;
 			wavelength /= 1000000;
 			double h = 2 * a / n1;
-			vector<vector<complex>> output = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? collins(functionVortex, uv, matrixABCD, wavelength) : ampCollins(functionVortex, xy, uv, matrixABCD, wavelength, h);
+
+			/*BMP absInput(fieldToMonochrome(abs(functionVortex)));
+			BMP argInput(fieldToMonochrome(arg(functionVortex)));
+			writingFile(absInput, "absInput.bmp");
+			writingFile(argInput, "argInput.bmp");
+			for (int z = 0; z <= 500; z++) {
+				matrixABCD.at(0).at(0) = (cos(((double)z/125) * PI / 2));
+				matrixABCD.at(0).at(1) = (f * sin(((double)z / 125) * PI / 2));
+				matrixABCD.at(1).at(0) = (-sin(((double)z / 125) * PI / 2) / f);
+				matrixABCD.at(1).at(1) = (cos(((double)z / 125) * PI / 2));
+				if ((((double)z / 125) == 0) || (((double)z / 125) == 2) || (((double)z / 125) == 4)) continue;
+				vector<vector<complex>> output = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? collins(functionVortex, uv, matrixABCD, wavelength) : ampCollins(functionVortex, xy, uv, matrixABCD, wavelength, h);
+
+				BMP absOutput(fieldToMonochrome(abs(output)));
+				BMP argOutput(fieldToMonochrome(arg(output)));
+
+				writingFile(absOutput, "abs_" + to_string(z) + ".bmp");
+				writingFile(argOutput, "arg_" + to_string(z) + ".bmp");
+			}*/
+
+			vector<vector<complex>> output = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? collins(functionVortex, uv, matrixABCD, wavelength) : collins(functionVortex, xy, uv, matrixABCD, wavelength, h);
 
 			BMP absInput(fieldToMonochrome(abs(functionVortex)));
 			BMP absOutput(fieldToMonochrome(abs(output)));
