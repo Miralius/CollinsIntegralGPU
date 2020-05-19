@@ -117,10 +117,10 @@ vector<double> calcPoints(double interval, double count, double D) {
 
 vector<vector<double>> functionGauss(vector<double> x, vector<double> y, double sigma) {
 	vector<vector<double>> input;
-	for (int i = 0; i < x.size(); i++) {
+	for (int i = 0; i < y.size(); i++) {
 		input.push_back(vector<double>());
-		for (int j = 0; j < y.size(); j++) {
-			input.at(i).push_back((exp(-(x.at(i) * x.at(i) + x.at(j) * x.at(j)) / (2 * sigma * sigma))));
+		for (int j = 0; j < x.size(); j++) {
+			input.at(i).push_back((exp(-(x.at(j) * x.at(j) + y.at(i) * y.at(i)) / (2 * sigma * sigma))));
 		}
 	}
 	return input;
@@ -128,10 +128,10 @@ vector<vector<double>> functionGauss(vector<double> x, vector<double> y, double 
 
 vector<vector<double>> functionGaussLaguerre(vector<double> x, vector<double> y, double sigma, int n, double m) {
 	vector<vector<double>> input;
-	for (int i = 0; i < x.size(); i++) {
+	for (int i = 0; i < y.size(); i++) {
 		input.push_back(vector<double>());
-		for (int j = 0; j < y.size(); j++) {
-			input.at(i).push_back((exp(-(x.at(i) * x.at(i) + y.at(j) * y.at(j)) / (2 * sigma * sigma))) * pow(((sqrt(x.at(i) * x.at(i) + y.at(j) * y.at(j))) / sigma), (int) abs(m)));
+		for (int j = 0; j < x.size(); j++) {
+			input.at(i).push_back((exp(-(x.at(j) * x.at(j) + y.at(i) * y.at(i)) / (2 * sigma * sigma))) * pow(((sqrt(x.at(j) * x.at(j) + y.at(i) * y.at(i))) / sigma), (int) abs(m)));
 		}
 	}
 	return input;
@@ -139,10 +139,10 @@ vector<vector<double>> functionGaussLaguerre(vector<double> x, vector<double> y,
 
 vector<vector<complex<double>>> vortex(vector<vector<double>> func, vector<double> x, vector<double> y, double n) {
 	vector<vector<complex<double>>> functionVortex;
-	for (int i = 0; i < x.size(); i++) {
+	for (int i = 0; i < y.size(); i++) {
 		functionVortex.push_back(vector<complex<double>>());
-		for (int j = 0; j < y.size(); j++) {
-			functionVortex.at(i).push_back(func.at(i).at(j) * exp(complex<double>(0, (n * ((j < (y.size() / 2)) ? atan2(-y.at(i), x.at(j)) : atan2(-y.at(i), x.at(j)) + 2 * PI)))));
+		for (int j = 0; j < x.size(); j++) {
+			functionVortex.at(i).push_back(func.at(i).at(j) * exp(complex<double>(0, (n * ((i < (y.size() / 2)) ? atan2(-y.at(i), x.at(j)) : (atan2(-y.at(i), x.at(j)) + 2 * PI))))));
 		}
 	}
 	return functionVortex;
@@ -152,10 +152,10 @@ vector<vector<complex<double>>> collins(vector<vector<complex<double>>> function
 	double k = 2 * PI / wavelength;
 
 	vector<vector<complex<double>>> output;
-	for (int i = 0; i < u.size(); i++) {
+	for (int i = 0; i < v.size(); i++) {
 		output.push_back(vector<complex<double>>());
-		for (int j = 0; j < v.size(); j++) {
-			output.at(i).push_back(sqrt(matrixABCD.at(1).at(1)) * functionVortex.at(i).at(j) * exp(complex<double>(0, (k * matrixABCD.at(1).at(0) * matrixABCD.at(1).at(1) * (u.at(i) + v.at(j)) * (u.at(i) + v.at(j))) / 2)));
+		for (int j = 0; j < u.size(); j++) {
+			output.at(i).push_back(sqrt(matrixABCD.at(1).at(1)) * functionVortex.at(i).at(j) * exp(complex<double>(0, (k * matrixABCD.at(1).at(0) * matrixABCD.at(1).at(1) * (u.at(j) * u.at(j) + v.at(i) + v.at(i))) / 2)));
 		}
 	}
 	return output;
@@ -228,7 +228,7 @@ vector<vector<double>> arg(vector<vector<complex<double>>> field) {
 	for (vector<complex<double>> row : field) {
 		argField.push_back(vector<double>());
 		for (complex<double> value : row) {
-			argField.back().push_back(arg(value));
+			argField.back().push_back((value.imag() < 0) ? (arg(value) + 2 * PI) : arg(value));
 		}
 	}
 	return argField;
