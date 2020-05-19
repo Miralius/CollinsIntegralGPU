@@ -3,17 +3,11 @@
 #include <fstream>
 #include <Windows.h>
 #include <vector>
-#include <ctime>
-#include <complex.h>
-#include <math.h>
-#include <amp.h>
-#include <amp_math.h>
+#include <complex>
 
 constexpr auto PI = 3.1415926535897932384626433832795;
 
 using namespace std;
-using namespace concurrency;
-using std::vector;
 
 inline void error(const string& s)
 {
@@ -31,61 +25,6 @@ void processing(int NOW, int MAX, int seconds, int timeLeft)
 		proc = trunc(10000 * (nowf / maxf)) / 100;
 	}
 	cout << '\r' << "Выполнено " << setw(6) << proc << "%, прошло " << setw(6) << seconds << " секунд, осталось " << setw(6) << timeLeft << " секунд";
-}
-
-class complex {
-private:
-	double value[2];
-	
-public:
-	double real() const restrict(amp, cpu) { return value[0]; }
-	double imag() const restrict(amp, cpu) { return value[1]; }
-
-	complex() restrict(amp, cpu) {
-		value[0] = 0;
-		value[1] = 0;
-	}
-
-	complex(double setReal, double setImag) restrict(amp, cpu) {
-		value[0] = setReal;
-		value[1] = setImag;
-	}
-
-	complex& operator=(const double _Right) restrict(amp, cpu) {
-
-		value[0] = _Right;
-		value[1] = 0;
-		return *this;
-	}
-
-	complex& operator=(const int _Right) restrict(amp, cpu) {
-
-		value[0] = (double)_Right;
-		value[1] = 0;
-		return *this;
-	}
-
-	complex& operator+=(const complex _Right) restrict(amp, cpu) {
-		value[0] += _Right.real();
-		value[1] += _Right.imag();
-		return *this;
-	}
-};
-
-complex operator*(const complex& _Left, const double& _Right) restrict(amp, cpu) {
-	return complex(_Right * _Left.real(), _Right * _Left.imag());
-}
-
-complex operator*(const double& _Left, const complex& _Right) restrict(amp, cpu) {
-	return complex(_Right.real() * _Left, _Right.imag() * _Left);
-}
-
-complex operator*(const complex& _Left, const complex& _Right) restrict(amp, cpu) {
-	return complex(_Left.real() * _Right.real() - _Left.imag() * _Right.imag(), _Left.real() * _Right.imag() + _Left.imag() * _Right.real());
-}
-
-complex exp(complex obj) restrict(amp, cpu) {
-	return complex(Concurrency::precise_math::exp(obj.real()) * Concurrency::precise_math::cos(obj.imag()), Concurrency::precise_math::exp(obj.real()) * Concurrency::precise_math::sin(obj.imag()));
 }
 
 class BMP
@@ -176,87 +115,82 @@ vector<double> calcPoints(double interval, double count, double D) {
 	return points;
 }
 
-vector<vector<double>> functionGauss(vector<double> xy, double sigma) {
-	vector<double> function1D;
-	for (double value : xy) {
-		function1D.push_back((exp(-(value * value) / (2 * sigma * sigma))));
-	}
-
+vector<vector<double>> functionGauss(vector<double> x, vector<double> y, double sigma) {
 	vector<vector<double>> input;
-	for (int i = 0; i < function1D.size(); i++) {
+	for (int i = 0; i < x.size(); i++) {
 		input.push_back(vector<double>());
-		for (int j = 0; j < function1D.size(); j++) {
-			input.at(i).push_back(function1D.at(i) * function1D.at(j));
+		for (int j = 0; j < y.size(); j++) {
+			input.at(i).push_back((exp(-(x.at(i) * x.at(i) + x.at(j) * x.at(j)) / (2 * sigma * sigma))));
 		}
 	}
 	return input;
 }
 
-vector<vector<double>> functionGaussLaguerreWithoutIMPhi(vector<double> xy, double sigma, int n, int m) {
+vector<vector<double>> functionGaussLaguerre(vector<double> x, vector<double> y, double sigma, int n, double m) {
 	vector<vector<double>> input;
-	for (int i = 0; i < xy.size(); i++) {
+	for (int i = 0; i < x.size(); i++) {
 		input.push_back(vector<double>());
-		for (int j = 0; j < xy.size(); j++) {
-			input.at(i).push_back((exp(-(xy.at(i) * xy.at(i) + xy.at(j) * xy.at(j)) / (2 * sigma * sigma))) * pow(((sqrt(xy.at(i) * xy.at(i) + xy.at(j) * xy.at(j))) / sigma), m));
+		for (int j = 0; j < y.size(); j++) {
+			input.at(i).push_back((exp(-(x.at(i) * x.at(i) + y.at(j) * y.at(j)) / (2 * sigma * sigma))) * pow(((sqrt(x.at(i) * x.at(i) + y.at(j) * y.at(j))) / sigma), (int) abs(m)));
 		}
 	}
 	return input;
 }
 
-vector<vector<complex>> vortex(vector<vector<double>> func, vector<double> xy, double n) {
-	vector<vector<complex>> functionVortex;
-	for (int i = 0; i < xy.size(); i++) {
-		functionVortex.push_back(vector<complex>());
-		for (int j = 0; j < xy.size(); j++) {
-			functionVortex.at(i).push_back(func.at(i).at(j) * exp(complex(0, (n * ((j < (xy.size() / 2)) ? atan2(-xy.at(i), xy.at(j)) : atan2(-xy.at(i), xy.at(j)) + 2 * PI)))));
+vector<vector<complex<double>>> vortex(vector<vector<double>> func, vector<double> x, vector<double> y, double n) {
+	vector<vector<complex<double>>> functionVortex;
+	for (int i = 0; i < x.size(); i++) {
+		functionVortex.push_back(vector<complex<double>>());
+		for (int j = 0; j < y.size(); j++) {
+			functionVortex.at(i).push_back(func.at(i).at(j) * exp(complex<double>(0, (n * ((j < (y.size() / 2)) ? atan2(-y.at(i), x.at(j)) : atan2(-y.at(i), x.at(j)) + 2 * PI)))));
 		}
 	}
 	return functionVortex;
 }
 
-vector<vector<complex>> collins(vector<vector<complex>> functionVortex, vector<double> uv, vector<vector<double>> matrixABCD, double wavelength) {
+vector<vector<complex<double>>> collins(vector<vector<complex<double>>> functionVortex, vector<double> u, vector<double> v, vector<vector<double>> matrixABCD, double wavelength) {
 	double k = 2 * PI / wavelength;
 
-	vector<vector<complex>> output;
-	for (int u = 0; u < uv.size(); u++) {
-		output.push_back(vector<complex>());
-		for (int v = 0; v < uv.size(); v++) {
-			output.at(u).push_back(sqrt(matrixABCD.at(1).at(1)) * functionVortex.at(u).at(v) * exp(complex(0, (k * matrixABCD.at(1).at(0) * matrixABCD.at(1).at(1) * (uv.at(u) + uv.at(v)) * (uv.at(u) + uv.at(v))) / 2)));
+	vector<vector<complex<double>>> output;
+	for (int i = 0; i < u.size(); i++) {
+		output.push_back(vector<complex<double>>());
+		for (int j = 0; j < v.size(); j++) {
+			output.at(i).push_back(sqrt(matrixABCD.at(1).at(1)) * functionVortex.at(i).at(j) * exp(complex<double>(0, (k * matrixABCD.at(1).at(0) * matrixABCD.at(1).at(1) * (u.at(i) + v.at(j)) * (u.at(i) + v.at(j))) / 2)));
 		}
 	}
 	return output;
 }
 
-vector<vector<complex>> collins(vector<vector<complex>> functionVortex, vector<double> xy, vector<double> uv, vector<vector<double>> matrixABCD, double wavelength, double h) {
+vector<vector<complex<double>>> collins(vector<vector<complex<double>>> functionVortex, vector<double> x, vector<double> y, vector<double> u, vector<double> v, vector<vector<double>> matrixABCD, double wavelength, double hx, double hy) {
 	double k = 2 * PI / wavelength;
 	int startTime(clock() / CLOCKS_PER_SEC), endTime(clock() / CLOCKS_PER_SEC), currentTime(clock() / CLOCKS_PER_SEC), progress(0);
-	vector<vector<complex>> output;
-	for (int u = 0; u < uv.size(); u++) {
-		processing(++progress, (int)uv.size(), clock() / CLOCKS_PER_SEC - currentTime, (endTime - startTime) * ((int)uv.size() - u));
+	vector<vector<complex<double>>> output;
+	for (int p = 0; p < u.size(); p++) {
+		processing(++progress, (int)u.size(), clock() / CLOCKS_PER_SEC - currentTime, (endTime - startTime) * ((int)u.size() - p));
 		startTime = endTime;
-		output.push_back(vector<complex>());
-		for (int v = 0; v < uv.size(); v++) {
-			complex value = complex(0, 0);
-			for (int x = 0; x < xy.size(); x++) {
-				for (int y = 0; y < xy.size(); y++) {
-					value += functionVortex.at(x).at(y) * exp(complex(0, ((k / (2 * matrixABCD.at(0).at(1))) * (matrixABCD.at(0).at(0) * (xy.at(x) * xy.at(x) + xy.at(y) * xy.at(y)) - 2 * (xy.at(x) * uv.at(u) + xy.at(y) * uv.at(v)) + matrixABCD.at(1).at(1) * (uv.at(u) * uv.at(u) + uv.at(v) * uv.at(v))))));
+		output.push_back(vector<complex<double>>());
+		for (int q = 0; q < v.size(); q++) {
+			complex<double> value = 0;
+			for (int i = 0; i < x.size(); i++) {
+				for (int j = 0; j < y.size(); j++) {
+					value += functionVortex.at(i).at(j) * exp(complex<double>(0, ((k / (2 * matrixABCD.at(0).at(1))) * (matrixABCD.at(0).at(0) * (x.at(i) * x.at(i) + y.at(j) * y.at(j)) - 2 * (x.at(i) * u.at(p) + y.at(j) * v.at(q)) + matrixABCD.at(1).at(1) * (u.at(p) * u.at(p) + v.at(q) * v.at(q))))));
 				}
 			}
-			output.at(u).push_back(complex(0, -(k / (2 * PI * matrixABCD.at(0).at(1)))) * value * h * h);
+			output.at(p).push_back(complex<double>(0, -(k / (2 * PI * matrixABCD.at(0).at(1)))) * value * hx * hy);
 		}
 		endTime = clock() / CLOCKS_PER_SEC;
 	}
 	return output;
 }
 
-vector<vector<complex>> cuCollins(vector<vector<complex>>& functionVortex, vector<double>& xy, vector<double>& uv, vector<vector<double>> matrixABCD, double wavelength, double h) {
+vector<vector<complex<double>>> cuCollins(vector<vector<complex<double>>>& functionVortex, vector<double>& xy, vector<double>& uv, vector<vector<double>> matrixABCD, double wavelength, double h) {
 #pragma warning(push)
 #pragma warning(disable:6386)
 	double k = 2 * PI / wavelength;
 	
-	complex** functionVortexTemp = new complex* [functionVortex.size() * functionVortex.size()];
+	complex<double>** functionVortexTemp = new complex<double>* [functionVortex.size() * functionVortex.size()];
 	for (int i = 0; i < functionVortex.size(); i++) {
-		functionVortexTemp[i] = new complex[functionVortex.size()];
+		functionVortexTemp[i] = new complex<double>[functionVortex.size()];
 		for (int j = 0; j < functionVortex.size(); j++) {
 			functionVortexTemp[i][j] = functionVortex.at(i).at(j);
 		}
@@ -274,76 +208,27 @@ vector<vector<complex>> cuCollins(vector<vector<complex>>& functionVortex, vecto
 
 	double* constantStorage = new double[7];
 #pragma warning(pop)
-	vector<vector<complex>> output;
+	vector<vector<complex<double>>> output;
 	return output;
 }
 
-vector<vector<complex>> ampCollins(vector<vector<complex>> functionVortex, vector<double> xy, vector<double> uv, vector<vector<double>> matrixABCD, double wavelength, double h) {
-	double k = 2 * PI / wavelength;
-	vector<vector<complex>> output;
-	vector<complex> funcVortex;
-	vector<double> abcd;
-	for (vector<double> row : matrixABCD) {
-		for (double value : row) {
-			abcd.push_back(value);
-		}
-	}
-	for (vector<complex> row : functionVortex) {
-		for (complex value : row) {
-			funcVortex.push_back(value);
-		}
-	}
-	vector<complex> results;
-	for (int i = 0; i < uv.size() * uv.size(); i++) {
-		results.push_back(complex(0, 0));
-	}
-	const int dim[2] = { (int)uv.size(), (int)uv.size() };
-	
-	Concurrency::extent<2> e(dim);
-	array_view<complex, 2> vort((int)functionVortex.size(), (int)functionVortex.size(), funcVortex);
-	array_view<double> xx((int)xy.size(), xy);
-	array_view<double> uu((int)uv.size(), uv);
-	array_view<double> params((int)abcd.size(), abcd);
-	array_view<complex, 2> r((int)uv.size(), (int)uv.size(), results);
-	r.discard_data();
-	
-	parallel_for_each(e, [=](Concurrency::index<2> idx) restrict(amp, cpu) {
-			for (unsigned int x = 0; x < xx.extent.size(); x++) {
-				for (unsigned int y = 0; y < xx.extent.size(); y++) {
-					r[idx[0]][idx[1]] += vort[x][y] * exp(complex(0, ((k / (2 * params[1])) * (params[0] * (xx[x] * xx[x] + xx[y] * xx[y]) - 2 * (xx[x] * uu[idx[0]] + xx[y] * uu[idx[1]]) + params[3] * (uu[idx[0]] * uu[idx[0]] + uu[idx[1]] * uu[idx[1]])))));
-				}
-			}	
-		}
-	);
-	r.synchronize();
-
-	for (int u = 0; u < uv.size(); u++) {
-		output.push_back(vector<complex>());
-		for (int v = 0; v < uv.size(); v++) {
-			output.at(u).push_back(complex(0, -(k / (2 * PI * matrixABCD.at(0).at(1)))) * results.at(u * uv.size() + v) * h * h);
-		}
-	}
-
-	return output;
-}
-
-vector<vector<double>> abs(vector<vector<complex>> field) {
+vector<vector<double>> abs(vector<vector<complex<double>>> field) {
 	vector<vector<double>> absField;
-	for (vector<complex> row : field) {
+	for (vector<complex<double>> row : field) {
 		absField.push_back(vector<double>());
-		for (complex value : row) {
-			absField.back().push_back(sqrt(value.real() * value.real() + value.imag() * value.imag()));
+		for (complex<double> value : row) {
+			absField.back().push_back(abs(value));
 		}
 	}
 	return absField;
 }
 
-vector<vector<double>> arg(vector<vector<complex>> field) {
+vector<vector<double>> arg(vector<vector<complex<double>>> field) {
 	vector<vector<double>> argField;
-	for (vector<complex> row : field) {
+	for (vector<complex<double>> row : field) {
 		argField.push_back(vector<double>());
-		for (complex value : row) {
-			argField.back().push_back(atan2(value.imag(), value.real()));
+		for (complex<double> value : row) {
+			argField.back().push_back(arg(value));
 		}
 	}
 	return argField;
@@ -404,12 +289,16 @@ int main() {
 	try {
 		cout << "Расчёт двумерного интеграла Коллинза…" << endl;
 		while (1) {
-			cout << "Введите пределы интегрирования (a и b):" << "\na = ";
-			double a, b;
+			cout << "Введите пределы интегрирования (a, b и c, d):" << "\na = ";
+			double a, b, c, d;
 			while (!(cin >> a) || (a < 0)) wrongInput();
 			if (a == 0) break;
 			cout << "b = ";
 			while (!(cin >> b) || !(b > 0)) wrongInput();
+			cout << "c = ";
+			while (!(cin >> c) || !(c > 0)) wrongInput();
+			cout << "d = ";
+			while (!(cin >> d) || !(d > 0)) wrongInput();
 			cout << "Дробное преобразование Фурье (y или n)?" << "\nОтвет: ";
 			char ff;
 			while (!(cin >> ff) || !(ff == 'y' || ff == 'n')) wrongInput();
@@ -448,8 +337,10 @@ int main() {
 			cout << "n2 = ";
 			while (!(cin >> n2) || !(n2 > 0)) wrongInput();
 
-			vector<double> xy = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? calcPoints(b, n2, matrixABCD.at(1).at(1)) : calcPoints(a, n1);
-			vector<double> uv = calcPoints(b, n2);
+			vector<double> x = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? calcPoints(c, n2, matrixABCD.at(1).at(1)) : calcPoints(a, n1);
+			vector<double> y = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? calcPoints(d, n2, matrixABCD.at(1).at(1)) : calcPoints(b, n1);
+			vector<double> u = calcPoints(c, n2);
+			vector<double> v = calcPoints(d, n2);
 
 			cout << "Введите топологический заряд:" << "\nm = ";
 			double m;
@@ -463,46 +354,28 @@ int main() {
 				cout << "Введите параметр сигма:" << "\nsigma = ";
 				double sigma;
 				while(!(cin >> sigma) || !(sigma > 0)) wrongInput();
-				input = functionGauss(xy, sigma);
+				input = functionGauss(x, y, sigma);
 			}
 			else if (select == "2") {
 				cout << "Введите параметр сигма:" << "\nsigma = ";
 				double sigma;
 				while (!(cin >> sigma) || !(sigma > 0)) wrongInput();
-				input = functionGaussLaguerreWithoutIMPhi(xy, sigma, 0, (int)abs(m));
+				input = functionGaussLaguerre(x, y, sigma, 0, m);
 			}
 			else {
 				error("Не выбрана входная функция!");
 			}
 
-			vector<vector<complex>> functionVortex = vortex(input, xy, m);
+			vector<vector<complex<double>>> functionVortex = vortex(input, x, y, m);
 
 			cout << "Введите длину волны света (нм):" << "\nwavelength = ";
 			double wavelength;
 			cin >> wavelength;
 			wavelength /= 1000000;
-			double h = 2 * a / n1;
+			double hx = 2 * a / n1;
+			double hy = 2 * b / n1;
 
-			/*BMP absInput(fieldToMonochrome(abs(functionVortex)));
-			BMP argInput(fieldToMonochrome(arg(functionVortex)));
-			writingFile(absInput, "absInput.bmp");
-			writingFile(argInput, "argInput.bmp");
-			for (int z = 0; z <= 500; z++) {
-				matrixABCD.at(0).at(0) = (cos(((double)z/125) * PI / 2));
-				matrixABCD.at(0).at(1) = (f * sin(((double)z / 125) * PI / 2));
-				matrixABCD.at(1).at(0) = (-sin(((double)z / 125) * PI / 2) / f);
-				matrixABCD.at(1).at(1) = (cos(((double)z / 125) * PI / 2));
-				if ((((double)z / 125) == 0) || (((double)z / 125) == 2) || (((double)z / 125) == 4)) continue;
-				vector<vector<complex>> output = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? collins(functionVortex, uv, matrixABCD, wavelength) : ampCollins(functionVortex, xy, uv, matrixABCD, wavelength, h);
-
-				BMP absOutput(fieldToMonochrome(abs(output)));
-				BMP argOutput(fieldToMonochrome(arg(output)));
-
-				writingFile(absOutput, "abs_" + to_string(z) + ".bmp");
-				writingFile(argOutput, "arg_" + to_string(z) + ".bmp");
-			}*/
-
-			vector<vector<complex>> output = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? collins(functionVortex, uv, matrixABCD, wavelength) : collins(functionVortex, xy, uv, matrixABCD, wavelength, h);
+			vector<vector<complex<double>>> output = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? collins(functionVortex, u, v, matrixABCD, wavelength) : collins(functionVortex, x, y, u, v, matrixABCD, wavelength, hx, hy);
 
 			BMP absInput(fieldToMonochrome(abs(functionVortex)));
 			BMP absOutput(fieldToMonochrome(abs(output)));
