@@ -4,6 +4,7 @@
 #include <Windows.h>
 #include <vector>
 #include <complex>
+#include "cuda_runtime.h"
 
 constexpr auto PI = 3.1415926535897932384626433832795;
 
@@ -308,7 +309,9 @@ int main() {
 
 	try {
 		cout << "Расчёт двумерного интеграла Коллинза…" << endl;
-		while (1) {
+
+
+		/*while (1) {
 			cout << "Введите пределы интегрирования (a, b и c, d):" << "\na = ";
 			double a, b, c, d;
 			while (!(cin >> a) || (a < 0)) wrongInput();
@@ -409,7 +412,7 @@ int main() {
 			writingFile(argOutput, "argOutput.bmp");
 
 			cout << endl << "Результаты записаны! Продолжить расчёты? Для выхода ввести 0" << endl;
-		}
+		}*/
 	}
 	catch (runtime_error & e) {
 		cerr << "Ошибка! " << e.what() << endl;
