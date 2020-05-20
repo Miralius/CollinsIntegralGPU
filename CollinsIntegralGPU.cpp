@@ -1,19 +1,4 @@
-﻿#include <iostream>
-#include <iomanip>
-#include <fstream>
-#include <Windows.h>
-#include <vector>
-#include <complex>
-#include "cuda_runtime.h"
-
-constexpr auto PI = 3.1415926535897932384626433832795;
-
-using namespace std;
-
-inline void error(const string& s)
-{
-	throw runtime_error(s);
-}
+﻿#include "CollinsIntegralGPU.h"
 
 void processing(int NOW, int MAX, int seconds, int timeLeft)
 {
@@ -40,6 +25,11 @@ private:
 	vector<vector<int>> bmpFileHeader;
 	vector<vector<int>> bmpInfoHeader;
 
+	void initHeaders(int width, int height) {
+		bmpFileHeader = { {0x4D42, 2}, {width * height * countRGBChannel + BMPFILEHEADERsize + BMPINFOHEADERsize, 4}, {0, 2}, {0, 2}, {BMPFILEHEADERsize + BMPINFOHEADERsize, 4} };
+		bmpInfoHeader = { {BMPINFOHEADERsize, 4}, {width, 4}, {height, 4}, {1, 2}, {countRGBChannel * 8, 2}, {BI_RGB, 4}, {0, 4}, {0, 4}, {0, 4}, {0, 4}, {0, 4} };
+	}
+
 	vector<unsigned char> toBinary(vector<int> number) {
 		vector<unsigned char> binary;
 		for (int i = 0; i < number.at(1); i++) {
@@ -48,24 +38,67 @@ private:
 		return binary;
 	}
 
+	vector<int> toNumber(vector<unsigned char> binary) {
+		vector<int> number;
+		int temp = 0;
+		for (int i = 0; i < binary.size(); i++) {
+			temp |= binary.at(i) << (8 * i);
+		}
+		number.push_back(temp);
+		number.push_back(binary.size());
+		return number;
+	}
+
 public:
 	BMP() {
-		bmpFileHeader = { {0, 2}, {0, 4}, {0, 2}, {0, 2}, {0, 4} };
-		bmpInfoHeader = { {BMPINFOHEADERsize, 4}, {0, 4}, {0, 4}, {1, 2}, {countRGBChannel * 8, 2}, {BI_RGB, 4}, {0, 4}, {0, 4}, {0, 4}, {0, 4}, {0, 4} };
+		initHeaders(0, 0);
 	}
 
 	BMP(vector<vector<unsigned char>> picture) {
-		bmpFileHeader = { {0x4D42, 2}, {(int)picture.size() * (int)picture.size() * countRGBChannel + BMPFILEHEADERsize + BMPINFOHEADERsize, 4}, {0, 2}, {0, 2}, {BMPFILEHEADERsize + BMPINFOHEADERsize, 4} };
-		bmpInfoHeader = { {BMPINFOHEADERsize, 4}, {(int)picture.size(), 4}, {(int)picture.size(), 4}, {1, 2}, {countRGBChannel * 8, 2}, {BI_RGB, 4}, {0, 4}, {0, 4}, {0, 4}, {0, 4}, {0, 4} };
-		for (int i = (int)(picture.size() - 1); i >= 0; i--) {
+		initHeaders((int)picture.size(), (int)picture.at(0).size());
+		for (vector<unsigned char> data : picture) {
+			vector<unsigned char> temp(data);
+			pixels.push_back(temp);
+		}
+	}
+
+	BMP(string filename, int width, int height) : BMP() {
+		unsigned char buf;
+		vector<unsigned char> buf_vector;
+		ifstream input(filename, ios::binary | ios::in);
+		if (!input) error("Считывание с " + filename + " невозможно!");
+		for (vector<int> data : bmpFileHeader) {
+			for (int i = 0; i < data.at(1); i++) {
+				input >> buf;
+				buf_vector.push_back(buf);
+			}
+			data = toNumber(buf_vector);
+			buf_vector.clear();
+		}
+		buf_vector.clear();
+		for (vector<int> data : bmpInfoHeader) {
+			for (int i = 0; i < data.at(1); i++) {
+				input >> buf;
+				buf_vector.push_back(buf);
+			}
+			data = toNumber(buf_vector);
+			buf_vector.clear();
+		}
+		buf_vector.clear();
+		for (int i = 0; i < height; i++) {
 			pixels.push_back(vector<unsigned char>());
-			for (unsigned char value : picture.at(i)) {
-				pixels.back().push_back(value); //blue channel
-				pixels.back().push_back(value); //green channel
-				pixels.back().push_back(value); //red channel
-				pixels.back().push_back(255); //reserved channel
+			for (int j = 0; j < width; j++) {
+				input >> buf;
+				pixels.at(i).push_back(255); //reserved channel
+				input >> buf;
+				pixels.at(i).push_back(buf); //red channel
+				input >> buf;
+				pixels.at(i).push_back(buf); //green channel
+				input >> buf;
+				pixels.at(i).push_back(buf); //blue channel
 			}
 		}
+		reverse(pixels.begin(), pixels.end());
 	}
 
 	vector<unsigned char> serialize() {
@@ -81,9 +114,12 @@ public:
 				serializedBMP.push_back(byte);
 			}
 		}
-		for (vector<unsigned char> data : pixels) {
-			for (unsigned char byte : data) {
-				serializedBMP.push_back(byte);
+		for (int i = pixels.size() - 1; i >= 0; i--) {
+			for (unsigned char value : pixels.at(i)) {
+				serializedBMP.push_back(value); //blue channel
+				serializedBMP.push_back(value); //green channel
+				serializedBMP.push_back(value); //red channel
+				serializedBMP.push_back(255); //reserved channel
 			}
 		}
 		return serializedBMP;
@@ -303,6 +339,15 @@ void wrongInput() {
 	cin.ignore(cin.rdbuf()->in_avail(), '\n');
 }
 
+//__global__
+//void add(int n, float* x, float* y)
+//{
+//	int index = blockIdx.x * blockDim.x + threadIdx.x;
+//	int stride = blockDim.x * gridDim.x;
+//	for (int i = index; i < n; i += stride)
+//		y[i] = x[i] + y[i];
+//}
+
 int main() {
 	SetConsoleCP(1251);
 	SetConsoleOutputCP(1251);
@@ -310,8 +355,38 @@ int main() {
 	try {
 		cout << "Расчёт двумерного интеграла Коллинза…" << endl;
 
+		BMP test("argInput.bmp", 100, 100);
 
-		/*while (1) {
+		cout << "ыыыы";
+		//int N = 1 << 20; // 1M elements
+
+		//float* x, * y;
+		//cudaMallocManaged(&x, N * sizeof(float));
+		//cudaMallocManaged(&y, N * sizeof(float));
+
+		//// initialize x and y arrays on the host
+		//for (int i = 0; i < N; i++) {
+		//	x[i] = 1.0f;
+		//	y[i] = 2.0f;
+		//}
+
+		//// Run kernel on 1M elements on the CPU
+		//add<<<1, 1>>>(N, x, y);
+
+		//cudaDeviceSynchronize();
+
+		//// Check for errors (all values should be 3.0f)
+		//float maxError = 0.0f;
+		//for (int i = 0; i < N; i++)
+		//	maxError = fmax(maxError, fabs(y[i] - 3.0f));
+		//std::cout << "Max error: " << maxError << std::endl;
+
+		//// Free memory
+		//cudaFree(x);
+		//cudaFree(y);
+
+
+		while (1) {
 			cout << "Введите пределы интегрирования (a, b и c, d):" << "\na = ";
 			double a, b, c, d;
 			while (!(cin >> a) || (a < 0)) wrongInput();
@@ -398,8 +473,8 @@ int main() {
 			double hx = 2 * a / n1;
 			double hy = 2 * b / n1;
 
-			//vector<vector<complex<double>>> output = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? collins(functionVortex, u, v, matrixABCD, wavelength) : collins(functionVortex, x, y, u, v, matrixABCD, wavelength, hx, hy);
-			vector<vector<complex<double>>> output = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? collins(functionVortex, u, v, matrixABCD, wavelength) : cuCollins(functionVortex, x, y, u, v, matrixABCD, wavelength, hx, hy);
+			vector<vector<complex<double>>> output = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? collins(functionVortex, u, v, matrixABCD, wavelength) : collins(functionVortex, x, y, u, v, matrixABCD, wavelength, hx, hy);
+			//vector<vector<complex<double>>> output = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? collins(functionVortex, u, v, matrixABCD, wavelength) : cuCollins(functionVortex, x, y, u, v, matrixABCD, wavelength, hx, hy);
 
 			BMP absInput(fieldToMonochrome(abs(functionVortex)));
 			BMP absOutput(fieldToMonochrome(abs(output)));
@@ -412,7 +487,7 @@ int main() {
 			writingFile(argOutput, "argOutput.bmp");
 
 			cout << endl << "Результаты записаны! Продолжить расчёты? Для выхода ввести 0" << endl;
-		}*/
+		}
 	}
 	catch (runtime_error & e) {
 		cerr << "Ошибка! " << e.what() << endl;
