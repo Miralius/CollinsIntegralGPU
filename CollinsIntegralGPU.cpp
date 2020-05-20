@@ -183,30 +183,50 @@ vector<vector<complex<double>>> collins(vector<vector<complex<double>>> function
 	return output;
 }
 
-vector<vector<complex<double>>> cuCollins(vector<vector<complex<double>>>& functionVortex, vector<double>& xy, vector<double>& uv, vector<vector<double>> matrixABCD, double wavelength, double h) {
+vector<vector<complex<double>>> cuCollins(vector<vector<complex<double>>> functionVortex, vector<double> x, vector<double> y, vector<double> u, vector<double> v, vector<vector<double>> matrixABCD, double wavelength, double hx, double hy) {
 #pragma warning(push)
 #pragma warning(disable:6386)
 	double k = 2 * PI / wavelength;
 	
-	complex<double>** functionVortexTemp = new complex<double>* [functionVortex.size() * functionVortex.size()];
+	complex<double>** functionVortexTemp = new complex<double>* [functionVortex.size() * functionVortex.at(0).size()];
 	for (int i = 0; i < functionVortex.size(); i++) {
 		functionVortexTemp[i] = new complex<double>[functionVortex.size()];
-		for (int j = 0; j < functionVortex.size(); j++) {
+		for (int j = 0; j < functionVortex.at(i).size(); j++) {
 			functionVortexTemp[i][j] = functionVortex.at(i).at(j);
 		}
 	}
 
-	double* xyTemp = new double[xy.size()];
-	for (int i = 0; i < xy.size(); i++) {
-		xyTemp[i] = xy.at(i);
+	double* xTemp = new double[x.size()];
+	for (int i = 0; i < x.size(); i++) {
+		xTemp[i] = x.at(i);
 	}
 
-	double* uvTemp = new double[uv.size()];
-	for (int i = 0; i < uv.size(); i++) {
-		uvTemp[i] = uv.at(i);
+	double* yTemp = new double[y.size()];
+	for (int i = 0; i < y.size(); i++) {
+		yTemp[i] = y.at(i);
 	}
 
-	double* constantStorage = new double[7];
+	double* uTemp = new double[u.size()];
+	for (int i = 0; i < u.size(); i++) {
+		uTemp[i] = u.at(i);
+	}
+
+	double* vTemp = new double[v.size()];
+	for (int i = 0; i < v.size(); i++) {
+		vTemp[i] = v.at(i);
+	}
+
+	double* constantStorage = new double[8];
+	constantStorage[0] = matrixABCD.at(0).at(0);
+	constantStorage[1] = matrixABCD.at(0).at(1);
+	constantStorage[2] = matrixABCD.at(1).at(0);
+	constantStorage[3] = matrixABCD.at(0).at(1);
+	constantStorage[4] = k;
+	constantStorage[5] = wavelength;
+	constantStorage[6] = hx;
+	constantStorage[7] = hy;
+
+
 #pragma warning(pop)
 	vector<vector<complex<double>>> output;
 	return output;
@@ -375,7 +395,8 @@ int main() {
 			double hx = 2 * a / n1;
 			double hy = 2 * b / n1;
 
-			vector<vector<complex<double>>> output = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? collins(functionVortex, u, v, matrixABCD, wavelength) : collins(functionVortex, x, y, u, v, matrixABCD, wavelength, hx, hy);
+			//vector<vector<complex<double>>> output = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? collins(functionVortex, u, v, matrixABCD, wavelength) : collins(functionVortex, x, y, u, v, matrixABCD, wavelength, hx, hy);
+			vector<vector<complex<double>>> output = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? collins(functionVortex, u, v, matrixABCD, wavelength) : cuCollins(functionVortex, x, y, u, v, matrixABCD, wavelength, hx, hy);
 
 			BMP absInput(fieldToMonochrome(abs(functionVortex)));
 			BMP absOutput(fieldToMonochrome(abs(output)));
