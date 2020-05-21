@@ -121,9 +121,9 @@ istream& operator>>(istream& input, BMP& bmp)
 		if (!(input >> buffer)) return input;
 	}
 	vector<vector<vector<unsigned char>>> pixels;
-	for (int i = 0; i < size.at(1); i++) {
+	for (int i = 0; i < size.at(0); i++) {
 		pixels.push_back(vector<vector<unsigned char>>());
-		for (int j = 0; j < size.at(0); j++) {
+		for (int j = 0; j < size.at(1); j++) {
 			vector<unsigned char> pixel;
 			for (int k = 0; k < 4; k++) { //4 because BGR + alpha
 				if (!(input >> buffer)) return input;
@@ -133,6 +133,7 @@ istream& operator>>(istream& input, BMP& bmp)
 			pixel.clear();
 		}
 	}
+	reverse(pixels.begin(), pixels.end());
 	bmp = BMP(pixels);
 	return input;
 }
@@ -404,7 +405,7 @@ int main() {
 	try {
 		cout << "Расчёт двумерного интеграла Коллинза…" << endl;
 
-		BMP test = loadingFile<BMP>("absOutput.bmp");
+		BMP test = loadingFile<BMP>("Unt.bmp");
 		writingFile<BMP>(test, "test.bmp");
 
 		//int N = 1 << 20; // 1M elements
