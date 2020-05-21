@@ -101,14 +101,26 @@ ostream& operator<<(ostream& output, BMP& bmp)
 
 istream& operator>>(istream& input, BMP& bmp)
 {
-	int const BMPFILEHEADERsizeBeforeSize = 18; //count of bytes which following before width's value
-	int const BMPFILEHEADERsizeAfterSize = 28; //count of bytes which following after height's value
-	vector<int> size;
+	int const bytesBeforeOffset = 10; //count of bytes which following before pixel's offset
 	unsigned char buffer;
-	for (int i = 0; i < BMPFILEHEADERsizeBeforeSize; i++) {
-		if(!(input >> buffer)) return input;
+	for (int i = 0; i < bytesBeforeOffset; i++) {
+		if (!(input >> buffer)) return input;
 	}
+	
 	vector<unsigned char> bufferVector;
+	for (int i = 0; i < sizeof(int); i++) {
+		if (!(input >> buffer)) return input;
+		bufferVector.push_back(buffer);
+	}
+	int offset = BMP().toNumber(bufferVector);
+
+	int const bytesAfterOffsetBeforeWidth = 4; //count of bytes between offset and width
+	for (int i = 0; i < bytesAfterOffsetBeforeWidth; i++) {
+		if (!(input >> buffer)) return input;
+	}
+	
+	vector<int> size;
+	bufferVector.clear();
 	for (int i = 0; i < 2; i++) { //2 because width & height
 		for (int j = 0; j < sizeof(int); j++) {
 			if (!(input >> buffer)) return input;
@@ -117,17 +129,40 @@ istream& operator>>(istream& input, BMP& bmp)
 		size.push_back(BMP().toNumber(bufferVector));
 		bufferVector.clear();
 	}
-	for (int i = 0; i < BMPFILEHEADERsizeAfterSize; i++) {
+
+	int bytesAfterSizeBeforeBitCount = 2; //count of bytes between height and bitCount
+	for (int i = 0; i < bytesAfterSizeBeforeBitCount; i++) {
 		if (!(input >> buffer)) return input;
 	}
+
+	for (int i = 0; i < sizeof(short); i++) {
+		if (!(input >> buffer)) return input;
+		bufferVector.push_back(buffer);
+	}
+	int bitCount = BMP().toNumber(bufferVector);
+
+	int bytesAfterBitCount = offset - 30; //count of bytes after bitCount
+	for (int i = 0; i < bytesAfterBitCount; i++) {
+		if (!(input >> buffer)) return input;
+	}
+
 	vector<vector<vector<unsigned char>>> pixels;
 	for (int i = 0; i < size.at(0); i++) {
 		pixels.push_back(vector<vector<unsigned char>>());
 		for (int j = 0; j < size.at(1); j++) {
 			vector<unsigned char> pixel;
-			for (int k = 0; k < 4; k++) { //4 because BGR + alpha
-				if (!(input >> buffer)) return input;
-				pixel.push_back(buffer);
+			if (bitCount == 32) {
+				for (int k = 0; k < 4; k++) { //because BGR + alpha
+					if (!(input >> buffer)) return input;
+					pixel.push_back(buffer);
+				}
+			}
+			if (bitCount == 24) {
+				for (int k = 0; k < 3; k++) { //because BGR
+					if (!(input >> buffer)) return input;
+					pixel.push_back(buffer);
+				}
+				pixel.push_back(0);
 			}
 			pixels.back().push_back(pixel);
 			pixel.clear();
@@ -405,7 +440,7 @@ int main() {
 	try {
 		cout << "Расчёт двумерного интеграла Коллинза…" << endl;
 
-		BMP test = loadingFile<BMP>("Unt.bmp");
+		BMP test = loadingFile<BMP>("Untitled.bmp");
 		writingFile<BMP>(test, "test.bmp");
 
 		//int N = 1 << 20; // 1M elements
