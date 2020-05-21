@@ -218,12 +218,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BMP.cpp" />
     <ClCompile Include="CollinsIntegralGPU.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Kernel.cu" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BMP.h" />
     <ClInclude Include="CollinsIntegralGPU.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

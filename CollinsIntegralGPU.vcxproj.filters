@@ -18,6 +18,9 @@
     <ClCompile Include="CollinsIntegralGPU.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="BMP.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Kernel.cu">
@@ -25,8 +28,11 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BMP.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="CollinsIntegralGPU.h">
-      <Filter>Source Files</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
