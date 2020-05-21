@@ -15,14 +15,19 @@ class BMP {
 private:
 	static int const countRGBChannel = 4;
 	static int const BMPFILEHEADERsize = 14;
-	static int const BMPINFOHEADERsize = 40;
+	static int const BMPINFOHEADERsize = 124;
+	static int const COLORPROFILEsize = 12;
 	vector<vector<vector<unsigned char>>> pixels;
 	vector<vector<int>> bmpFileHeader; //This vector replaces the struct BITMAPFILEHEADER. Each first element — value, each second element — size of type of var.
 	vector<vector<int>> bmpInfoHeader; //This vector replaces the struct BITMAPINFOHEADER. Each first element — value, each second element — size of type of var.
+	vector<vector<int>> colorProfile;
 
 	void initHeaders(int width, int height) {
-		bmpFileHeader = { {0x4D42, 2}, {width * height * countRGBChannel + BMPFILEHEADERsize + BMPINFOHEADERsize, 4}, {0, 2}, {0, 2}, {BMPFILEHEADERsize + BMPINFOHEADERsize, 4} };
-		bmpInfoHeader = { {BMPINFOHEADERsize, 4}, {width, 4}, {height, 4}, {1, 2}, {countRGBChannel * 8, 2}, {BI_RGB, 4}, {0, 4}, {0, 4}, {0, 4}, {0, 4}, {0, 4} };
+		bmpFileHeader = { {0x4D42, 2}, {width * height * countRGBChannel + BMPFILEHEADERsize + BMPINFOHEADERsize + COLORPROFILEsize, 4}, {0, 2}, {0, 2}, {BMPFILEHEADERsize + BMPINFOHEADERsize + COLORPROFILEsize, 4} };
+		bmpInfoHeader = { {BMPINFOHEADERsize, 4}, {width, 4}, {height, 4}, {1, 2}, {countRGBChannel * 8, 2}, {BI_BITFIELDS, 4}, {0, 4}, {0xEC4, 4}, {0xEC4, 4}, {0, 4}, {0, 4},
+			{0x00FF0000, 4}, {0x0000FF00, 4}, {0x000000FF, 4}, {-16777216 /*0xFF000000*/, 4}, {LCS_WINDOWS_COLOR_SPACE, 4}, {0, 36}, {0, 4}, {0, 4}, {0, 4},
+			{0, 4}, {0, 4}, {0, 4}, {0, 4} };
+		colorProfile = { {0x000000FF, 4}, {0x0000FF00, 4}, {0x00FF0000, 4} };
 	}
 
 	static vector<unsigned char> toBinary(vector<int> number) {
@@ -47,6 +52,7 @@ public:
 		pixels = obj.pixels;
 		bmpFileHeader = obj.bmpFileHeader;
 		bmpInfoHeader = obj.bmpInfoHeader;
+		colorProfile = obj.colorProfile;
 	}
 
 	BMP& operator=(const BMP& obj)
@@ -55,6 +61,7 @@ public:
 		pixels = obj.pixels;
 		bmpFileHeader = obj.bmpFileHeader;
 		bmpInfoHeader = obj.bmpInfoHeader;
+		colorProfile = obj.colorProfile;
 		return *this;
 	}
 
@@ -79,6 +86,11 @@ public:
 				serializedBMP.push_back(byte);
 			}
 		}
+		for (vector<int> data : colorProfile) {
+			for (unsigned char byte : toBinary(data)) {
+				serializedBMP.push_back(byte);
+			}
+		}
 		for_each(pixels.rbegin(), pixels.rend(), [&](vector<vector<unsigned char>> row) {
 			for (vector<unsigned char> pixel : row) {
 				for (unsigned char color : pixel) {
@@ -90,8 +102,7 @@ public:
 	}
 };
 
-ostream& operator<<(ostream& output, BMP& bmp)
-{
+ostream& operator<<(ostream& output, BMP& bmp) {
 	vector<unsigned char> data = bmp.serialize();
 	for (unsigned char value : data) {
 		output << value;
@@ -99,8 +110,7 @@ ostream& operator<<(ostream& output, BMP& bmp)
 	return output;
 }
 
-istream& operator>>(istream& input, BMP& bmp)
-{
+istream& operator>>(istream& input, BMP& bmp) {
 	int const bytesBeforeOffset = 10; //count of bytes which following before pixel's offset
 	unsigned char buffer;
 	for (int i = 0; i < bytesBeforeOffset; i++) {
@@ -162,7 +172,7 @@ istream& operator>>(istream& input, BMP& bmp)
 					if (!(input >> buffer)) return input;
 					pixel.push_back(buffer);
 				}
-				pixel.push_back(0);
+				pixel.push_back(255);
 			}
 			pixels.back().push_back(pixel);
 			pixel.clear();
@@ -439,9 +449,6 @@ int main() {
 
 	try {
 		cout << "Расчёт двумерного интеграла Коллинза…" << endl;
-
-		BMP test = loadingFile<BMP>("Untitled.bmp");
-		writingFile<BMP>(test, "test.bmp");
 
 		//int N = 1 << 20; // 1M elements
 
