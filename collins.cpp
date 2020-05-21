@@ -1,6 +1,6 @@
 #include "CollinsIntegralGPU.h"
 
-vector<vector<complex<double>>> collins(vector<vector<complex<double>>> functionVortex, vector<double> u, vector<double> v, vector<vector<double>> matrixABCD, double wavelength) {
+vector<vector<complex<double>>> collins(vector<vector<complex<double>>>& functionVortex, vector<double>& u, vector<double>& v, vector<vector<double>>& matrixABCD, double wavelength) {
 	double k = 2 * PI / wavelength;
 
 	vector<vector<complex<double>>> output;
@@ -13,7 +13,7 @@ vector<vector<complex<double>>> collins(vector<vector<complex<double>>> function
 	return output;
 }
 
-vector<vector<complex<double>>> collins(vector<vector<complex<double>>> functionVortex, vector<double> x, vector<double> y, vector<double> u, vector<double> v, vector<vector<double>> matrixABCD, double wavelength, double hx, double hy) {
+vector<vector<complex<double>>> collins(vector<vector<complex<double>>>& functionVortex, vector<double>& x, vector<double>& y, vector<double>& u, vector<double>& v, vector<vector<double>>& matrixABCD, double wavelength, double hx, double hy) {
 	double k = 2 * PI / wavelength;
 	int startTime(clock() / CLOCKS_PER_SEC), endTime(clock() / CLOCKS_PER_SEC), currentTime(clock() / CLOCKS_PER_SEC), progress(0);
 	vector<vector<complex<double>>> output;
@@ -35,7 +35,7 @@ vector<vector<complex<double>>> collins(vector<vector<complex<double>>> function
 	return output;
 }
 
-vector<vector<complex<double>>> cuCollins(vector<vector<complex<double>>> functionVortex, vector<double> x, vector<double> y, vector<double> u, vector<double> v, vector<vector<double>> matrixABCD, double wavelength, double hx, double hy) {
+vector<vector<complex<double>>> cuCollins(vector<vector<complex<double>>>& functionVortex, vector<double>& x, vector<double>& y, vector<double>& u, vector<double>& v, vector<vector<double>>& matrixABCD, double wavelength, double hx, double hy) {
 #pragma warning(push)
 #pragma warning(disable:6386)
 	double k = 2 * PI / wavelength;

@@ -1,6 +1,6 @@
 #include "CollinsIntegralGPU.h"
 
-vector<vector<double>> functionGauss(vector<double> x, vector<double> y, double sigma) {
+vector<vector<double>> functionGauss(vector<double>& x, vector<double>& y, double sigma) {
 	vector<vector<double>> input;
 	for (int i = 0; i < y.size(); i++) {
 		input.push_back(vector<double>());
@@ -11,7 +11,7 @@ vector<vector<double>> functionGauss(vector<double> x, vector<double> y, double 
 	return input;
 }
 
-vector<vector<double>> functionGaussLaguerre(vector<double> x, vector<double> y, double sigma, int n, double m) {
+vector<vector<double>> functionGaussLaguerre(vector<double>& x, vector<double>& y, double sigma, int n, double m) {
 	vector<vector<double>> input;
 	for (int i = 0; i < y.size(); i++) {
 		input.push_back(vector<double>());

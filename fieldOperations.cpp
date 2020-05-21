@@ -1,6 +1,6 @@
 #include "CollinsIntegralGPU.h"
 
-vector<vector<complex<double>>> vortex(vector<vector<double>> func, vector<double> x, vector<double> y, double n) {
+vector<vector<complex<double>>> vortex(vector<vector<double>>& func, vector<double>& x, vector<double>& y, double n) {
 	vector<vector<complex<double>>> functionVortex;
 	for (int i = 0; i < y.size(); i++) {
 		functionVortex.push_back(vector<complex<double>>());
@@ -11,7 +11,7 @@ vector<vector<complex<double>>> vortex(vector<vector<double>> func, vector<doubl
 	return functionVortex;
 }
 
-vector<vector<double>> abs(vector<vector<complex<double>>> field) {
+vector<vector<double>> abs(vector<vector<complex<double>>>& field) {
 	vector<vector<double>> absField;
 	for (vector<complex<double>> row : field) {
 		absField.push_back(vector<double>());
@@ -22,7 +22,7 @@ vector<vector<double>> abs(vector<vector<complex<double>>> field) {
 	return absField;
 }
 
-vector<vector<double>> arg(vector<vector<complex<double>>> field) {
+vector<vector<double>> arg(vector<vector<complex<double>>>& field) {
 	vector<vector<double>> argField;
 	for (vector<complex<double>> row : field) {
 		argField.push_back(vector<double>());
@@ -33,7 +33,7 @@ vector<vector<double>> arg(vector<vector<complex<double>>> field) {
 	return argField;
 }
 
-double minimum(vector<vector<double>> field) {
+double minimum(vector<vector<double>>& field) {
 	double minValue = DBL_MAX;
 	for (vector<double> row : field) {
 		for (double value : row) {
@@ -43,7 +43,7 @@ double minimum(vector<vector<double>> field) {
 	return minValue;
 }
 
-double maximum(vector<vector<double>> field) {
+double maximum(vector<vector<double>>& field) {
 	double maxValue = DBL_MIN;
 	for (vector<double> row : field) {
 		for (double value : row) {

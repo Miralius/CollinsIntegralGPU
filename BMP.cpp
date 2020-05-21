@@ -115,10 +115,10 @@ istream& operator>>(istream& input, BMP& bmp) {
 	}
 
 	vector<vector<vector<unsigned char>>> pixels;
+	vector<unsigned char> pixel;
 	for (int i = 0; i < size.at(0); i++) {
 		pixels.push_back(vector<vector<unsigned char>>());
 		for (int j = 0; j < size.at(1); j++) {
-			vector<unsigned char> pixel;
 			if (bitCount == 32) {
 				for (int k = 0; k < 4; k++) { //because BGR + alpha
 					if (!(input >> buffer)) return input;
