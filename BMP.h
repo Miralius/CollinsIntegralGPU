@@ -33,9 +33,7 @@ private:
 
 public:
 	BMP();
-
 	BMP(vector<vector<vector<unsigned char>>> picture);
-
 	BMP(const BMP& obj);
 
 	BMP& operator=(const BMP& obj);
@@ -52,7 +50,6 @@ public:
 };
 
 istream& operator>>(istream& input, BMP& bmp);
-
 ostream& operator<<(ostream& output, BMP& bmp);
 
 #endif

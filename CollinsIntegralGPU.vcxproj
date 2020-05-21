@@ -219,7 +219,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="BMP.cpp" />
-    <ClCompile Include="CollinsIntegralGPU.cpp" />
+    <ClCompile Include="collins.cpp" />
+    <ClCompile Include="fieldOperations.cpp" />
+    <ClCompile Include="inputFunctions.cpp" />
+    <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Kernel.cu" />
