@@ -5,7 +5,8 @@
 #include <Windows.h>
 #include <vector>
 #include <complex>
-#include "cuda_runtime.h"
+#include <algorithm>
+//#include "cuda_runtime.h"
 
 constexpr auto PI = 3.1415926535897932384626433832795;
 

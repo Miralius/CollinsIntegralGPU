@@ -1,11 +1,9 @@
 ﻿#include "CollinsIntegralGPU.h"
 
-void processing(int NOW, int MAX, int seconds, int timeLeft)
-{
+void processing(int NOW, int MAX, int seconds, int timeLeft) {
 	float proc, nowf, maxf;
 	if (NOW == MAX) proc = 100.;
-	else
-	{
+	else {
 		nowf = (float)NOW;
 		maxf = (float)MAX;
 		proc = trunc(10000 * (nowf / maxf)) / 100;
@@ -13,14 +11,13 @@ void processing(int NOW, int MAX, int seconds, int timeLeft)
 	cout << '\r' << "Выполнено " << setw(6) << proc << "%, прошло " << setw(6) << seconds << " секунд, осталось " << setw(6) << timeLeft << " секунд";
 }
 
-class BMP
-{
+class BMP {
 	int const countRGBChannel = 4;
 	int const BMPFILEHEADERsize = 14;
 	int const BMPINFOHEADERsize = 40;
 
 private:
-	vector<vector<unsigned char>> pixels;
+	vector<vector<vector<unsigned char>>> pixels;
 	//These vectors replace the structs. Each first element — value, each second element — size of type of var.
 	vector<vector<int>> bmpFileHeader;
 	vector<vector<int>> bmpInfoHeader;
@@ -54,52 +51,48 @@ public:
 		initHeaders(0, 0);
 	}
 
-	BMP(vector<vector<unsigned char>> picture) {
+	BMP(vector<vector<vector<unsigned char>>> picture) : pixels(picture) {
 		initHeaders((int)picture.size(), (int)picture.at(0).size());
-		for (vector<unsigned char> data : picture) {
-			vector<unsigned char> temp(data);
-			pixels.push_back(temp);
-		}
 	}
 
-	BMP(string filename, int width, int height) : BMP() {
-		unsigned char buf;
-		vector<unsigned char> buf_vector;
-		ifstream input(filename, ios::binary | ios::in);
-		if (!input) error("Считывание с " + filename + " невозможно!");
-		for (vector<int> data : bmpFileHeader) {
-			for (int i = 0; i < data.at(1); i++) {
-				input >> buf;
-				buf_vector.push_back(buf);
-			}
-			data = toNumber(buf_vector);
-			buf_vector.clear();
-		}
-		buf_vector.clear();
-		for (vector<int> data : bmpInfoHeader) {
-			for (int i = 0; i < data.at(1); i++) {
-				input >> buf;
-				buf_vector.push_back(buf);
-			}
-			data = toNumber(buf_vector);
-			buf_vector.clear();
-		}
-		buf_vector.clear();
-		for (int i = 0; i < height; i++) {
-			pixels.push_back(vector<unsigned char>());
-			for (int j = 0; j < width; j++) {
-				input >> buf;
-				pixels.at(i).push_back(255); //reserved channel
-				input >> buf;
-				pixels.at(i).push_back(buf); //red channel
-				input >> buf;
-				pixels.at(i).push_back(buf); //green channel
-				input >> buf;
-				pixels.at(i).push_back(buf); //blue channel
-			}
-		}
-		reverse(pixels.begin(), pixels.end());
-	}
+	//BMP(string filename, int width, int height) : BMP() { //repair this too
+	//	unsigned char buf;
+	//	vector<unsigned char> buf_vector;
+	//	ifstream input(filename, ios::binary | ios::in);
+	//	if (!input) error("Считывание с " + filename + " невозможно!");
+	//	for (vector<int> data : bmpFileHeader) {
+	//		for (int i = 0; i < data.at(1); i++) {
+	//			input >> buf;
+	//			buf_vector.push_back(buf);
+	//		}
+	//		data = toNumber(buf_vector);
+	//		buf_vector.clear();
+	//	}
+	//	buf_vector.clear();
+	//	for (vector<int> data : bmpInfoHeader) {
+	//		for (int i = 0; i < data.at(1); i++) {
+	//			input >> buf;
+	//			buf_vector.push_back(buf);
+	//		}
+	//		data = toNumber(buf_vector);
+	//		buf_vector.clear();
+	//	}
+	//	buf_vector.clear();
+	//	for (int i = 0; i < height; i++) {
+	//		pixels.push_back(vector<unsigned char>());
+	//		for (int j = 0; j < width; j++) {
+	//			input >> buf;
+	//			pixels.at(i).push_back(255); //reserved channel
+	//			input >> buf;
+	//			pixels.at(i).push_back(buf); //red channel
+	//			input >> buf;
+	//			pixels.at(i).push_back(buf); //green channel
+	//			input >> buf;
+	//			pixels.at(i).push_back(buf); //blue channel
+	//		}
+	//	}
+	//	reverse(pixels.begin(), pixels.end());
+	//}
 
 	vector<unsigned char> serialize() {
 		vector<unsigned char> serializedBMP;
@@ -114,17 +107,49 @@ public:
 				serializedBMP.push_back(byte);
 			}
 		}
-		for (int i = pixels.size() - 1; i >= 0; i--) {
-			for (unsigned char value : pixels.at(i)) {
-				serializedBMP.push_back(value); //blue channel
-				serializedBMP.push_back(value); //green channel
-				serializedBMP.push_back(value); //red channel
-				serializedBMP.push_back(255); //reserved channel
+		for_each(pixels.rbegin(), pixels.rend(), [&](vector<vector<unsigned char>> row) {
+			for (vector<unsigned char> pixel : row) {
+				for (unsigned char color : pixel) {
+					serializedBMP.push_back(color);
+				}
 			}
-		}
+		});
 		return serializedBMP;
 	}
+
 };
+
+ostream& operator<<(ostream& output, BMP& bmp)
+{
+	vector<unsigned char> data = bmp.serialize();
+	for (unsigned char value : data) {
+		output << value;
+	}
+	return output;
+}
+
+enum class scheme {
+	black_white, red
+};
+
+vector<vector<unsigned char>> applyScheme(scheme schemeName) {
+	vector<vector<unsigned char>> schemes;
+	switch (schemeName) {
+	case scheme::black_white:
+		for (int i = 0; i < 256; i++) {
+			schemes.push_back(vector<unsigned char>({ (unsigned char)i, (unsigned char)i, (unsigned char)i, 255 }));
+		}
+		break;
+	case scheme::red:
+		for (int i = 0; i < 256; i++) {
+			schemes.push_back(vector<unsigned char>({ 0, 0, (unsigned char)i, 255 }));
+		}
+		break;
+	default:
+		error("Выбрана неверная цветовая схема!");
+	}
+	return schemes;
+}
 
 vector<double> calcPoints(double interval, double count) {
 	double pointValue = -interval;
@@ -311,14 +336,15 @@ double maximum(vector<vector<double>> field) {
 	return maxValue;
 }
 
-vector<vector<unsigned char>> fieldToMonochrome(vector<vector<double>> field) {
+vector<vector<vector<unsigned char>>> fieldToBMP(vector<vector<double>> field, scheme schemeName) {
 	double minValue = minimum(field);
 	double maxValue = maximum(field);
-	vector<vector<unsigned char>> pixels;
+	vector<vector<unsigned char>> scheme = applyScheme(schemeName);
+	vector<vector<vector<unsigned char>>> pixels;
 	for (vector<double> row : field) {
-		pixels.push_back(vector<unsigned char>());
+		pixels.push_back(vector<vector<unsigned char>>());
 		for (double value : row) {
-			pixels.back().push_back((unsigned char)round((value - minValue) * 255 / (maxValue - minValue)));
+			pixels.back().push_back(scheme.at((unsigned char)round((value - minValue) * 255 / (maxValue - minValue))));
 		}
 	}
 	return pixels;
@@ -326,11 +352,12 @@ vector<vector<unsigned char>> fieldToMonochrome(vector<vector<double>> field) {
 
 void writingFile(BMP picture, string nameFile) {
 	ofstream output(nameFile, ios::binary | ios::trunc | ios::out);
-	vector<unsigned char> data = picture.serialize();
+	//vector<unsigned char> data = picture.serialize();
 	if (!output) error("Запись в файл " + nameFile + " невозможна!");
-	for (unsigned char value : data) {
-		output << value;
-	}
+	//for (unsigned char value : data) {
+	//	output << value;
+	//}
+	output << picture;
 }
 
 void wrongInput() {
@@ -355,9 +382,8 @@ int main() {
 	try {
 		cout << "Расчёт двумерного интеграла Коллинза…" << endl;
 
-		BMP test("argInput.bmp", 100, 100);
+		//BMP test("argInput.bmp", 100, 100);
 
-		cout << "ыыыы";
 		//int N = 1 << 20; // 1M elements
 
 		//float* x, * y;
@@ -476,10 +502,10 @@ int main() {
 			vector<vector<complex<double>>> output = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? collins(functionVortex, u, v, matrixABCD, wavelength) : collins(functionVortex, x, y, u, v, matrixABCD, wavelength, hx, hy);
 			//vector<vector<complex<double>>> output = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? collins(functionVortex, u, v, matrixABCD, wavelength) : cuCollins(functionVortex, x, y, u, v, matrixABCD, wavelength, hx, hy);
 
-			BMP absInput(fieldToMonochrome(abs(functionVortex)));
-			BMP absOutput(fieldToMonochrome(abs(output)));
-			BMP argInput(fieldToMonochrome(arg(functionVortex)));
-			BMP argOutput(fieldToMonochrome(arg(output)));
+			BMP absInput(fieldToBMP(abs(functionVortex), scheme::red));
+			BMP absOutput(fieldToBMP(abs(output), scheme::red));
+			BMP argInput(fieldToBMP(arg(functionVortex), scheme::black_white));
+			BMP argOutput(fieldToBMP(arg(output), scheme::black_white));
 
 			writingFile(absInput, "absInput.bmp");
 			writingFile(absOutput, "absOutput.bmp");
