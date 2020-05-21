@@ -12,38 +12,25 @@ void processing(int NOW, int MAX, int seconds, int timeLeft) {
 }
 
 class BMP {
-	int const countRGBChannel = 4;
-	int const BMPFILEHEADERsize = 14;
-	int const BMPINFOHEADERsize = 40;
-
 private:
+	static int const countRGBChannel = 4;
+	static int const BMPFILEHEADERsize = 14;
+	static int const BMPINFOHEADERsize = 40;
 	vector<vector<vector<unsigned char>>> pixels;
-	//These vectors replace the structs. Each first element — value, each second element — size of type of var.
-	vector<vector<int>> bmpFileHeader;
-	vector<vector<int>> bmpInfoHeader;
+	vector<vector<int>> bmpFileHeader; //This vector replaces the struct BITMAPFILEHEADER. Each first element — value, each second element — size of type of var.
+	vector<vector<int>> bmpInfoHeader; //This vector replaces the struct BITMAPINFOHEADER. Each first element — value, each second element — size of type of var.
 
 	void initHeaders(int width, int height) {
 		bmpFileHeader = { {0x4D42, 2}, {width * height * countRGBChannel + BMPFILEHEADERsize + BMPINFOHEADERsize, 4}, {0, 2}, {0, 2}, {BMPFILEHEADERsize + BMPINFOHEADERsize, 4} };
 		bmpInfoHeader = { {BMPINFOHEADERsize, 4}, {width, 4}, {height, 4}, {1, 2}, {countRGBChannel * 8, 2}, {BI_RGB, 4}, {0, 4}, {0, 4}, {0, 4}, {0, 4}, {0, 4} };
 	}
 
-	vector<unsigned char> toBinary(vector<int> number) {
+	static vector<unsigned char> toBinary(vector<int> number) {
 		vector<unsigned char> binary;
 		for (int i = 0; i < number.at(1); i++) {
 			binary.push_back(number.at(0) >> (8 * i));
 		}
 		return binary;
-	}
-
-	vector<int> toNumber(vector<unsigned char> binary) {
-		vector<int> number;
-		int temp = 0;
-		for (int i = 0; i < binary.size(); i++) {
-			temp |= binary.at(i) << (8 * i);
-		}
-		number.push_back(temp);
-		number.push_back(binary.size());
-		return number;
 	}
 
 public:
@@ -55,44 +42,29 @@ public:
 		initHeaders((int)picture.size(), (int)picture.at(0).size());
 	}
 
-	//BMP(string filename, int width, int height) : BMP() { //repair this too
-	//	unsigned char buf;
-	//	vector<unsigned char> buf_vector;
-	//	ifstream input(filename, ios::binary | ios::in);
-	//	if (!input) error("Считывание с " + filename + " невозможно!");
-	//	for (vector<int> data : bmpFileHeader) {
-	//		for (int i = 0; i < data.at(1); i++) {
-	//			input >> buf;
-	//			buf_vector.push_back(buf);
-	//		}
-	//		data = toNumber(buf_vector);
-	//		buf_vector.clear();
-	//	}
-	//	buf_vector.clear();
-	//	for (vector<int> data : bmpInfoHeader) {
-	//		for (int i = 0; i < data.at(1); i++) {
-	//			input >> buf;
-	//			buf_vector.push_back(buf);
-	//		}
-	//		data = toNumber(buf_vector);
-	//		buf_vector.clear();
-	//	}
-	//	buf_vector.clear();
-	//	for (int i = 0; i < height; i++) {
-	//		pixels.push_back(vector<unsigned char>());
-	//		for (int j = 0; j < width; j++) {
-	//			input >> buf;
-	//			pixels.at(i).push_back(255); //reserved channel
-	//			input >> buf;
-	//			pixels.at(i).push_back(buf); //red channel
-	//			input >> buf;
-	//			pixels.at(i).push_back(buf); //green channel
-	//			input >> buf;
-	//			pixels.at(i).push_back(buf); //blue channel
-	//		}
-	//	}
-	//	reverse(pixels.begin(), pixels.end());
-	//}
+	BMP(const BMP& obj)
+	{
+		pixels = obj.pixels;
+		bmpFileHeader = obj.bmpFileHeader;
+		bmpInfoHeader = obj.bmpInfoHeader;
+	}
+
+	BMP& operator=(const BMP& obj)
+	{
+		if (this == &obj) return *this;
+		pixels = obj.pixels;
+		bmpFileHeader = obj.bmpFileHeader;
+		bmpInfoHeader = obj.bmpInfoHeader;
+		return *this;
+	}
+
+	static int toNumber(vector<unsigned char> binary) {
+		int temp = 0;
+		for (int i = 0; i < binary.size(); i++) {
+			temp |= binary.at(i) << (8 * i);
+		}
+		return temp;
+	}
 
 	vector<unsigned char> serialize() {
 		vector<unsigned char> serializedBMP;
@@ -116,7 +88,6 @@ public:
 		});
 		return serializedBMP;
 	}
-
 };
 
 ostream& operator<<(ostream& output, BMP& bmp)
@@ -126,6 +97,44 @@ ostream& operator<<(ostream& output, BMP& bmp)
 		output << value;
 	}
 	return output;
+}
+
+istream& operator>>(istream& input, BMP& bmp)
+{
+	int const BMPFILEHEADERsizeBeforeSize = 18; //count of bytes which following before width's value
+	int const BMPFILEHEADERsizeAfterSize = 28; //count of bytes which following after height's value
+	vector<int> size;
+	unsigned char buffer;
+	for (int i = 0; i < BMPFILEHEADERsizeBeforeSize; i++) {
+		if(!(input >> buffer)) return input;
+	}
+	vector<unsigned char> bufferVector;
+	for (int i = 0; i < 2; i++) { //2 because width & height
+		for (int j = 0; j < sizeof(int); j++) {
+			if (!(input >> buffer)) return input;
+			bufferVector.push_back(buffer);
+		}
+		size.push_back(BMP().toNumber(bufferVector));
+		bufferVector.clear();
+	}
+	for (int i = 0; i < BMPFILEHEADERsizeAfterSize; i++) {
+		if (!(input >> buffer)) return input;
+	}
+	vector<vector<vector<unsigned char>>> pixels;
+	for (int i = 0; i < size.at(1); i++) {
+		pixels.push_back(vector<vector<unsigned char>>());
+		for (int j = 0; j < size.at(0); j++) {
+			vector<unsigned char> pixel;
+			for (int k = 0; k < 4; k++) { //4 because BGR + alpha
+				if (!(input >> buffer)) return input;
+				pixel.push_back(buffer);
+			}
+			pixels.back().push_back(pixel);
+			pixel.clear();
+		}
+	}
+	bmp = BMP(pixels);
+	return input;
 }
 
 enum class scheme {
@@ -350,14 +359,27 @@ vector<vector<vector<unsigned char>>> fieldToBMP(vector<vector<double>> field, s
 	return pixels;
 }
 
-void writingFile(BMP picture, string nameFile) {
+template <typename T> T loadingFile(string nameFile)
+{
+	ifstream in(nameFile, ios::binary | ios::in);
+	in.unsetf(ios_base::skipws);
+	T data;
+	if (!in.fail()) {
+		if (!(in >> data)) error("Файл " + nameFile + " пуст или содержит неверные данные!");
+	}
+	else {
+		error("Файл " + nameFile + " не найден!");
+	}
+	return data;
+}
+
+template <typename T> void writingFile(T data, string nameFile)
+{
 	ofstream output(nameFile, ios::binary | ios::trunc | ios::out);
-	//vector<unsigned char> data = picture.serialize();
-	if (!output) error("Запись в файл " + nameFile + " невозможна!");
-	//for (unsigned char value : data) {
-	//	output << value;
-	//}
-	output << picture;
+	if (!output) {
+		error("Запись в файл " + nameFile + " невозможна!");
+	}
+	output << data;
 }
 
 void wrongInput() {
@@ -382,7 +404,8 @@ int main() {
 	try {
 		cout << "Расчёт двумерного интеграла Коллинза…" << endl;
 
-		//BMP test("argInput.bmp", 100, 100);
+		BMP test = loadingFile<BMP>("absOutput.bmp");
+		writingFile<BMP>(test, "test.bmp");
 
 		//int N = 1 << 20; // 1M elements
 
@@ -507,10 +530,10 @@ int main() {
 			BMP argInput(fieldToBMP(arg(functionVortex), scheme::black_white));
 			BMP argOutput(fieldToBMP(arg(output), scheme::black_white));
 
-			writingFile(absInput, "absInput.bmp");
-			writingFile(absOutput, "absOutput.bmp");
-			writingFile(argInput, "argInput.bmp");
-			writingFile(argOutput, "argOutput.bmp");
+			writingFile<BMP>(absInput, "absInput.bmp");
+			writingFile<BMP>(absOutput, "absOutput.bmp");
+			writingFile<BMP>(argInput, "argInput.bmp");
+			writingFile<BMP>(argOutput, "argOutput.bmp");
 
 			cout << endl << "Результаты записаны! Продолжить расчёты? Для выхода ввести 0" << endl;
 		}
