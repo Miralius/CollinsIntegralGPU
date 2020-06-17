@@ -52,3 +52,71 @@ double maximum(vector<vector<double>>& field) {
 	}
 	return maxValue;
 }
+
+class pixel {
+private:
+	vector<unsigned char> colors;
+
+public:
+	pixel() {
+		colors = vector<unsigned char>();
+	}
+
+	pixel(unsigned char blue, unsigned char green, unsigned char red, unsigned char alpha) {
+		colors = { blue, green, red, alpha };
+	}
+
+	vector<unsigned char> getPixel() {
+		return colors;
+	}
+};
+
+istream& operator>>(istream& input, pixel& data) {
+	int blue, green, red;
+	input >> red >> green >> blue;
+	if (!input) {
+		return input;
+	}
+	data = pixel(blue, green, red, 255);
+	return input;
+}
+
+vector<vector<unsigned char>> applyScheme(scheme schemeName) {
+	vector<vector<unsigned char>> schemes;
+	vector<pixel> colors;
+	switch (schemeName) {
+	case scheme::black_white:
+		for (int i = 0; i < 256; i++) {
+			schemes.push_back(vector<unsigned char>({ (unsigned char)i, (unsigned char)i, (unsigned char)i, 255 }));
+		}
+		break;
+	case scheme::red:
+		for (int i = 0; i < 256; i++) {
+			schemes.push_back(vector<unsigned char>({ 0, 0, (unsigned char)i, 255 }));
+		}
+		break;
+	case scheme::fire:
+		colors = loadingData<pixel>("fire.txt");
+		for (int i = 255; i >= 0; i--) {
+			schemes.push_back(colors.at(i).getPixel());
+		}
+		break;
+	default:
+		error("Выбрана неверная цветовая схема!");
+	}
+	return schemes;
+}
+
+vector<vector<vector<unsigned char>>> fieldToBMP(vector<vector<double>> field, scheme schemeName) {
+	double minValue = minimum(field);
+	double maxValue = maximum(field);
+	vector<vector<unsigned char>> scheme = applyScheme(schemeName);
+	vector<vector<vector<unsigned char>>> pixels;
+	for (vector<double> row : field) {
+		pixels.push_back(vector<vector<unsigned char>>());
+		for (double value : row) {
+			pixels.back().push_back(scheme.at((unsigned char)round((value - minValue) * 255 / (maxValue - minValue))));
+		}
+	}
+	return pixels;
+}

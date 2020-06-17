@@ -1,42 +1,5 @@
 ﻿#include "CollinsIntegralGPU.h"
 
-enum class scheme {
-	black_white, red
-};
-
-vector<vector<unsigned char>> applyScheme(scheme schemeName) {
-	vector<vector<unsigned char>> schemes;
-	switch (schemeName) {
-	case scheme::black_white:
-		for (int i = 0; i < 256; i++) {
-			schemes.push_back(vector<unsigned char>({ (unsigned char)i, (unsigned char)i, (unsigned char)i, 255 }));
-		}
-		break;
-	case scheme::red:
-		for (int i = 0; i < 256; i++) {
-			schemes.push_back(vector<unsigned char>({ 0, 0, (unsigned char)i, 255 }));
-		}
-		break;
-	default:
-		error("Выбрана неверная цветовая схема!");
-	}
-	return schemes;
-}
-
-vector<vector<vector<unsigned char>>> fieldToBMP(vector<vector<double>> field, scheme schemeName) {
-	double minValue = minimum(field);
-	double maxValue = maximum(field);
-	vector<vector<unsigned char>> scheme = applyScheme(schemeName);
-	vector<vector<vector<unsigned char>>> pixels;
-	for (vector<double> row : field) {
-		pixels.push_back(vector<vector<unsigned char>>());
-		for (double value : row) {
-			pixels.back().push_back(scheme.at((unsigned char)round((value - minValue) * 255 / (maxValue - minValue))));
-		}
-	}
-	return pixels;
-}
-
 vector<double> calcPoints(double interval, double count) {
 	double pointValue = -interval;
 	vector<double> points;
@@ -78,9 +41,6 @@ int main() {
 
 	try {
 		cout << "Расчёт двумерного интеграла Коллинза…" << endl;
-
-		BMP test = loadingFile<BMP>("1.bmp");
-		writingFile<BMP>(test, "2.bmp");
 
 		//int N = 1 << 20; // 1M elements
 
@@ -200,8 +160,8 @@ int main() {
 			vector<vector<complex<double>>> output = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? collins(functionVortex, u, v, matrixABCD, wavelength) : collins(functionVortex, x, y, u, v, matrixABCD, wavelength, hx, hy);
 			//vector<vector<complex<double>>> output = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? collins(functionVortex, u, v, matrixABCD, wavelength) : cuCollins(functionVortex, x, y, u, v, matrixABCD, wavelength, hx, hy);
 
-			BMP absInput(fieldToBMP(abs(functionVortex), scheme::red));
-			BMP absOutput(fieldToBMP(abs(output), scheme::red));
+			BMP absInput(fieldToBMP(abs(functionVortex), scheme::fire));
+			BMP absOutput(fieldToBMP(abs(output), scheme::fire));
 			BMP argInput(fieldToBMP(arg(functionVortex), scheme::black_white));
 			BMP argOutput(fieldToBMP(arg(output), scheme::black_white));
 

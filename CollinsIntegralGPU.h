@@ -1,4 +1,3 @@
-#pragma once
 #ifndef MAIN_H
 #define MAIN_H
 
@@ -15,19 +14,21 @@ constexpr auto PI = 3.1415926535897932384626433832795;
 
 using namespace std;
 
+enum class scheme {
+	black_white, red, fire
+};
+
 inline void error(const string& s) {
 	throw runtime_error(s);
 }
 
-inline void processing(int NOW, int MAX, int seconds, int timeLeft) {
-	float proc, nowf, maxf;
-	if (NOW == MAX) proc = 100.;
+inline void processing(int now, int max, int seconds, int timeLeft) {
+	double percent;
+	if (now == max) percent = static_cast<double>(100);
 	else {
-		nowf = (float)NOW;
-		maxf = (float)MAX;
-		proc = trunc(10000 * (nowf / maxf)) / 100;
+		percent = trunc(10000 * (static_cast<double>(now) / static_cast<double>(max))) / 100;
 	}
-	cout << '\r' << "Выполнено " << setw(6) << proc << "%, прошло " << setw(6) << seconds << " секунд, осталось " << setw(6) << timeLeft << " секунд";
+	cout << '\r' << "Выполнено " << setw(6) << percent << "%, прошло " << setw(6) << seconds << " секунд, осталось " << setw(6) << timeLeft << " секунд";
 }
 
 inline void wrongInput() {
@@ -49,6 +50,22 @@ template <typename T> T loadingFile(string nameFile) {
 	return data;
 }
 
+template <typename T> vector<T> loadingData(string nameFile) {
+	ifstream in(nameFile);
+	vector<T> vectorName;
+	if (!in.fail()) {
+		T buffer;
+		while (in >> buffer) {
+			if (in.eof()) break;
+			vectorName.push_back(buffer);
+		}
+		in.close();
+		if (vectorName.size() == 0) error("Файл " + nameFile + " пуст или содержит неверные данные!");
+	}
+	else error("Файл " + nameFile + " не найден!");
+	return vectorName;
+}
+
 template <typename T> void writingFile(T data, string nameFile) {
 	ofstream output(nameFile, ios::binary | ios::trunc | ios::out);
 	if (!output) {
@@ -65,6 +82,8 @@ vector<vector<double>> abs(vector<vector<complex<double>>>&  field);
 vector<vector<double>> arg(vector<vector<complex<double>>>&  field);
 double minimum(vector<vector<double>>&  field);
 double maximum(vector<vector<double>>&  field);
+vector<vector<unsigned char>> applyScheme(scheme schemeName);
+vector<vector<vector<unsigned char>>> fieldToBMP(vector<vector<double>> field, scheme schemeName);
 
 vector<vector<complex<double>>> collins(vector<vector<complex<double>>>&  functionVortex, vector<double>& u, vector<double>&  v, vector<vector<double>>& matrixABCD, double wavelength);
 vector<vector<complex<double>>> collins(vector<vector<complex<double>>>& functionVortex, vector<double>& x, vector<double>& y, vector<double>& u, vector<double>& v, vector<vector<double>>& matrixABCD, double wavelength, double hx, double hy);

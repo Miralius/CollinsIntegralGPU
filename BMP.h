@@ -1,4 +1,3 @@
-#pragma once
 #ifndef BMP_H
 #define BMP_H
 
@@ -39,8 +38,8 @@ public:
 	BMP& operator=(const BMP& obj);
 
 	static int toNumber(vector<unsigned char> binary) {
-		int temp = 0;
-		for (int i = 0; i < binary.size(); i++) {
+		auto temp = 0;
+		for (auto i = 0; i < binary.size(); i++) {
 			temp |= binary.at(i) << (8 * i);
 		}
 		return temp;
