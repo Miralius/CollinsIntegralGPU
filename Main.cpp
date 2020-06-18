@@ -108,7 +108,7 @@ int main() {
 						matrixABCD.at(i).push_back(coefficient);
 					}
 				}
-				if (abs((matrixABCD.at(0).at(0) * matrixABCD.at(1).at(1) - matrixABCD.at(0).at(1) * matrixABCD.at(1).at(0)) - 1) > DBL_EPSILON) {
+				if (abs((matrixABCD.at(0).at(0) * matrixABCD.at(1).at(1) - matrixABCD.at(0).at(1) * matrixABCD.at(1).at(0)) - 1) > FLT_EPSILON) {
 					error("Определитель ABCD-матрицы должен быть равен 1");
 				}
 			}
@@ -119,8 +119,8 @@ int main() {
 			cout << "n2 = ";
 			while (!(cin >> n2) || !(n2 > 0)) wrongInput();
 
-			vector<double> x = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? calcPoints(c, n2, matrixABCD.at(1).at(1)) : calcPoints(a, n1);
-			vector<double> y = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? calcPoints(d, n2, matrixABCD.at(1).at(1)) : calcPoints(b, n1);
+			vector<double> x = (abs(matrixABCD.at(0).at(1)) < FLT_EPSILON) ? calcPoints(c, n2, matrixABCD.at(1).at(1)) : calcPoints(a, n1);
+			vector<double> y = (abs(matrixABCD.at(0).at(1)) < FLT_EPSILON) ? calcPoints(d, n2, matrixABCD.at(1).at(1)) : calcPoints(b, n1);
 			vector<double> u = calcPoints(c, n2);
 			vector<double> v = calcPoints(d, n2);
 
@@ -129,7 +129,8 @@ int main() {
 			cin >> m;
 			
 			vector<vector<double>> input;
-			cout << "Входная функция:" << "\nГауссов пучок (1)\nМоды Гаусса-Лагерра (n = 0, m) (2): ";
+			vector<vector<complex<double>>> functionVortex;
+			cout << "Входная функция:" << "\nГауссов пучок (1)\nМоды Гаусса-Лагерра (n = 0, m) (2)\nСуперпозиция мод Гаусса-Эрмита (3): ";
 			string select;
 			cin >> select;
 			if (select == "1") {
@@ -137,18 +138,32 @@ int main() {
 				double sigma;
 				while(!(cin >> sigma) || !(sigma > 0)) wrongInput();
 				input = functionGauss(x, y, sigma);
+				functionVortex = vortex(input, x, y, m);
 			}
 			else if (select == "2") {
 				cout << "Введите параметр сигма:" << "\nsigma = ";
 				double sigma;
 				while (!(cin >> sigma) || !(sigma > 0)) wrongInput();
 				input = functionGaussLaguerre(x, y, sigma, 0, m);
+				functionVortex = vortex(input, x, y, m);
+			}
+			else if (select == "3") {
+				cout << "Введите параметр сигма:" << "\nsigma = ";
+				double sigma;
+				while (!(cin >> sigma) || !(sigma > 0)) wrongInput();
+				cout << "Введите порядок (n, m) первой моды:" << "\nn m = ";
+				int n, m;
+				while (!(cin >> n) || !(n >= 0)) wrongInput();
+				while (!(cin >> m) || !(m >= 0)) wrongInput();
+				cout << "Введите порядок (p, q) второй моды:" << "\np q = ";
+				int p, q;
+				while (!(cin >> p) || !(p >= 0)) wrongInput();
+				while (!(cin >> q) || !(q >= 0)) wrongInput();
+				functionVortex = superposition(functionGaussHermite(x, y, sigma, n, m), functionGaussHermite(x, y, sigma, p, q));
 			}
 			else {
 				error("Не выбрана входная функция!");
 			}
-
-			vector<vector<complex<double>>> functionVortex = vortex(input, x, y, m);
 
 			cout << "Введите длину волны света (нм):" << "\nwavelength = ";
 			double wavelength;
@@ -157,13 +172,13 @@ int main() {
 			double hx = 2 * a / n1;
 			double hy = 2 * b / n1;
 
-			vector<vector<complex<double>>> output = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? collins(functionVortex, u, v, matrixABCD, wavelength) : collins(functionVortex, x, y, u, v, matrixABCD, wavelength, hx, hy);
-			//vector<vector<complex<double>>> output = (abs(matrixABCD.at(0).at(1)) < DBL_EPSILON) ? collins(functionVortex, u, v, matrixABCD, wavelength) : cuCollins(functionVortex, x, y, u, v, matrixABCD, wavelength, hx, hy);
+			vector<vector<complex<double>>> output = (abs(matrixABCD.at(0).at(1)) < FLT_EPSILON) ? collins(functionVortex, u, v, matrixABCD, wavelength) : collins(functionVortex, x, y, u, v, matrixABCD, wavelength, hx, hy);
+			//vector<vector<complex<double>>> output = (abs(matrixABCD.at(0).at(1)) < FLT_EPSILON) ? collins(functionVortex, u, v, matrixABCD, wavelength) : cuCollins(functionVortex, x, y, u, v, matrixABCD, wavelength, hx, hy);
 
-			BMP absInput(fieldToBMP(abs(functionVortex), scheme::fire));
-			BMP absOutput(fieldToBMP(abs(output), scheme::fire));
-			BMP argInput(fieldToBMP(arg(functionVortex), scheme::black_white));
-			BMP argOutput(fieldToBMP(arg(output), scheme::black_white));
+			BMP absInput(fieldToBMP(abs(functionVortex), scheme::fire, false));
+			BMP absOutput(fieldToBMP(abs(output), scheme::fire, false));
+			BMP argInput(fieldToBMP(arg(functionVortex), scheme::black_white, true));
+			BMP argOutput(fieldToBMP(arg(output), scheme::black_white, true));
 
 			writingFile<BMP>(absInput, "absInput.bmp");
 			writingFile<BMP>(absOutput, "absOutput.bmp");

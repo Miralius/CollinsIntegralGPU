@@ -107,9 +107,17 @@ vector<vector<unsigned char>> applyScheme(scheme schemeName) {
 	return schemes;
 }
 
-vector<vector<vector<unsigned char>>> fieldToBMP(vector<vector<double>> field, scheme schemeName) {
-	double minValue = minimum(field);
-	double maxValue = maximum(field);
+vector<vector<vector<unsigned char>>> fieldToBMP(vector<vector<double>> field, scheme schemeName, bool phase) {
+	double minValue;
+	double maxValue;
+	if (phase) {
+		minValue = 0;
+		maxValue = 2 * PI;
+	}
+	else {
+		minValue = 0;
+		maxValue = maximum(field);
+	}
 	vector<vector<unsigned char>> scheme = applyScheme(schemeName);
 	vector<vector<vector<unsigned char>>> pixels;
 	for (vector<double> row : field) {

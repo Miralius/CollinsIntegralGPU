@@ -7,7 +7,7 @@ vector<vector<complex<double>>> collins(vector<vector<complex<double>>>& functio
 	for (int i = 0; i < v.size(); i++) {
 		output.push_back(vector<complex<double>>());
 		for (int j = 0; j < u.size(); j++) {
-			output.at(i).push_back(sqrt(matrixABCD.at(1).at(1)) * functionVortex.at(i).at(j) * exp(complex<double>(0, (k * matrixABCD.at(1).at(0) * matrixABCD.at(1).at(1) * (u.at(j) * u.at(j) + v.at(i) + v.at(i))) / 2)));
+			output.at(i).push_back(matrixABCD.at(1).at(1) * functionVortex.at(i).at(j) * exp(complex<double>(0, (k * matrixABCD.at(1).at(0) * matrixABCD.at(1).at(1) * (u.at(j) * u.at(j) + v.at(i) * v.at(i))) / 2)));
 		}
 	}
 	return output;
