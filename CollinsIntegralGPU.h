@@ -74,11 +74,11 @@ template <typename T> void writingFile(T data, string nameFile) {
 	output << data;
 }
 
-vector<vector<double>> functionGaussHermite(vector<double>& x, vector<double>& y, double sigma, int n, int m);
+vector<vector<complex<double>>> functionGaussHermite(vector<double>& x, vector<double>& y, double sigma, int n, int m, double shiftX);
 vector<vector<double>> functionGauss(vector<double>&  x, vector<double>&  y, double sigma);
 vector<vector<double>> functionGaussLaguerre(vector<double>&  x, vector<double>&  y, double sigma, int n, double m);
 
-vector<vector<complex<double>>> superposition(vector<vector<double>> func1, vector<vector<double>> func2);
+vector<vector<complex<double>>> superposition(vector<vector<complex<double>>> func1, vector<vector<complex<double>>> func2);
 vector<vector<complex<double>>> vortex(vector<vector<double>>&  func, vector<double>&  x, vector<double>&  y, double n);
 vector<vector<double>> abs(vector<vector<complex<double>>>&  field);
 vector<vector<double>> arg(vector<vector<complex<double>>>&  field);

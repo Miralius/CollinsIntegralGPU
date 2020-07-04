@@ -13,18 +13,18 @@ double hermite(double x, int n) {
 	return series;
 }
 
-vector<vector<double>> functionGaussHermite(vector<double>& x, vector<double>& y, double sigma, int n, int m) {
-	vector<vector<double>> input;
+vector<vector<complex<double>>> functionGaussHermite(vector<double>& x, vector<double>& y, double sigma, int n, int m, double shiftX) {
+	vector<vector<complex<double>>> input;
 	for (int i = 0; i < y.size(); i++) {
-		input.push_back(vector<double>());
+		input.push_back(vector<complex<double>>());
 		for (int j = 0; j < x.size(); j++) {
-			input.at(i).push_back((hermite(y.at(i) / sigma, n) / sqrt(pow(2, n) * factorial(n) * sqrt(PI))) * (hermite(x.at(j) / sigma, m) / sqrt(pow(2, m) * factorial(m) * sqrt(PI))) * (exp(-(x.at(j) * x.at(j) + y.at(i) * y.at(i)) / (2 * sigma * sigma))));
+			input.at(i).push_back(exp(complex<double>(0, 2 * PI * shiftX * x.at(j))) * (hermite(y.at(i) / sigma, n) / sqrt(pow(2, n) * factorial(n) * sqrt(PI))) * (hermite(x.at(j) / sigma, m) / sqrt(pow(2, m) * factorial(m) * sqrt(PI))) * (exp(-(x.at(j) * x.at(j) + y.at(i) * y.at(i)) / (2 * sigma * sigma))));
 		}
 	}
 	return input;
 }
 
-vector<vector<complex<double>>> superposition(vector<vector<double>> func1, vector<vector<double>> func2) {
+vector<vector<complex<double>>> superposition(vector<vector<complex<double>>> func1, vector<vector<complex<double>>> func2) {
 	vector<vector<complex<double>>> summa;
 	for (int i = 0; i < func1.at(1).size(); i++) {
 		summa.push_back(vector<complex<double>>());
