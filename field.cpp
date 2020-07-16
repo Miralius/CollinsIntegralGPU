@@ -2,9 +2,9 @@
 
 vector<vector<complex<double>>> field::gauss(vector<double>& x1, vector<double>& x2, double sigma, double m) {
 	vector<vector<complex<double>>> input;
-	for (int i = 0; i < x2.size(); i++) {
+	for (auto i = 0; i < x2.size(); i++) {
 		input.push_back(vector<complex<double>>());
-		for (int j = 0; j < x1.size(); j++) {
+		for (auto j = 0; j < x1.size(); j++) {
 			input.at(i).push_back(exp(complex<double>(-(x1.at(j) * x1.at(j) + x2.at(i) * x2.at(i)) / (2 * sigma * sigma), 0)) * exp(complex<double>(0, m * ((i < (x2.size() / 2)) ? atan2(-x2.at(i), x1.at(j)) : (atan2(-x2.at(i), x1.at(j)) + 2 * M_PI)))));
 		}
 	}
@@ -20,9 +20,9 @@ vector<vector<complex<double>>> field::gaussHermite(vector<double>& x1, vector<d
 		return series;
 	};
 	vector<vector<complex<double>>> input;
-	for (int i = 0; i < x2.size(); i++) {
+	for (auto i = 0; i < x2.size(); i++) {
 		input.push_back(vector<complex<double>>());
-		for (int j = 0; j < x1.size(); j++) {
+		for (auto j = 0; j < x1.size(); j++) {
 			input.at(i).push_back((hermite(x2.at(i) / sigma, n) / sqrt(pow(2, n) * tgamma(n + 1) * sqrt(M_PI))) * (hermite(x1.at(j) / sigma, m) / sqrt(pow(2, m) * tgamma(m + 1) * sqrt(M_PI))) * (exp(-(x1.at(j) * x1.at(j) + x2.at(i) * x2.at(i)) / (2 * sigma * sigma))));
 		}
 	}
@@ -32,9 +32,9 @@ vector<vector<complex<double>>> field::gaussHermite(vector<double>& x1, vector<d
 //Requires full implementation
 vector<vector<complex<double>>> field::gaussLaguerre(vector<double>& x1, vector<double>& x2, double sigma, double m, double n) {
 	vector<vector<complex<double>>> input;
-	for (int i = 0; i < x2.size(); i++) {
+	for (auto i = 0; i < x2.size(); i++) {
 		input.push_back(vector<complex<double>>());
-		for (int j = 0; j < x1.size(); j++) {
+		for (auto j = 0; j < x1.size(); j++) {
 			input.at(i).push_back((exp(-(x1.at(j) * x1.at(j) + x2.at(i) * x2.at(i)) / (2 * sigma * sigma))) * pow(((sqrt(x1.at(j) * x1.at(j) + x2.at(i) * x2.at(i))) / sigma), static_cast<int>(std::abs(m))));
 		}
 	}
@@ -60,14 +60,14 @@ vector<vector<complex<double>>> field::collins(vector<vector<complex<double>>>& 
 	auto hy = 2 * limits.at(1) / n1;
 	int startTime(clock() / CLOCKS_PER_SEC), endTime(clock() / CLOCKS_PER_SEC), currentTime(clock() / CLOCKS_PER_SEC), progress(0);
 	vector<vector<complex<double>>> output;
-	for (int p = 0; p < x4.size(); p++) {
+	for (auto p = 0; p < x4.size(); p++) {
 		processing(++progress, static_cast<int>(x4.size()), clock() / CLOCKS_PER_SEC - currentTime, (endTime - startTime) * (static_cast<int>(x4.size()) - p));
 		startTime = endTime;
 		output.push_back(vector<complex<double>>());
-		for (int q = 0; q < x3.size(); q++) {
+		for (auto q = 0; q < x3.size(); q++) {
 			complex<double> value = 0;
-			for (int i = 0; i < x2.size(); i++) {
-				for (int j = 0; j < x1.size(); j++) {
+			for (auto i = 0; i < x2.size(); i++) {
+				for (auto j = 0; j < x1.size(); j++) {
 					value += inputFunction.at(i).at(j) * exp(complex<double>(0, ((k / (2 * matrixABCD.at(0).at(1))) * (matrixABCD.at(0).at(0) * (x2.at(i) * x2.at(i) + x1.at(j) * x1.at(j)) - 2 * (x2.at(i) * x4.at(p) + x1.at(j) * x3.at(q)) + matrixABCD.at(1).at(1) * (x4.at(p) * x4.at(p) + x3.at(q) * x3.at(q))))));
 				}
 			}
@@ -81,9 +81,9 @@ vector<vector<complex<double>>> field::collins(vector<vector<complex<double>>>& 
 vector<vector<complex<double>>> field::collinsSingular(vector<vector<complex<double>>>& inputFunction, vector<double>& x1, vector<double>& x2, vector<double>& x3, vector<double>& x4) {
 	auto k = 2 * M_PI / fieldParameters.at(0);
 	vector<vector<complex<double>>> output;
-	for (int p = 0; p < x4.size(); p++) {
+	for (auto p = 0; p < x4.size(); p++) {
 		output.push_back(vector<complex<double>>());
-		for (int q = 0; q < x3.size(); q++) {
+		for (auto q = 0; q < x3.size(); q++) {
 			output.at(p).push_back(matrixABCD.at(1).at(1) * inputFunction.at(p).at(q) * exp(complex<double>(0, (k * matrixABCD.at(1).at(0) * matrixABCD.at(1).at(1) * (x3.at(q) * x3.at(q) + x4.at(p) * x4.at(p))) / 2)));
 		}
 	}
@@ -94,33 +94,33 @@ vector<vector<complex<double>>> field::collinsSingular(vector<vector<complex<dou
 //vector<vector<complex<double>>> cuCollins(vector<vector<complex<double>>>& functionVortex, vector<double>& x, vector<double>& y, vector<double>& u, vector<double>& v, vector<vector<double>>& matrixABCD, double wavelength, double hx, double hy) {
 //#pragma warning(push)
 //#pragma warning(disable:6386)
-//	double k = 2 * PI / wavelength;
+//	auto k = 2 * PI / wavelength;
 //
 //	complex<double>** functionVortexTemp = new complex<double> * [functionVortex.size() * functionVortex.at(0).size()];
-//	for (int i = 0; i < functionVortex.size(); i++) {
+//	for (auto i = 0; i < functionVortex.size(); i++) {
 //		functionVortexTemp[i] = new complex<double>[functionVortex.size()];
-//		for (int j = 0; j < functionVortex.at(i).size(); j++) {
+//		for (auto j = 0; j < functionVortex.at(i).size(); j++) {
 //			functionVortexTemp[i][j] = functionVortex.at(i).at(j);
 //		}
 //	}
 //
 //	double* xTemp = new double[x.size()];
-//	for (int i = 0; i < x.size(); i++) {
+//	for (auto i = 0; i < x.size(); i++) {
 //		xTemp[i] = x.at(i);
 //	}
 //
 //	double* yTemp = new double[y.size()];
-//	for (int i = 0; i < y.size(); i++) {
+//	for (auto i = 0; i < y.size(); i++) {
 //		yTemp[i] = y.at(i);
 //	}
 //
 //	double* uTemp = new double[u.size()];
-//	for (int i = 0; i < u.size(); i++) {
+//	for (auto i = 0; i < u.size(); i++) {
 //		uTemp[i] = u.at(i);
 //	}
 //
 //	double* vTemp = new double[v.size()];
-//	for (int i = 0; i < v.size(); i++) {
+//	for (auto i = 0; i < v.size(); i++) {
 //		vTemp[i] = v.at(i);
 //	}
 //
@@ -141,9 +141,9 @@ vector<vector<complex<double>>> field::collinsSingular(vector<vector<complex<dou
 //}
 
 vector<double> field::calcPoints(double interval, double count) {
-	double pointValue = -interval;
+	auto pointValue = -interval;
 	vector<double> points;
-	double h = 2 * interval / count;
+	auto h = 2 * interval / count;
 	for (auto i = 0; i < count; i++) {
 		points.push_back((std::abs(matrixABCD.at(0).at(1)) < FLT_EPSILON) ? pointValue * matrixABCD.at(1).at(1) : pointValue);
 		pointValue += h;
@@ -152,7 +152,7 @@ vector<double> field::calcPoints(double interval, double count) {
 }
 
 double field::maximum(vector<vector<double>>& field) {
-	double maxValue = DBL_MIN;
+	auto maxValue = DBL_MIN;
 	for (auto row : field) {
 		for (auto value : row) {
 			maxValue = max(maxValue, value);
@@ -240,7 +240,7 @@ BMP field::createBMP(string schemeName, bool phase) {
 	for (auto row : field) {
 		pixels.push_back(vector<vector<unsigned char>>());
 		for (auto value : row) {
-			pixels.back().push_back(scheme.at((unsigned char)round((value - minValue) * 255 / (maxValue - minValue))));
+			pixels.back().push_back(scheme.at(static_cast<unsigned char>(round((value - minValue) * 255 / (maxValue - minValue)))));
 		}
 	}
 	return BMP(pixels);
@@ -270,9 +270,9 @@ field operator+(field& firstField, field& secondField) {
 		return field();
 	}
 	vector<vector<complex<double>>> summa;
-	for (int i = 0; i < firstField.getCalculatedField().at(1).size(); i++) {
+	for (auto i = 0; i < firstField.getCalculatedField().at(1).size(); i++) {
 		summa.push_back(vector<complex<double>>());
-		for (int j = 0; j < firstField.getCalculatedField().size(); j++) {
+		for (auto j = 0; j < firstField.getCalculatedField().size(); j++) {
 			summa.at(i).push_back(firstField.getCalculatedField().at(i).at(j) + secondField.getCalculatedField().at(i).at(j));
 		}
 	}

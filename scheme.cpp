@@ -7,8 +7,7 @@ scheme::scheme() {
 }
 
 scheme::scheme(string schemeName) {
-	vector<pixel> colors;
-	colors = loadingData<pixel>(schemeName + ".txt");
+	auto colors = loadingData<pixel>(schemeName + ".txt");
 	for_each(colors.rbegin(), colors.rend(), [&](pixel pixel) {
 		colorScheme.push_back(pixel);
 	});

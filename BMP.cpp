@@ -3,7 +3,7 @@
 void BMP::initHeaders(int width, int height) {
 	bmpFileHeader = { {0x4D42, 2}, {width * height * countRGBChannel + BMPFILEHEADERsize + BMPINFOHEADERsize + COLORPROFILEsize, 4}, {0, 2}, {0, 2}, {BMPFILEHEADERsize + BMPINFOHEADERsize + COLORPROFILEsize, 4} };
 	bmpInfoHeader = { {BMPINFOHEADERsize, 4}, {width, 4}, {height, 4}, {1, 2}, {countRGBChannel * 8, 2}, {BI_BITFIELDS, 4}, {0, 4}, {0xEC4, 4}, {0xEC4, 4}, {0, 4}, {0, 4},
-		{0x00FF0000, 4}, {0x0000FF00, 4}, {0x000000FF, 4}, {static_cast<int>(0xFF000000)/*-16777216*/, 4}, {LCS_WINDOWS_COLOR_SPACE, 4}, {0, 36}, {0, 4}, {0, 4}, {0, 4},
+		{0x00FF0000, 4}, {0x0000FF00, 4}, {0x000000FF, 4}, {static_cast<int>(0xFF000000), 4}, {LCS_WINDOWS_COLOR_SPACE, 4}, {0, 36}, {0, 4}, {0, 4}, {0, 4},
 		{0, 4}, {0, 4}, {0, 4}, {0, 4} };
 	colorProfile = { {0x000000FF, 4}, {0x0000FF00, 4}, {0x00FF0000, 4} };
 }
@@ -25,7 +25,7 @@ BMP::BMP(const BMP& obj) {
 
 vector<unsigned char> BMP::toBinary(vector<int> number) {
 	vector<unsigned char> binary;
-	for (int i = 0; i < number.at(1); i++) {
+	for (auto i = 0; i < number.at(1); i++) {
 		binary.push_back(number.at(0) >> (8 * i));
 	}
 	return binary;
@@ -51,24 +51,24 @@ BMP& BMP::operator=(const BMP& obj) {
 BMP::operator vector<unsigned char>() {
 	vector<unsigned char> serializedBMP;
 	serializedBMP.reserve(bmpFileHeader.at(1).at(0));
-	for (vector<int> data : bmpFileHeader) {
-		for (unsigned char byte : toBinary(data)) {
+	for (auto data : bmpFileHeader) {
+		for (auto byte : toBinary(data)) {
 			serializedBMP.push_back(byte);
 		}
 	}
-	for (vector<int> data : bmpInfoHeader) {
-		for (unsigned char byte : toBinary(data)) {
+	for (auto data : bmpInfoHeader) {
+		for (auto byte : toBinary(data)) {
 			serializedBMP.push_back(byte);
 		}
 	}
-	for (vector<int> data : colorProfile) {
-		for (unsigned char byte : toBinary(data)) {
+	for (auto data : colorProfile) {
+		for (auto byte : toBinary(data)) {
 			serializedBMP.push_back(byte);
 		}
 	}
-	for_each(pixels.rbegin(), pixels.rend(), [&](vector<vector<unsigned char>> row) {
-		for (vector<unsigned char> pixel : row) {
-			for (unsigned char color : pixel) {
+	for_each(pixels.rbegin(), pixels.rend(), [&](auto row) {
+		for (auto pixel : row) {
+			for (auto color : pixel) {
 				serializedBMP.push_back(color);
 			}
 		}
@@ -78,35 +78,35 @@ BMP::operator vector<unsigned char>() {
 
 ostream& operator<<(ostream& output, BMP& bmp) {
 	vector<unsigned char> data = bmp;
-	for (unsigned char value : data) {
+	for (auto value : data) {
 		output << value;
 	}
 	return output;
 }
 
 istream& operator>>(istream& input, BMP& bmp) {
-	int const bytesBeforeOffset = 10; //count of bytes which following before pixel's offset
+	auto const bytesBeforeOffset = 10; //count of bytes which following before pixel's offset
 	unsigned char buffer;
-	for (int i = 0; i < bytesBeforeOffset; i++) {
+	for (auto i = 0; i < bytesBeforeOffset; i++) {
 		if (!(input >> buffer)) return input;
 	}
 
 	vector<unsigned char> bufferVector;
-	for (int i = 0; i < sizeof(int); i++) {
+	for (auto i = 0; i < sizeof(int); i++) {
 		if (!(input >> buffer)) return input;
 		bufferVector.push_back(buffer);
 	}
-	int offset = BMP().toNumber(bufferVector);
+	auto offset = BMP().toNumber(bufferVector);
 
-	int const bytesAfterOffsetBeforeWidth = 4; //count of bytes between offset and width
-	for (int i = 0; i < bytesAfterOffsetBeforeWidth; i++) {
+	auto const bytesAfterOffsetBeforeWidth = 4; //count of bytes between offset and width
+	for (auto i = 0; i < bytesAfterOffsetBeforeWidth; i++) {
 		if (!(input >> buffer)) return input;
 	}
 
 	vector<int> size;
 	bufferVector.clear();
-	for (int i = 0; i < 2; i++) { //2 because width & height
-		for (int j = 0; j < sizeof(int); j++) {
+	for (auto i = 0; i < 2; i++) { //2 because width & height
+		for (auto j = 0; j < sizeof(int); j++) {
 			if (!(input >> buffer)) return input;
 			bufferVector.push_back(buffer);
 		}
@@ -114,35 +114,35 @@ istream& operator>>(istream& input, BMP& bmp) {
 		bufferVector.clear();
 	}
 
-	int bytesAfterSizeBeforeBitCount = 2; //count of bytes between height and bitCount
-	for (int i = 0; i < bytesAfterSizeBeforeBitCount; i++) {
+	auto bytesAfterSizeBeforeBitCount = 2; //count of bytes between height and bitCount
+	for (auto i = 0; i < bytesAfterSizeBeforeBitCount; i++) {
 		if (!(input >> buffer)) return input;
 	}
 
-	for (int i = 0; i < sizeof(short); i++) {
+	for (auto i = 0; i < sizeof(short); i++) {
 		if (!(input >> buffer)) return input;
 		bufferVector.push_back(buffer);
 	}
-	int bitCount = BMP().toNumber(bufferVector);
+	auto bitCount = BMP().toNumber(bufferVector);
 
-	int bytesAfterBitCount = offset - 30; //count of bytes after bitCount
-	for (int i = 0; i < bytesAfterBitCount; i++) {
+	auto bytesAfterBitCount = offset - 30; //count of bytes after bitCount
+	for (auto i = 0; i < bytesAfterBitCount; i++) {
 		if (!(input >> buffer)) return input;
 	}
 
 	vector<vector<vector<unsigned char>>> pixels;
 	vector<unsigned char> pixel;
-	for (int i = 0; i < size.at(0); i++) {
+	for (auto i = 0; i < size.at(0); i++) {
 		pixels.push_back(vector<vector<unsigned char>>());
-		for (int j = 0; j < size.at(1); j++) {
+		for (auto j = 0; j < size.at(1); j++) {
 			if (bitCount == 32) {
-				for (int k = 0; k < 4; k++) { //because BGR + alpha
+				for (auto k = 0; k < 4; k++) { //because BGR + alpha
 					if (!(input >> buffer)) return input;
 					pixel.push_back(buffer);
 				}
 			}
 			if (bitCount == 24) {
-				for (int k = 0; k < 3; k++) { //because BGR
+				for (auto k = 0; k < 3; k++) { //because BGR
 					if (!(input >> buffer)) return input;
 					pixel.push_back(buffer);
 				}
