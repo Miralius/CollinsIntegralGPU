@@ -1,4 +1,4 @@
-#include "field.h"
+п»ї#include "field.h"
 
 vector<vector<complex<double>>> field::gauss(vector<double>& x1, vector<double>& x2, double sigma, double m) {
 	vector<vector<complex<double>>> input;
@@ -87,7 +87,7 @@ vector<vector<complex<double>>> field::collinsSingular(vector<vector<complex<dou
 			output.at(p).push_back(matrixABCD.at(1).at(1) * inputFunction.at(p).at(q) * exp(complex<double>(0, (k * matrixABCD.at(1).at(0) * matrixABCD.at(1).at(1) * (x3.at(q) * x3.at(q) + x4.at(p) * x4.at(p))) / 2)));
 		}
 	}
-	cout << "Сингулярный случай — световое поле посчитано мгновенно.";
+	cout << "РЎРёРЅРіСѓР»СЏСЂРЅС‹Р№ СЃР»СѓС‡Р°Р№ вЂ” СЃРІРµС‚РѕРІРѕРµ РїРѕР»Рµ РїРѕСЃС‡РёС‚Р°РЅРѕ РјРіРЅРѕРІРµРЅРЅРѕ.";
 	return output;
 }
 
@@ -170,7 +170,7 @@ void field::processing(int now, int max, int seconds, int timeLeft) {
 	else {
 		percent = trunc(10000 * (static_cast<double>(now) / static_cast<double>(max))) / 100;
 	}
-	cout << '\r' << "Выполнено " << setw(6) << percent << "%, прошло " << setw(6) << seconds << " секунд, осталось " << setw(6) << timeLeft << " секунд";
+	cout << '\r' << "Р’С‹РїРѕР»РЅРµРЅРѕ " << setw(6) << percent << "%, РїСЂРѕС€Р»Рѕ " << setw(6) << seconds << " СЃРµРєСѓРЅРґ, РѕСЃС‚Р°Р»РѕСЃСЊ " << setw(6) << timeLeft << " СЃРµРєСѓРЅРґ";
 }
 
 field::field() : n1(0), n2(0), limits(vector<double>()), inputFunction(inputField::undefined), selectedCrossSection(crossSection::Oxy), fieldParameters(vector<double>()), matrixABCD(vector<vector<double>>()), calculatedField(vector<vector<complex<double>>>()), superposition(false), calculated(false) {

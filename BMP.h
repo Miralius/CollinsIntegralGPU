@@ -1,4 +1,4 @@
-#ifndef BMP_H
+ï»¿#ifndef BMP_H
 #define BMP_H
 
 #include <vector>
@@ -16,10 +16,9 @@ private:
 	static int const BMPINFOHEADERsize = 124;
 	static int const COLORPROFILEsize = 12;
 	vector<vector<vector<unsigned char>>> pixels;
-	vector<vector<int>> bmpFileHeader; //This vector replaces the struct BITMAPFILEHEADER. Each first element — value, each second element — size of type of var.
-	vector<vector<int>> bmpInfoHeader; //This vector replaces the struct BITMAPINFOHEADER. Each first element — value, each second element — size of type of var.
+	vector<vector<int>> bmpFileHeader; //This vector replaces the struct BITMAPFILEHEADER. Each first element â€” value, each second element â€” size of type of var.
+	vector<vector<int>> bmpInfoHeader; //This vector replaces the struct BITMAPINFOHEADER. Each first element â€” value, each second element â€” size of type of var.
 	vector<vector<int>> colorProfile;
-
 	void initHeaders(int width, int height);
 
 public:

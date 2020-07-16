@@ -1,4 +1,4 @@
-#include "BMP.h"
+﻿#include "BMP.h"
 
 void BMP::initHeaders(int width, int height) {
 	bmpFileHeader = { {0x4D42, 2}, {width * height * countRGBChannel + BMPFILEHEADERsize + BMPINFOHEADERsize + COLORPROFILEsize, 4}, {0, 2}, {0, 2}, {BMPFILEHEADERsize + BMPINFOHEADERsize + COLORPROFILEsize, 4} };

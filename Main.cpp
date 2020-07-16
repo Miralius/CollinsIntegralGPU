@@ -134,7 +134,6 @@ int main() {
 			}
 
 			auto output = field(limits, n1, n2, crossSection::Oxy, matrixABCD, selectedInputField, fieldParameters);
-			
 			writingFile<BMP>(output.createBMP("fire", false), "absOutput.bmp");
 			writingFile<BMP>(output.createBMP("black_white", true), "argOutput.bmp");
 

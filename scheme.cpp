@@ -1,4 +1,4 @@
-#include "scheme.h"
+﻿#include "scheme.h"
 #include "CollinsIntegralGPU.h"
 
 scheme::scheme() {

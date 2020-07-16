@@ -1,4 +1,4 @@
-#ifndef MAIN_H
+п»ї#ifndef MAIN_H
 #define MAIN_H
 
 #include "field.h"
@@ -10,7 +10,7 @@ inline void error(const string& s) {
 }
 
 inline void wrongInput() {
-	cout << "Неверный ввод! Введите ещё раз!" << endl;
+	cout << "РќРµРІРµСЂРЅС‹Р№ РІРІРѕРґ! Р’РІРµРґРёС‚Рµ РµС‰С‘ СЂР°Р·!" << endl;
 	cin.clear();
 	cin.ignore(cin.rdbuf()->in_avail(), '\n');
 }
@@ -20,10 +20,10 @@ template <typename T> T loadingFile(string nameFile) {
 	in.unsetf(ios_base::skipws);
 	T data;
 	if (!in.fail()) {
-		if (!(in >> data)) error("Файл " + nameFile + " пуст или содержит неверные данные!");
+		if (!(in >> data)) error("Р¤Р°Р№Р» " + nameFile + " РїСѓСЃС‚ РёР»Рё СЃРѕРґРµСЂР¶РёС‚ РЅРµРІРµСЂРЅС‹Рµ РґР°РЅРЅС‹Рµ!");
 	}
 	else {
-		error("Файл " + nameFile + " не найден!");
+		error("Р¤Р°Р№Р» " + nameFile + " РЅРµ РЅР°Р№РґРµРЅ!");
 	}
 	return data;
 }
@@ -38,16 +38,16 @@ template <typename T> vector<T> loadingData(string nameFile) {
 			vectorName.push_back(buffer);
 		}
 		in.close();
-		if (vectorName.size() == 0) error("Файл " + nameFile + " пуст или содержит неверные данные!");
+		if (vectorName.size() == 0) error("Р¤Р°Р№Р» " + nameFile + " РїСѓСЃС‚ РёР»Рё СЃРѕРґРµСЂР¶РёС‚ РЅРµРІРµСЂРЅС‹Рµ РґР°РЅРЅС‹Рµ!");
 	}
-	else error("Файл " + nameFile + " не найден!");
+	else error("Р¤Р°Р№Р» " + nameFile + " РЅРµ РЅР°Р№РґРµРЅ!");
 	return vectorName;
 }
 
 template <typename T> void writingFile(T data, string nameFile) {
 	ofstream output(nameFile, ios::binary | ios::trunc | ios::out);
 	if (!output) {
-		error("Запись в файл " + nameFile + " невозможна!");
+		error("Р—Р°РїРёСЃСЊ РІ С„Р°Р№Р» " + nameFile + " РЅРµРІРѕР·РјРѕР¶РЅР°!");
 	}
 	output << data;
 }
