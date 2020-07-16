@@ -22,30 +22,14 @@ private:
 
 	void initHeaders(int width, int height);
 
-	static vector<unsigned char> toBinary(vector<int> number) {
-		vector<unsigned char> binary;
-		for (int i = 0; i < number.at(1); i++) {
-			binary.push_back(number.at(0) >> (8 * i));
-		}
-		return binary;
-	}
-
 public:
 	BMP();
 	BMP(vector<vector<vector<unsigned char>>> picture);
 	BMP(const BMP& obj);
-
+	static vector<unsigned char> toBinary(vector<int> number);
+	static int toNumber(vector<unsigned char> binary);
 	BMP& operator=(const BMP& obj);
-
-	static int toNumber(vector<unsigned char> binary) {
-		auto temp = 0;
-		for (auto i = 0; i < binary.size(); i++) {
-			temp |= binary.at(i) << (8 * i);
-		}
-		return temp;
-	}
-
-	vector<unsigned char> serialize();
+	operator vector<unsigned char>();
 };
 
 istream& operator>>(istream& input, BMP& bmp);

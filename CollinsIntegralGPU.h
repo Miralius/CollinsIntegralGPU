@@ -1,34 +1,12 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-#include <iostream>
-#include <iomanip>
-#include <fstream>
-#include <Windows.h>
-#include <vector>
-#include <complex>
-#include "cuda_runtime.h"
-#include "BMP.h"
-
-constexpr auto PI = 3.1415926535897932384626433832795;
+#include "field.h"
 
 using namespace std;
 
-enum class scheme {
-	black_white, red, fire
-};
-
 inline void error(const string& s) {
 	throw runtime_error(s);
-}
-
-inline void processing(int now, int max, int seconds, int timeLeft) {
-	double percent;
-	if (now == max) percent = static_cast<double>(100);
-	else {
-		percent = trunc(10000 * (static_cast<double>(now) / static_cast<double>(max))) / 100;
-	}
-	cout << '\r' << "¬ыполнено " << setw(6) << percent << "%, прошло " << setw(6) << seconds << " секунд, осталось " << setw(6) << timeLeft << " секунд";
 }
 
 inline void wrongInput() {
@@ -73,22 +51,5 @@ template <typename T> void writingFile(T data, string nameFile) {
 	}
 	output << data;
 }
-
-vector<vector<complex<double>>> functionGaussHermite(vector<double>& x, vector<double>& y, double sigma, int n, int m, double shiftX);
-vector<vector<double>> functionGauss(vector<double>&  x, vector<double>&  y, double sigma);
-vector<vector<double>> functionGaussLaguerre(vector<double>&  x, vector<double>&  y, double sigma, int n, double m);
-
-vector<vector<complex<double>>> superposition(vector<vector<complex<double>>> func1, vector<vector<complex<double>>> func2);
-vector<vector<complex<double>>> vortex(vector<vector<double>>&  func, vector<double>&  x, vector<double>&  y, double n);
-vector<vector<double>> abs(vector<vector<complex<double>>>&  field);
-vector<vector<double>> arg(vector<vector<complex<double>>>&  field);
-double minimum(vector<vector<double>>&  field);
-double maximum(vector<vector<double>>&  field);
-vector<vector<unsigned char>> applyScheme(scheme schemeName);
-vector<vector<vector<unsigned char>>> fieldToBMP(vector<vector<double>> field, scheme schemeName, bool phase);
-
-vector<vector<complex<double>>> collins(vector<vector<complex<double>>>&  functionVortex, vector<double>& u, vector<double>&  v, vector<vector<double>>& matrixABCD, double wavelength);
-vector<vector<complex<double>>> collins(vector<vector<complex<double>>>& functionVortex, vector<double>& x, vector<double>& y, vector<double>& u, vector<double>& v, vector<vector<double>>& matrixABCD, double wavelength, double hx, double hy);
-vector<vector<complex<double>>> cuCollins(vector<vector<complex<double>>>& functionVortex, vector<double>& x, vector<double>& y, vector<double>& u, vector<double>& v, vector<vector<double>>& matrixABCD, double wavelength, double hx, double hy);
 
 #endif

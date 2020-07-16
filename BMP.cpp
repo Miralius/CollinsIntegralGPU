@@ -23,6 +23,22 @@ BMP::BMP(const BMP& obj) {
 	colorProfile = obj.colorProfile;
 }
 
+vector<unsigned char> BMP::toBinary(vector<int> number) {
+	vector<unsigned char> binary;
+	for (int i = 0; i < number.at(1); i++) {
+		binary.push_back(number.at(0) >> (8 * i));
+	}
+	return binary;
+}
+
+int BMP::toNumber(vector<unsigned char> binary) {
+	auto temp = 0;
+	for (auto i = 0; i < binary.size(); i++) {
+		temp |= binary.at(i) << (8 * i);
+	}
+	return temp;
+}
+
 BMP& BMP::operator=(const BMP& obj) {
 	if (this == &obj) return *this;
 	pixels = obj.pixels;
@@ -32,7 +48,7 @@ BMP& BMP::operator=(const BMP& obj) {
 	return *this;
 }
 
-vector<unsigned char> BMP::serialize() {
+BMP::operator vector<unsigned char>() {
 	vector<unsigned char> serializedBMP;
 	serializedBMP.reserve(bmpFileHeader.at(1).at(0));
 	for (vector<int> data : bmpFileHeader) {
@@ -56,12 +72,12 @@ vector<unsigned char> BMP::serialize() {
 				serializedBMP.push_back(color);
 			}
 		}
-		});
+	});
 	return serializedBMP;
 }
 
 ostream& operator<<(ostream& output, BMP& bmp) {
-	vector<unsigned char> data = bmp.serialize();
+	vector<unsigned char> data = bmp;
 	for (unsigned char value : data) {
 		output << value;
 	}
