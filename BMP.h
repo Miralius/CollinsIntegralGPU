@@ -1,6 +1,7 @@
 ﻿#ifndef BMP_H
 #define BMP_H
 
+#define _HAS_STD_BYTE 0
 #include <vector>
 #include <Windows.h>
 #include <algorithm>

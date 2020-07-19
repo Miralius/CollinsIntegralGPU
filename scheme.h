@@ -1,6 +1,7 @@
 ﻿#ifndef SCHEME_H
 #define SCHEME_H
 
+#define _HAS_STD_BYTE 0
 #include <vector>
 #include <Windows.h>
 #include <algorithm>

@@ -2,7 +2,7 @@
 #define FIELD_H
 
 #define _USE_MATH_DEFINES
-//#define __STDCPP_WANT_MATH_SPEC_FUNCS__
+#define _HAS_STD_BYTE 0
 #include <cmath>
 #include <complex>
 #include <iomanip>

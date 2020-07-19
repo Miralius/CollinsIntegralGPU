@@ -12,18 +12,11 @@ vector<vector<complex<double>>> field::gauss(vector<double>& x1, vector<double>&
 }
 
 vector<vector<complex<double>>> field::gaussHermite(vector<double>& x1, vector<double>& x2, double sigma, double m, double n) {
-	auto hermite = [](double n, double x) {
-		double series = 0;
-		for (auto m = 0; m <= n / 2; m++) {
-			series += pow(-1, m) * pow(2 * x, n - 2 * static_cast<long long>(m)) / (tgamma(m + 1) * tgamma(n - 2 * static_cast<long long>(m) + 1));
-		}
-		return series;
-	};
 	vector<vector<complex<double>>> input;
 	for (auto i = 0; i < x2.size(); i++) {
 		input.push_back(vector<complex<double>>());
 		for (auto j = 0; j < x1.size(); j++) {
-			input.at(i).push_back((/*std::*/hermite(n, x2.at(i) / sigma) / sqrt(pow(2, n) * tgamma(n + 1) * sqrt(M_PI))) * (/*std::*/hermite(m, x1.at(j) / sigma) / sqrt(pow(2, m) * tgamma(m + 1) * sqrt(M_PI))) * (exp(-(x1.at(j) * x1.at(j) + x2.at(i) * x2.at(i)) / (2 * sigma * sigma))));
+			input.at(i).push_back((std::hermite(static_cast<int>(n), x2.at(i) / sigma) / sqrt(pow(2, n) * tgamma(n + 1) * sqrt(M_PI))) * (std::hermite(static_cast<int>(m), x1.at(j) / sigma) / sqrt(pow(2, m) * tgamma(m + 1) * sqrt(M_PI))) * (exp(-(x1.at(j) * x1.at(j) + x2.at(i) * x2.at(i)) / (2 * sigma * sigma))));
 		}
 	}
 	return input;
