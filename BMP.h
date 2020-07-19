@@ -15,7 +15,7 @@ private:
 	static auto const BMPFILEHEADERsize = 14;
 	static auto const BMPINFOHEADERsize = 124;
 	static auto const COLORPROFILEsize = 12;
-	vector<vector<vector<unsigned char>>> pixels;
+	vector<vector<vector<byte>>> pixels;
 	vector<vector<int>> bmpFileHeader; //This vector replaces the struct BITMAPFILEHEADER. Each first element — value, each second element — size of type of var.
 	vector<vector<int>> bmpInfoHeader; //This vector replaces the struct BITMAPINFOHEADER. Each first element — value, each second element — size of type of var.
 	vector<vector<int>> colorProfile;
@@ -23,12 +23,12 @@ private:
 
 public:
 	BMP();
-	BMP(vector<vector<vector<unsigned char>>> picture);
+	BMP(vector<vector<vector<byte>>>& picture);
 	BMP(const BMP& obj);
-	static vector<unsigned char> toBinary(vector<int> number);
-	static int toNumber(vector<unsigned char> binary);
+	static vector<byte> toBinary(vector<int> number);
+	static int toNumber(vector<byte> binary);
 	BMP& operator=(const BMP& obj);
-	operator vector<unsigned char>();
+	operator vector<byte>();
 };
 
 istream& operator>>(istream& input, BMP& bmp);

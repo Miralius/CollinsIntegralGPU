@@ -12,7 +12,7 @@ vector<vector<complex<double>>> field::gauss(vector<double>& x1, vector<double>&
 }
 
 vector<vector<complex<double>>> field::gaussHermite(vector<double>& x1, vector<double>& x2, double sigma, double m, double n) {
-	auto hermite = [](double x, double n) {
+	auto hermite = [](double n, double x) {
 		double series = 0;
 		for (auto m = 0; m <= n / 2; m++) {
 			series += pow(-1, m) * pow(2 * x, n - 2 * static_cast<long long>(m)) / (tgamma(m + 1) * tgamma(n - 2 * static_cast<long long>(m) + 1));
@@ -23,7 +23,7 @@ vector<vector<complex<double>>> field::gaussHermite(vector<double>& x1, vector<d
 	for (auto i = 0; i < x2.size(); i++) {
 		input.push_back(vector<complex<double>>());
 		for (auto j = 0; j < x1.size(); j++) {
-			input.at(i).push_back((hermite(x2.at(i) / sigma, n) / sqrt(pow(2, n) * tgamma(n + 1) * sqrt(M_PI))) * (hermite(x1.at(j) / sigma, m) / sqrt(pow(2, m) * tgamma(m + 1) * sqrt(M_PI))) * (exp(-(x1.at(j) * x1.at(j) + x2.at(i) * x2.at(i)) / (2 * sigma * sigma))));
+			input.at(i).push_back((/*std::*/hermite(n, x2.at(i) / sigma) / sqrt(pow(2, n) * tgamma(n + 1) * sqrt(M_PI))) * (/*std::*/hermite(m, x1.at(j) / sigma) / sqrt(pow(2, m) * tgamma(m + 1) * sqrt(M_PI))) * (exp(-(x1.at(j) * x1.at(j) + x2.at(i) * x2.at(i)) / (2 * sigma * sigma))));
 		}
 	}
 	return input;
@@ -235,12 +235,12 @@ BMP field::createBMP(string schemeName, bool phase) {
 		minValue = 0;
 		maxValue = maximum(field);
 	}
-	vector<vector<unsigned char>> scheme = scheme::scheme(schemeName);
-	vector<vector<vector<unsigned char>>> pixels;
+	vector<vector<byte>> scheme = scheme::scheme(schemeName);
+	vector<vector<vector<byte>>> pixels;
 	for (auto row : field) {
-		pixels.push_back(vector<vector<unsigned char>>());
+		pixels.push_back(vector<vector<byte>>());
 		for (auto value : row) {
-			pixels.back().push_back(scheme.at(static_cast<unsigned char>(round((value - minValue) * 255 / (maxValue - minValue)))));
+			pixels.back().push_back(scheme.at(static_cast<byte>(round((value - minValue) * 255 / (maxValue - minValue)))));
 		}
 	}
 	return BMP(pixels);

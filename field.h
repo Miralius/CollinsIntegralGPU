@@ -2,7 +2,8 @@
 #define FIELD_H
 
 #define _USE_MATH_DEFINES
-#include <math.h>
+//#define __STDCPP_WANT_MATH_SPEC_FUNCS__
+#include <cmath>
 #include <complex>
 #include <iomanip>
 #include "scheme.h"

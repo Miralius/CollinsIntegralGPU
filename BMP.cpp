@@ -12,8 +12,8 @@ BMP::BMP() {
 	initHeaders(0, 0);
 }
 
-BMP::BMP(vector<vector<vector<unsigned char>>> picture) : pixels(picture) {
-	initHeaders((int)picture.size(), (int)picture.at(0).size());
+BMP::BMP(vector<vector<vector<byte>>>& picture) : pixels(picture) {
+	initHeaders(static_cast<int>(picture.size()), static_cast<int>(picture.at(0).size()));
 }
 
 BMP::BMP(const BMP& obj) {
@@ -23,15 +23,15 @@ BMP::BMP(const BMP& obj) {
 	colorProfile = obj.colorProfile;
 }
 
-vector<unsigned char> BMP::toBinary(vector<int> number) {
-	vector<unsigned char> binary;
+vector<byte> BMP::toBinary(vector<int> number) {
+	vector<byte> binary;
 	for (auto i = 0; i < number.at(1); i++) {
 		binary.push_back(number.at(0) >> (8 * i));
 	}
 	return binary;
 }
 
-int BMP::toNumber(vector<unsigned char> binary) {
+int BMP::toNumber(vector<byte> binary) {
 	auto temp = 0;
 	for (auto i = 0; i < binary.size(); i++) {
 		temp |= binary.at(i) << (8 * i);
@@ -48,8 +48,8 @@ BMP& BMP::operator=(const BMP& obj) {
 	return *this;
 }
 
-BMP::operator vector<unsigned char>() {
-	vector<unsigned char> serializedBMP;
+BMP::operator vector<byte>() {
+	vector<byte> serializedBMP;
 	serializedBMP.reserve(bmpFileHeader.at(1).at(0));
 	for (auto data : bmpFileHeader) {
 		for (auto byte : toBinary(data)) {
@@ -77,7 +77,7 @@ BMP::operator vector<unsigned char>() {
 }
 
 ostream& operator<<(ostream& output, BMP& bmp) {
-	vector<unsigned char> data = bmp;
+	vector<byte> data = bmp;
 	for (auto value : data) {
 		output << value;
 	}
@@ -86,12 +86,12 @@ ostream& operator<<(ostream& output, BMP& bmp) {
 
 istream& operator>>(istream& input, BMP& bmp) {
 	auto const bytesBeforeOffset = 10; //count of bytes which following before pixel's offset
-	unsigned char buffer;
+	byte buffer;
 	for (auto i = 0; i < bytesBeforeOffset; i++) {
 		if (!(input >> buffer)) return input;
 	}
 
-	vector<unsigned char> bufferVector;
+	vector<byte> bufferVector;
 	for (auto i = 0; i < sizeof(int); i++) {
 		if (!(input >> buffer)) return input;
 		bufferVector.push_back(buffer);
@@ -130,10 +130,10 @@ istream& operator>>(istream& input, BMP& bmp) {
 		if (!(input >> buffer)) return input;
 	}
 
-	vector<vector<vector<unsigned char>>> pixels;
-	vector<unsigned char> pixel;
+	vector<vector<vector<byte>>> pixels;
+	vector<byte> pixel;
 	for (auto i = 0; i < size.at(0); i++) {
-		pixels.push_back(vector<vector<unsigned char>>());
+		pixels.push_back(vector<vector<byte>>());
 		for (auto j = 0; j < size.at(1); j++) {
 			if (bitCount == 32) {
 				for (auto k = 0; k < 4; k++) { //because BGR + alpha

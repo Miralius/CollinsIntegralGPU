@@ -44,7 +44,7 @@ template <typename T> vector<T> loadingData(string nameFile) {
 	return vectorName;
 }
 
-template <typename T> void writingFile(T data, string nameFile) {
+template <typename T> void writingFile(T& data, string nameFile) {
 	ofstream output(nameFile, ios::binary | ios::trunc | ios::out);
 	if (!output) {
 		error("Запись в файл " + nameFile + " невозможна!");

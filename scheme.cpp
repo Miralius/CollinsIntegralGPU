@@ -2,7 +2,7 @@
 #include "CollinsIntegralGPU.h"
 
 scheme::scheme() {
-	colorScheme = vector<vector<unsigned char>>();
+	colorScheme = vector<vector<byte>>();
 	schemeName = "";
 }
 
@@ -13,19 +13,17 @@ scheme::scheme(string schemeName) {
 	});
 }
 
-scheme::operator vector<vector<unsigned char>>() {
+scheme::operator vector<vector<byte>>() {
 	return colorScheme;
 }
 
-pixel::pixel() {
-	colors = vector<unsigned char>();
+pixel::pixel() : colors(vector<byte>()) {
 }
 
-pixel::pixel(unsigned char blue, unsigned char green, unsigned char red, unsigned char alpha) {
-	colors = { blue, green, red, alpha };
+pixel::pixel(byte blue, byte green, byte red, byte alpha) : colors({ blue, green, red, alpha }) {
 }
 
-pixel::operator vector<unsigned char>() {
+pixel::operator vector<byte>() {
 	return colors;
 }
 
