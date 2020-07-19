@@ -6,26 +6,27 @@
 #include <algorithm>
 
 using namespace std;
+typedef unsigned char byte;
 
 class scheme {
 private:
-	vector<vector<unsigned char>> colorScheme;
+	vector<vector<byte>> colorScheme;
 	string schemeName;
 
 public:
 	scheme();
 	scheme(string schemeName);
-	operator vector<vector<unsigned char>>();
+	operator vector<vector<byte>>();
 };
 
 class pixel {
 private:
-	vector<unsigned char> colors;
+	vector<byte> colors;
 
 public:
 	pixel();
-	pixel(unsigned char blue, unsigned char green, unsigned char red, unsigned char alpha);
-	operator vector<unsigned char>();
+	pixel(byte blue, byte green, byte red, byte alpha);
+	operator vector<byte>();
 };
 
 istream& operator>>(istream& input, pixel& obj);
