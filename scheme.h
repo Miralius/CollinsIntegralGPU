@@ -2,11 +2,11 @@
 #define SCHEME_H
 
 #include <vector>
-#include <iostream>
+#include <Windows.h>
 #include <algorithm>
+#include <iostream>
 
 using namespace std;
-typedef unsigned char byte;
 
 class scheme {
 private:
