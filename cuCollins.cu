@@ -1,8 +1,14 @@
-
+#include <iostream>
+#include <vector>
+#include <complex>
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
+#include <thrust/host_vector.h>
+#include <thrust/device_vector.h>
+#include <cuComplex.h>
 
-#include <stdio.h>
+using namespace std;
+using namespace thrust;
 
 cudaError_t addWithCuda(int* c, const int* a, const int* b, unsigned int size);
 
@@ -12,8 +18,21 @@ __global__ void addKernel(int* c, const int* a, const int* b)
     c[i] = a[i] + b[i + 1];
 }
 
-int test()
+vector<vector<complex<double>>> calculateCollinsCUDA(vector<vector<complex<double>>>& inputFunction, vector<double>& x1, vector<double>& x2, vector<double>& x3, vector<double>& x4, int n1, int n2, double waveNumber, vector<double> limits, vector<vector<double>> matrixABCD)
 {
+    auto hx = 2 * limits.at(0) / n1;
+    auto hy = 2 * limits.at(1) / n1;
+    host_vector<host_vector<cuDoubleComplex>> input;
+    for (auto row : inputFunction) {
+        input.push_back(host_vector<cuDoubleComplex>());
+        for (auto value : row) {
+            input.back().push_back(make_cuDoubleComplex(value.real(), value.imag()));
+        }
+    }
+    device_vector<double> x(x1.begin(), x1.end());
+    device_vector<double> y(x2.begin(), x2.end());
+    device_vector<double> u(x3.begin(), x3.end());
+    device_vector<double> v(x4.begin(), x4.end());
     const int arraySize = 5;
     const int a[arraySize] = { 1, 2, 3, 4, 5 };
     const int b[arraySize] = { 10, 20, 30, 40, 50 };
@@ -22,7 +41,7 @@ int test()
     cudaError_t cudaStatus = addWithCuda(c, a, b, arraySize);
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "addWithCuda failed!");
-        return 1;
+        return vector<vector<complex<double>>>();
     }
 
     printf("{1,2,3,4,5} + {10,20,30,40,50} = {%d,%d,%d,%d,%d}\n",
@@ -33,10 +52,10 @@ int test()
     cudaStatus = cudaDeviceReset();
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaDeviceReset failed!");
-        return 1;
+        return vector<vector<complex<double>>>();
     }
 
-    return 0;
+    return vector<vector<complex<double>>>();
 }
 
 // Helper function for using CUDA to add vectors in parallel.

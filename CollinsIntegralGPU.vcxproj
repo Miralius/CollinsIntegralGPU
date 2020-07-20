@@ -12,7 +12,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{4656FA26-88FD-4BD7-97D0-EE571D1E3C42}</ProjectGuid>
-    <RootNamespace>Test</RootNamespace>
+    <RootNamespace>CollinsIntegralGPU</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

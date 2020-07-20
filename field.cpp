@@ -1,11 +1,12 @@
 ﻿#include "field.h"
+extern vector<vector<complex<double>>> calculateCollinsCUDA(vector<vector<complex<double>>>& inputFunction, vector<double>& x1, vector<double>& x2, vector<double>& x3, vector<double>& x4, int n1, int n2, double waveNumber, vector<double> limits, vector<vector<double>> matrixABCD);
 
 vector<vector<complex<double>>> field::gauss(vector<double>& x1, vector<double>& x2, double sigma, double m) {
 	vector<vector<complex<double>>> input;
 	for (auto i = 0; i < x2.size(); i++) {
 		input.push_back(vector<complex<double>>());
 		for (auto j = 0; j < x1.size(); j++) {
-			input.at(i).push_back(exp(complex<double>(-(x1.at(j) * x1.at(j) + x2.at(i) * x2.at(i)) / (2 * sigma * sigma), 0)) * exp(complex<double>(0, m * ((i < (x2.size() / 2)) ? atan2(-x2.at(i), x1.at(j)) : (atan2(-x2.at(i), x1.at(j)) + 2 * M_PI)))));
+			input.back().push_back(exp(complex<double>(-(x1.at(j) * x1.at(j) + x2.at(i) * x2.at(i)) / (2 * sigma * sigma), 0)) * exp(complex<double>(0, m * ((i < (x2.size() / 2)) ? atan2(-x2.at(i), x1.at(j)) : (atan2(-x2.at(i), x1.at(j)) + 2 * M_PI)))));
 		}
 	}
     return input;
@@ -17,7 +18,7 @@ vector<vector<complex<double>>> field::gaussHermite(vector<double>& x1, vector<d
 		input.push_back(vector<complex<double>>());
 		for (auto j = 0; j < x1.size(); j++) {
 			//std::hermite() requires C++17
-			input.at(i).push_back((hermite(static_cast<int>(n), x2.at(i) / sigma) / sqrt(pow(2, n) * tgamma(n + 1) * sqrt(M_PI))) * (hermite(static_cast<int>(m), x1.at(j) / sigma) / sqrt(pow(2, m) * tgamma(m + 1) * sqrt(M_PI))) * (exp(-(x1.at(j) * x1.at(j) + x2.at(i) * x2.at(i)) / (2 * sigma * sigma))));
+			input.back().push_back((hermite(static_cast<int>(n), x2.at(i) / sigma) / sqrt(pow(2, n) * tgamma(n + 1) * sqrt(M_PI))) * (hermite(static_cast<int>(m), x1.at(j) / sigma) / sqrt(pow(2, m) * tgamma(m + 1) * sqrt(M_PI))) * (exp(-(x1.at(j) * x1.at(j) + x2.at(i) * x2.at(i)) / (2 * sigma * sigma))));
 		}
 	}
 	return input;
@@ -29,7 +30,7 @@ vector<vector<complex<double>>> field::gaussLaguerre(vector<double>& x1, vector<
 	for (auto i = 0; i < x2.size(); i++) {
 		input.push_back(vector<complex<double>>());
 		for (auto j = 0; j < x1.size(); j++) {
-			input.at(i).push_back((exp(-(x1.at(j) * x1.at(j) + x2.at(i) * x2.at(i)) / (2 * sigma * sigma))) * pow(((sqrt(x1.at(j) * x1.at(j) + x2.at(i) * x2.at(i))) / sigma), static_cast<int>(std::abs(m))));
+			input.back().push_back((exp(-(x1.at(j) * x1.at(j) + x2.at(i) * x2.at(i)) / (2 * sigma * sigma))) * pow(((sqrt(x1.at(j) * x1.at(j) + x2.at(i) * x2.at(i))) / sigma), static_cast<int>(std::abs(m))));
 		}
 	}
 	return input;
@@ -72,17 +73,10 @@ vector<vector<complex<double>>> field::collins(vector<vector<complex<double>>>& 
 	return output;
 }
 
-vector<vector<complex<double>>> field::collinsSingular(vector<vector<complex<double>>>& inputFunction, vector<double>& x1, vector<double>& x2, vector<double>& x3, vector<double>& x4) {
-	auto k = 2 * M_PI / fieldParameters.at(0);
-	vector<vector<complex<double>>> output;
-	for (auto p = 0; p < x4.size(); p++) {
-		output.push_back(vector<complex<double>>());
-		for (auto q = 0; q < x3.size(); q++) {
-			output.at(p).push_back(matrixABCD.at(1).at(1) * inputFunction.at(p).at(q) * exp(complex<double>(0, (k * matrixABCD.at(1).at(0) * matrixABCD.at(1).at(1) * (x3.at(q) * x3.at(q) + x4.at(p) * x4.at(p))) / 2)));
-		}
-	}
-	cout << "Сингулярный случай — световое поле посчитано мгновенно.";
-	return output;
+//calculateCollinsCUDA() requires CUDA toolkit
+vector<vector<complex<double>>> field::collinsCUDA(vector<vector<complex<double>>>& inputFunction, vector<double>& x1, vector<double>& x2, vector<double>& x3, vector<double>& x4) {
+	cout << "Используется GPU для вычисления светового поля. Пожалуйста, подождите…";
+	return calculateCollinsCUDA(inputFunction, x1, x2, x3, x4, n1, n2, 2 * M_PI / fieldParameters.at(0), limits, matrixABCD);
 }
 
 //vector<vector<complex<double>>> cuCollins(vector<vector<complex<double>>>& functionVortex, vector<double>& x, vector<double>& y, vector<double>& u, vector<double>& v, vector<vector<double>>& matrixABCD, double wavelength, double hx, double hy) {
@@ -133,6 +127,19 @@ vector<vector<complex<double>>> field::collinsSingular(vector<vector<complex<dou
 //	vector<vector<complex<double>>> output;
 //	return output;
 //}
+
+vector<vector<complex<double>>> field::collinsSingular(vector<vector<complex<double>>>& inputFunction, vector<double>& x1, vector<double>& x2, vector<double>& x3, vector<double>& x4) {
+	auto k = 2 * M_PI / fieldParameters.at(0);
+	vector<vector<complex<double>>> output;
+	for (auto p = 0; p < x4.size(); p++) {
+		output.push_back(vector<complex<double>>());
+		for (auto q = 0; q < x3.size(); q++) {
+			output.at(p).push_back(matrixABCD.at(1).at(1) * inputFunction.at(p).at(q) * exp(complex<double>(0, (k * matrixABCD.at(1).at(0) * matrixABCD.at(1).at(1) * (x3.at(q) * x3.at(q) + x4.at(p) * x4.at(p))) / 2)));
+		}
+	}
+	cout << "Сингулярный случай — световое поле посчитано мгновенно.";
+	return output;
+}
 
 vector<double> field::calcPoints(double interval, double count) {
 	auto pointValue = -interval;
@@ -254,7 +261,7 @@ void field::calculate() {
 	auto u = calcPoints(limits.at(2), n2);
 	auto v = calcPoints(limits.at(3), n2);
 	auto inputField = selectInputField(x, y);
-	calculatedField = (std::abs(matrixABCD.at(0).at(1)) < FLT_EPSILON) ? collinsSingular(inputField, x, y, u, v) : collins(inputField, x, y, u, v);
+	calculatedField = (std::abs(matrixABCD.at(0).at(1)) < FLT_EPSILON) ? collinsSingular(inputField, x, y, u, v) : collinsCUDA(inputField, x, y, u, v); //collins(inputField, x, y, u, v);
 	calculated = true;
 }
 

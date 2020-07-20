@@ -36,6 +36,7 @@ private:
 	vector<vector<complex<double>>> gaussLaguerre(vector<double>& x1, vector<double>& x2, double sigma, double m, double n);
 	vector<vector<complex<double>>> selectInputField(vector<double>& x1, vector<double>& x2);
 	vector<vector<complex<double>>> collins(vector<vector<complex<double>>>& inputFunction, vector<double>& x1, vector<double>& x2, vector<double>& x3, vector<double>& x4);
+	vector<vector<complex<double>>> collinsCUDA(vector<vector<complex<double>>>& inputFunction, vector<double>& x1, vector<double>& x2, vector<double>& x3, vector<double>& x4);
 	vector<vector<complex<double>>> collinsSingular(vector<vector<complex<double>>>& inputFunction, vector<double>& x1, vector<double>& x2, vector<double>& x3, vector<double>& x4);
 	vector<double> calcPoints(double interval, double count);
 	static double maximum(vector<vector<double>>& field);
