@@ -1,8 +1,12 @@
 ﻿#include "CollinsIntegralGPU.h"
 
+extern int test();
+
 int main() {
 	SetConsoleCP(1251);
 	SetConsoleOutputCP(1251);
+
+	test();
 
 	try {
 		cout << "Расчёт двумерного интеграла Коллинза…" << endl;

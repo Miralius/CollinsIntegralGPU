@@ -16,7 +16,8 @@ vector<vector<complex<double>>> field::gaussHermite(vector<double>& x1, vector<d
 	for (auto i = 0; i < x2.size(); i++) {
 		input.push_back(vector<complex<double>>());
 		for (auto j = 0; j < x1.size(); j++) {
-			input.at(i).push_back((std::hermite(static_cast<int>(n), x2.at(i) / sigma) / sqrt(pow(2, n) * tgamma(n + 1) * sqrt(M_PI))) * (std::hermite(static_cast<int>(m), x1.at(j) / sigma) / sqrt(pow(2, m) * tgamma(m + 1) * sqrt(M_PI))) * (exp(-(x1.at(j) * x1.at(j) + x2.at(i) * x2.at(i)) / (2 * sigma * sigma))));
+			//std::hermite() requires C++17
+			input.at(i).push_back((hermite(static_cast<int>(n), x2.at(i) / sigma) / sqrt(pow(2, n) * tgamma(n + 1) * sqrt(M_PI))) * (hermite(static_cast<int>(m), x1.at(j) / sigma) / sqrt(pow(2, m) * tgamma(m + 1) * sqrt(M_PI))) * (exp(-(x1.at(j) * x1.at(j) + x2.at(i) * x2.at(i)) / (2 * sigma * sigma))));
 		}
 	}
 	return input;
