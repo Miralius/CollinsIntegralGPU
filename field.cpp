@@ -79,55 +79,6 @@ vector<vector<complex<double>>> field::collinsCUDA(vector<vector<complex<double>
 	return calculateCollinsCUDA(inputFunction, x1, x2, x3, x4, n1, n2, 2 * M_PI / fieldParameters.at(0), limits, matrixABCD);
 }
 
-//vector<vector<complex<double>>> cuCollins(vector<vector<complex<double>>>& functionVortex, vector<double>& x, vector<double>& y, vector<double>& u, vector<double>& v, vector<vector<double>>& matrixABCD, double wavelength, double hx, double hy) {
-//#pragma warning(push)
-//#pragma warning(disable:6386)
-//	auto k = 2 * PI / wavelength;
-//
-//	complex<double>** functionVortexTemp = new complex<double> * [functionVortex.size() * functionVortex.at(0).size()];
-//	for (auto i = 0; i < functionVortex.size(); i++) {
-//		functionVortexTemp[i] = new complex<double>[functionVortex.size()];
-//		for (auto j = 0; j < functionVortex.at(i).size(); j++) {
-//			functionVortexTemp[i][j] = functionVortex.at(i).at(j);
-//		}
-//	}
-//
-//	double* xTemp = new double[x.size()];
-//	for (auto i = 0; i < x.size(); i++) {
-//		xTemp[i] = x.at(i);
-//	}
-//
-//	double* yTemp = new double[y.size()];
-//	for (auto i = 0; i < y.size(); i++) {
-//		yTemp[i] = y.at(i);
-//	}
-//
-//	double* uTemp = new double[u.size()];
-//	for (auto i = 0; i < u.size(); i++) {
-//		uTemp[i] = u.at(i);
-//	}
-//
-//	double* vTemp = new double[v.size()];
-//	for (auto i = 0; i < v.size(); i++) {
-//		vTemp[i] = v.at(i);
-//	}
-//
-//	double* constantStorage = new double[8];
-//	constantStorage[0] = matrixABCD.at(0).at(0);
-//	constantStorage[1] = matrixABCD.at(0).at(1);
-//	constantStorage[2] = matrixABCD.at(1).at(0);
-//	constantStorage[3] = matrixABCD.at(0).at(1);
-//	constantStorage[4] = k;
-//	constantStorage[5] = wavelength;
-//	constantStorage[6] = hx;
-//	constantStorage[7] = hy;
-//
-//
-//#pragma warning(pop)
-//	vector<vector<complex<double>>> output;
-//	return output;
-//}
-
 vector<vector<complex<double>>> field::collinsSingular(vector<vector<complex<double>>>& inputFunction, vector<double>& x1, vector<double>& x2, vector<double>& x3, vector<double>& x4) {
 	auto k = 2 * M_PI / fieldParameters.at(0);
 	vector<vector<complex<double>>> output;
