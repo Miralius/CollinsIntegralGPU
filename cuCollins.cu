@@ -1,4 +1,4 @@
-#include <iostream>
+﻿#include <iostream>
 #include <vector>
 #include <complex>
 #include "CollinsIntegralGPU.h"
@@ -12,8 +12,8 @@ cudaError_t collinsWithCuda(cuDoubleComplex* input, cuDoubleComplex* output, dou
 
 __global__ void collinsKernel(cuDoubleComplex* output, cuDoubleComplex* input, double* x, double* y, double* u, double* v, int n1, int n2, double hx, double hy, double A, double B, double D, double k)
 {
-    int q = blockIdx.x * blockDim.x + threadIdx.x;
-    int p = blockIdx.y * blockDim.y + threadIdx.y;
+    int p = blockIdx.x *blockDim.x + threadIdx.x;
+    int q = blockIdx.y *blockDim.y + threadIdx.y;
     cuDoubleComplex value = make_cuDoubleComplex(0, 0);
     for (int i = 0; i < n1; i++) {
         for (int j = 0; j < n1; j++) {
@@ -108,13 +108,13 @@ cudaError_t collinsWithCuda(cuDoubleComplex* input, cuDoubleComplex* output, dou
     }
 
     // Allocate GPU buffers for three vectors (two input, one output).
-    cudaStatus = cudaMallocPitch((void**)&dev_in, &pitch_in, n1 * sizeof(cuDoubleComplex), n1);
+    cudaStatus = cudaMalloc((void**)&dev_in, n1 * n1 * sizeof(cuDoubleComplex));
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMalloc failed!");
         goto Error;
     }
 
-    cudaStatus = cudaMallocPitch((void**)&dev_out, &pitch_out, n2 * sizeof(cuDoubleComplex), n2);
+    cudaStatus = cudaMalloc((void**)&dev_out, n2 * n2 * sizeof(cuDoubleComplex));
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMalloc failed!");
         goto Error;
@@ -145,7 +145,7 @@ cudaError_t collinsWithCuda(cuDoubleComplex* input, cuDoubleComplex* output, dou
     }
 
     // Copy input vectors from host memory to GPU buffers.
-    cudaStatus = cudaMemcpy2D(dev_in, pitch_in, input, n1 * sizeof(cuDoubleComplex), n1 * sizeof(cuDoubleComplex), n1, cudaMemcpyHostToDevice);
+    cudaStatus = cudaMemcpy(dev_in, input, n1 * n1 * sizeof(cuDoubleComplex), cudaMemcpyHostToDevice);
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMemcpy failed!");
         goto Error;
@@ -176,14 +176,15 @@ cudaError_t collinsWithCuda(cuDoubleComplex* input, cuDoubleComplex* output, dou
     }
 
     // Launch a kernel on the GPU with one thread for each element.
-    dim3 threadsPerBlock(16, 16);
+    int numberThreads = n1 < 16 ? n1 : 16;
+    dim3 threadsPerBlock(numberThreads, numberThreads);
     dim3 numBlocks(n2 / threadsPerBlock.x, n2 / threadsPerBlock.y);
     collinsKernel << <numBlocks, threadsPerBlock >> > (dev_out, dev_in, dev_x, dev_y, dev_u, dev_v, n1, n2, fieldParameters[0], fieldParameters[1], fieldParameters[2], fieldParameters[3], fieldParameters[4], fieldParameters[5]);
 
     // Check for any errors launching the kernel
     cudaStatus = cudaGetLastError();
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "addKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
+        fprintf(stderr, "collinsKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
         goto Error;
     }
 
@@ -196,7 +197,7 @@ cudaError_t collinsWithCuda(cuDoubleComplex* input, cuDoubleComplex* output, dou
     }
 
     // Copy output vector from GPU buffer to host memory.
-    cudaStatus = cudaMemcpy(output, dev_out, n2 * sizeof(cuDoubleComplex), cudaMemcpyDeviceToHost);
+    cudaStatus = cudaMemcpy(output, dev_out, n2 * n2 * sizeof(cuDoubleComplex), cudaMemcpyDeviceToHost);
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMemcpy failed!");
         goto Error;
