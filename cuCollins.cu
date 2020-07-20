@@ -1,4 +1,5 @@
-﻿#include <iostream>
+﻿#include <cmath>
+#include <iostream>
 #include <vector>
 #include <complex>
 #include "CollinsIntegralGPU.h"
@@ -10,10 +11,18 @@ using namespace std;
 
 cudaError_t collinsWithCuda(cuDoubleComplex* input, cuDoubleComplex* output, double* x, double* y, double* u, double* v, int n1, int n2, double* fieldParameters);
 
+int getNumberThreads(int N) {
+    int result = round(sqrt(N));
+    while ((N % result) != 0) {
+        result--;
+    }
+    return result;
+}
+
 __global__ void collinsKernel(cuDoubleComplex* output, cuDoubleComplex* input, double* x, double* y, double* u, double* v, int n1, int n2, double hx, double hy, double A, double B, double D, double k)
 {
-    int p = blockIdx.x *blockDim.x + threadIdx.x;
-    int q = blockIdx.y *blockDim.y + threadIdx.y;
+    int q = blockIdx.x *blockDim.x + threadIdx.x;
+    int p = blockIdx.y *blockDim.y + threadIdx.y;
     cuDoubleComplex value = make_cuDoubleComplex(0, 0);
     for (int i = 0; i < n1; i++) {
         for (int j = 0; j < n1; j++) {
@@ -21,6 +30,7 @@ __global__ void collinsKernel(cuDoubleComplex* output, cuDoubleComplex* input, d
             value = cuCadd(value, cuCmul(input[i * n1 + j], make_cuDoubleComplex(cos(arg), sin(arg))));
         }
     }
+    
     output[p * n2 + q] = cuCmul(make_cuDoubleComplex(0, -(k / (2 * 3.14159265358979323846 * B))), cuCmul(value, make_cuDoubleComplex(hx * hy, 0)));
 }
 
@@ -33,7 +43,7 @@ vector<vector<complex<double>>> calculateCollinsCUDA(vector<vector<complex<doubl
     	}
     }
 
-    auto output = new cuDoubleComplex[inputFunction.size() * inputFunction.at(0).size()];
+    auto output = new cuDoubleComplex[n2 * n2];
 
     auto x = new double[x1.size()];
 	for (auto i = 0; i < x1.size(); i++) {
@@ -92,8 +102,6 @@ cudaError_t collinsWithCuda(cuDoubleComplex* input, cuDoubleComplex* output, dou
 {
     cuDoubleComplex* dev_in = 0;
     cuDoubleComplex* dev_out = 0;
-    size_t pitch_in;
-    size_t pitch_out;
     double* dev_x = 0;
     double* dev_y = 0;
     double* dev_u = 0;
@@ -176,8 +184,7 @@ cudaError_t collinsWithCuda(cuDoubleComplex* input, cuDoubleComplex* output, dou
     }
 
     // Launch a kernel on the GPU with one thread for each element.
-    int numberThreads = n1 < 16 ? n1 : 16;
-    dim3 threadsPerBlock(numberThreads, numberThreads);
+    dim3 threadsPerBlock(getNumberThreads(n2), getNumberThreads(n2));
     dim3 numBlocks(n2 / threadsPerBlock.x, n2 / threadsPerBlock.y);
     collinsKernel << <numBlocks, threadsPerBlock >> > (dev_out, dev_in, dev_x, dev_y, dev_u, dev_v, n1, n2, fieldParameters[0], fieldParameters[1], fieldParameters[2], fieldParameters[3], fieldParameters[4], fieldParameters[5]);
 
@@ -192,7 +199,7 @@ cudaError_t collinsWithCuda(cuDoubleComplex* input, cuDoubleComplex* output, dou
     // any errors encountered during the launch.
     cudaStatus = cudaDeviceSynchronize();
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching addKernel!\n", cudaStatus);
+        fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching collinsKernel!\n", cudaStatus);
         goto Error;
     }
 
