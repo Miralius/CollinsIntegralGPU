@@ -92,7 +92,7 @@ int main() {
 			}
 			fieldParameters.push_back(wavelength / 1000000);
 			
-			cout << "Входная функция:" << "\nМода Гаусса (1)\nМода Гаусса-Эрмита (2)\nМода Гаусса-Лагерра (n = 0, m) (3): ";
+			cout << "Входная функция:" << "\nМода Гаусса (1)\nМода Гаусса-Эрмита (2)\nМода Гаусса-Лагерра (3): ";
 			int select;
 			double parameter;
 			inputField selectedInputField;

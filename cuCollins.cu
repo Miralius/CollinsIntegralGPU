@@ -7,7 +7,6 @@
 #include "device_launch_parameters.h"
 #include <cuComplex.h>
 
-
 using namespace std;
 
 cudaError_t collinsWithCuda(cuDoubleComplex* input, cuDoubleComplex* output, double* x, double* y, double* u, double* v, int n1, int n2, double* fieldParameters);
@@ -28,7 +27,7 @@ __device__ void processing(int now, int max) {
     else {
         percent = trunc(10000 * (static_cast<double>(now) / static_cast<double>(max))) / 100;
     }
-    printf("\rВыполнено %2f%", percent);
+    printf("\rВыполнено %2.2f%", percent);
 }
 
 __global__ void collinsKernel(cuDoubleComplex* output, cuDoubleComplex* input, double* x, double* y, double* u, double* v, int n1, int n2, double hx, double hy, double A, double B, double D, double k, int* progress)
