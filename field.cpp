@@ -6,7 +6,7 @@ vector<vector<complex<double>>> field::gauss(vector<double>& x1, vector<double>&
 	for (auto i = 0; i < x2.size(); i++) {
 		input.push_back(vector<complex<double>>());
 		for (auto j = 0; j < x1.size(); j++) {
-			input.back().push_back(exp(complex<double>(-(x1.at(j) * x1.at(j) + x2.at(i) * x2.at(i)) / (2 * sigma * sigma), 0)) * exp(complex<double>(0, m * ((i < (x2.size() / 2)) ? atan2(-x2.at(i), x1.at(j)) : (atan2(-x2.at(i), x1.at(j)) + 2 * M_PI)))));
+			input.back().push_back(exp(complex<double>(-(x1.at(j) * x1.at(j) + x2.at(i) * x2.at(i)) / (2 * sigma * sigma), 0)) * exp(complex<double>(0, m * ((i < (x2.size() / 2)) ? atan2(x2.at(i), -x1.at(j)) : (atan2(x2.at(i), -x1.at(j)) + 2 * M_PI)))));
 		}
 	}
     return input;
@@ -29,7 +29,8 @@ vector<vector<complex<double>>> field::gaussLaguerre(vector<double>& x1, vector<
 	for (auto i = 0; i < x2.size(); i++) {
 		input.push_back(vector<complex<double>>());
 		for (auto j = 0; j < x1.size(); j++) {
-			input.back().push_back((1 / sigma) *sqrt(2 * tgamma(n + 1) / (M_PI * tgamma(n + std::abs(m) + 1))) * exp(-(x1.at(j) * x1.at(j) + x2.at(i) * x2.at(i)) / (sigma * sigma)) * pow(((sqrt(2 * (x1.at(j) * x1.at(j) + x2.at(i) * x2.at(i)))) / sigma), std::abs(m)) * assoc_laguerre(static_cast<unsigned int>(n), static_cast<unsigned int>(std::abs(m)), 2 * (x1.at(j) * x1.at(j) + x2.at(i) * x2.at(i)) / (sigma * sigma)) * exp(complex<double>(0, m * ((i < (x2.size() / 2)) ? atan2(-x2.at(i), x1.at(j)) : (atan2(-x2.at(i), x1.at(j)) + 2 * M_PI)))));
+			//std::assoc_laguerre() requires C++17
+			input.back().push_back((1 / sigma) *sqrt(2 * tgamma(n + 1) / (M_PI * tgamma(n + std::abs(m) + 1))) * exp(-(x1.at(j) * x1.at(j) + x2.at(i) * x2.at(i)) / (sigma * sigma)) * pow(((sqrt(2 * (x1.at(j) * x1.at(j) + x2.at(i) * x2.at(i)))) / sigma), std::abs(m)) * assoc_laguerre(static_cast<unsigned int>(n), static_cast<unsigned int>(std::abs(m)), 2 * (x1.at(j) * x1.at(j) + x2.at(i) * x2.at(i)) / (sigma * sigma)) * exp(complex<double>(0, m * ((i < (x2.size() / 2)) ? atan2(x2.at(i), -x1.at(j)) : (atan2(x2.at(i), -x1.at(j)) + 2 * M_PI)))));
 		}
 	}
 	return input;
