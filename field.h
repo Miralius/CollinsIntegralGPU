@@ -1,8 +1,11 @@
 ﻿#ifndef FIELD_H
 #define FIELD_H
 
-#define _USE_MATH_DEFINES
+#pragma warning(push)
+#pragma warning(disable:4005)
 #define _HAS_STD_BYTE 0
+#pragma warning(pop)
+#define _USE_MATH_DEFINES
 #include <cmath>
 #include <complex>
 #include <iomanip>

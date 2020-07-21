@@ -7,19 +7,31 @@
 #include "device_launch_parameters.h"
 #include <cuComplex.h>
 
+
 using namespace std;
 
 cudaError_t collinsWithCuda(cuDoubleComplex* input, cuDoubleComplex* output, double* x, double* y, double* u, double* v, int n1, int n2, double* fieldParameters);
 
 int getNumberThreads(int N) {
-    int result = round(sqrt(N));
+    int result = static_cast<int>(round(sqrt(N)));
     while ((N % result) != 0) {
         result--;
     }
     return result;
 }
 
-__global__ void collinsKernel(cuDoubleComplex* output, cuDoubleComplex* input, double* x, double* y, double* u, double* v, int n1, int n2, double hx, double hy, double A, double B, double D, double k)
+__device__ void processing(int now, int max) {
+    double percent;
+    if (now == max) {
+        percent = 100;
+    }
+    else {
+        percent = trunc(10000 * (static_cast<double>(now) / static_cast<double>(max))) / 100;
+    }
+    printf("\rВыполнено %2f%", percent);
+}
+
+__global__ void collinsKernel(cuDoubleComplex* output, cuDoubleComplex* input, double* x, double* y, double* u, double* v, int n1, int n2, double hx, double hy, double A, double B, double D, double k, int* progress)
 {
     int q = blockIdx.x *blockDim.x + threadIdx.x;
     int p = blockIdx.y *blockDim.y + threadIdx.y;
@@ -30,7 +42,8 @@ __global__ void collinsKernel(cuDoubleComplex* output, cuDoubleComplex* input, d
             value = cuCadd(value, cuCmul(input[i * n1 + j], make_cuDoubleComplex(cos(arg), sin(arg))));
         }
     }
-    
+    atomicAdd(progress, 1);
+    processing(*progress, n2 * n2);
     output[p * n2 + q] = cuCmul(make_cuDoubleComplex(0, -(k / (2 * 3.14159265358979323846 * B))), cuCmul(value, make_cuDoubleComplex(hx * hy, 0)));
 }
 
@@ -107,92 +120,86 @@ cudaError_t collinsWithCuda(cuDoubleComplex* input, cuDoubleComplex* output, dou
     double* dev_u = 0;
     double* dev_v = 0;
     cudaError_t cudaStatus;
+    int* progress(0);
 
     // Choose which GPU to run on, change this on a multi-GPU system.
     cudaStatus = cudaSetDevice(0);
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?");
-        goto Error;
+        error("cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?");
     }
 
     // Allocate GPU buffers for three vectors (two input, one output).
     cudaStatus = cudaMalloc((void**)&dev_in, n1 * n1 * sizeof(cuDoubleComplex));
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc failed!");
-        goto Error;
+        error("cudaMalloc failed!");
     }
 
     cudaStatus = cudaMalloc((void**)&dev_out, n2 * n2 * sizeof(cuDoubleComplex));
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc failed!");
-        goto Error;
+        error("cudaMalloc failed!");
     }
 
     cudaStatus = cudaMalloc((void**)&dev_x, n1 * sizeof(double));
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc failed!");
-        goto Error;
+        error("cudaMalloc failed!");
     }
 
     cudaStatus = cudaMalloc((void**)&dev_y, n1 * sizeof(double));
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc failed!");
-        goto Error;
+        error("cudaMalloc failed!");
     }
 
     cudaStatus = cudaMalloc((void**)&dev_u, n2 * sizeof(double));
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc failed!");
-        goto Error;
+        error("cudaMalloc failed!");
     }
 
     cudaStatus = cudaMalloc((void**)&dev_v, n2 * sizeof(double));
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc failed!");
-        goto Error;
+        error("cudaMalloc failed!");
+    }
+
+    cudaStatus = cudaMalloc((void**)&progress, sizeof(int));
+    if (cudaStatus != cudaSuccess) {
+        error("cudaMemcpy failed!");
     }
 
     // Copy input vectors from host memory to GPU buffers.
     cudaStatus = cudaMemcpy(dev_in, input, n1 * n1 * sizeof(cuDoubleComplex), cudaMemcpyHostToDevice);
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy failed!");
-        goto Error;
+        error("cudaMemcpy failed!");
     }
 
     cudaStatus = cudaMemcpy(dev_x, x, n1 * sizeof(double), cudaMemcpyHostToDevice);
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy failed!");
-        goto Error;
+        error("cudaMemcpy failed!");
     }
 
     cudaStatus = cudaMemcpy(dev_y, y, n1 * sizeof(double), cudaMemcpyHostToDevice);
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy failed!");
-        goto Error;
+        error("cudaMemcpy failed!");
     }
 
     cudaStatus = cudaMemcpy(dev_u, u, n2 * sizeof(double), cudaMemcpyHostToDevice);
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy failed!");
-        goto Error;
+        error("cudaMemcpy failed!");
     }
 
     cudaStatus = cudaMemcpy(dev_v, v, n2 * sizeof(double), cudaMemcpyHostToDevice);
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy failed!");
-        goto Error;
+        error("cudaMemcpy failed!");
     }
 
     // Launch a kernel on the GPU with one thread for each element.
     dim3 threadsPerBlock(getNumberThreads(n2), getNumberThreads(n2));
     dim3 numBlocks(n2 / threadsPerBlock.x, n2 / threadsPerBlock.y);
-    collinsKernel << <numBlocks, threadsPerBlock >> > (dev_out, dev_in, dev_x, dev_y, dev_u, dev_v, n1, n2, fieldParameters[0], fieldParameters[1], fieldParameters[2], fieldParameters[3], fieldParameters[4], fieldParameters[5]);
+    collinsKernel << <numBlocks, threadsPerBlock >> > (dev_out, dev_in, dev_x, dev_y, dev_u, dev_v, n1, n2, fieldParameters[0], fieldParameters[1], fieldParameters[2], fieldParameters[3], fieldParameters[4], fieldParameters[5], progress);
 
     // Check for any errors launching the kernel
     cudaStatus = cudaGetLastError();
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "collinsKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
-        goto Error;
+        error("Запуск ядра CUDA не удался!");
     }
 
     // cudaDeviceSynchronize waits for the kernel to finish, and returns
@@ -200,17 +207,16 @@ cudaError_t collinsWithCuda(cuDoubleComplex* input, cuDoubleComplex* output, dou
     cudaStatus = cudaDeviceSynchronize();
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching collinsKernel!\n", cudaStatus);
-        goto Error;
+        error("Синхронизация не удалась!");
     }
 
     // Copy output vector from GPU buffer to host memory.
     cudaStatus = cudaMemcpy(output, dev_out, n2 * n2 * sizeof(cuDoubleComplex), cudaMemcpyDeviceToHost);
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMemcpy failed!");
-        goto Error;
+        error("Копирование результата в ОЗУ завершилось неудачей!");
     }
 
-Error:
     cudaFree(dev_in);
     cudaFree(dev_out);
     cudaFree(dev_x);

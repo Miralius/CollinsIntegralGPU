@@ -75,7 +75,7 @@ vector<vector<complex<double>>> field::collins(vector<vector<complex<double>>>& 
 
 //calculateCollinsCUDA() requires CUDA toolkit
 vector<vector<complex<double>>> field::collinsCUDA(vector<vector<complex<double>>>& inputFunction, vector<double>& x1, vector<double>& x2, vector<double>& x3, vector<double>& x4) {
-	cout << "Используется GPU для вычисления светового поля. Пожалуйста, подождите…";
+	cout << "Используется GPU для вычисления светового поля. Пожалуйста, подождите…" << endl;
 	return calculateCollinsCUDA(inputFunction, x1, x2, x3, x4, n1, n2, 2 * M_PI / fieldParameters.at(0), limits, matrixABCD);
 }
 
