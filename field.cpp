@@ -88,18 +88,6 @@ double field::maximum(vector<vector<double>>& field) {
 	return maxValue;
 }
 
-void field::processing(int now, int max, int seconds, int timeLeft) {
-	double percent;
-	if (now == max) {
-		percent = 100;
-		timeLeft = 0;
-	}
-	else {
-		percent = trunc(10000 * (static_cast<double>(now) / static_cast<double>(max))) / 100;
-	}
-	cout << '\r' << "Выполнено " << setw(6) << percent << "%, прошло " << setw(6) << seconds << " секунд, осталось " << setw(6) << timeLeft << " секунд";
-}
-
 field::field() : n1(0), n2(0), limits(vector<double>()), inputFunction(inputField::undefined), selectedCrossSection(crossSection::Oxy), fieldParameters(vector<double>()), matrixABCD(vector<vector<double>>()), calculatedField(vector<vector<complex<double>>>()), superposition(false), calculated(false) {
 }
 

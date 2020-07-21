@@ -42,7 +42,6 @@ private:
 	vector<vector<complex<double>>> collinsSingular(vector<vector<complex<double>>>& inputFunction, vector<double>& x1, vector<double>& x2, vector<double>& x3, vector<double>& x4);
 	vector<double> calcPoints(double interval, double count);
 	static double maximum(vector<vector<double>>& field);
-	void processing(int now, int max, int seconds, int timeLeft);
 	
 public:
 	field();
