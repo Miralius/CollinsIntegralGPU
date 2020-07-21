@@ -48,32 +48,8 @@ vector<vector<complex<double>>> field::selectInputField(vector<double>& x1, vect
 	}
 }
 
-vector<vector<complex<double>>> field::collins(vector<vector<complex<double>>>& inputFunction, vector<double>& x1, vector<double>& x2, vector<double>& x3, vector<double>& x4) {
-	auto k = 2 * M_PI / fieldParameters.at(0);
-	auto hx = 2 * limits.at(0) / n1;
-	auto hy = 2 * limits.at(1) / n1;
-	int startTime(clock() / CLOCKS_PER_SEC), endTime(clock() / CLOCKS_PER_SEC), currentTime(clock() / CLOCKS_PER_SEC), progress(0);
-	vector<vector<complex<double>>> output;
-	for (auto p = 0; p < x4.size(); p++) {
-		processing(++progress, static_cast<int>(x4.size()), clock() / CLOCKS_PER_SEC - currentTime, (endTime - startTime) * (static_cast<int>(x4.size()) - p));
-		startTime = endTime;
-		output.push_back(vector<complex<double>>());
-		for (auto q = 0; q < x3.size(); q++) {
-			complex<double> value = 0;
-			for (auto i = 0; i < x2.size(); i++) {
-				for (auto j = 0; j < x1.size(); j++) {
-					value += inputFunction.at(i).at(j) * exp(complex<double>(0, ((k / (2 * matrixABCD.at(0).at(1))) * (matrixABCD.at(0).at(0) * (x2.at(i) * x2.at(i) + x1.at(j) * x1.at(j)) - 2 * (x2.at(i) * x4.at(p) + x1.at(j) * x3.at(q)) + matrixABCD.at(1).at(1) * (x4.at(p) * x4.at(p) + x3.at(q) * x3.at(q))))));
-				}
-			}
-			output.at(p).push_back(complex<double>(0, -(k / (2 * M_PI * matrixABCD.at(0).at(1)))) * value * hx * hy);
-		}
-		endTime = clock() / CLOCKS_PER_SEC;
-	}
-	return output;
-}
-
 //calculateCollinsCUDA() requires CUDA toolkit
-vector<vector<complex<double>>> field::collinsCUDA(vector<vector<complex<double>>>& inputFunction, vector<double>& x1, vector<double>& x2, vector<double>& x3, vector<double>& x4) {
+vector<vector<complex<double>>> field::collins(vector<vector<complex<double>>>& inputFunction, vector<double>& x1, vector<double>& x2, vector<double>& x3, vector<double>& x4) {
 	cout << "Используется GPU для вычисления светового поля. Пожалуйста, подождите…" << endl;
 	return calculateCollinsCUDA(inputFunction, x1, x2, x3, x4, n1, n2, 2 * M_PI / fieldParameters.at(0), limits, matrixABCD);
 }
@@ -211,7 +187,7 @@ void field::calculate() {
 	auto u = calcPoints(limits.at(2), n2);
 	auto v = calcPoints(limits.at(3), n2);
 	auto inputField = selectInputField(x, y);
-	calculatedField = (std::abs(matrixABCD.at(0).at(1)) < FLT_EPSILON) ? collinsSingular(inputField, x, y, u, v) : collinsCUDA(inputField, x, y, u, v); //collins(inputField, x, y, u, v);
+	calculatedField = (std::abs(matrixABCD.at(0).at(1)) < FLT_EPSILON) ? collinsSingular(inputField, x, y, u, v) : collins(inputField, x, y, u, v);
 	calculated = true;
 }
 
