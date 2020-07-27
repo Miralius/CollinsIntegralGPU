@@ -10,7 +10,7 @@ int main() {
 		while (1) {
 			vector<double> limits;
 			double limit;
-			cout << "Введите пределы интегрирования (a, b и c, d):" << "\na = ";
+			cout << "Введите пределы интегрирования (a, b и c, d, мм):" << "\na = ";
 			while (!(cin >> limit)) {
 				wrongInput();
 			}
@@ -41,7 +41,7 @@ int main() {
 			vector<vector<double>> matrixABCD;
 			if (fourier == 'y') {
 				double f, z;
-				cout << "Введите фокусное расстояние линзы (f, мм) и расстояние до изображения:" << "\nf = ";
+				cout << "Введите фокусное расстояние линзы (f, мм) и расстояние до изображения (z, мм):" << "\nf = ";
 				while (!(cin >> f)) {
 					wrongInput();
 				}
@@ -92,7 +92,7 @@ int main() {
 			}
 			fieldParameters.push_back(wavelength / 1000000);
 			
-			cout << "Входная функция:" << "\nМода Гаусса (1)\nМода Гаусса-Эрмита (2)\nМода Гаусса-Лагерра (3): ";
+			cout << "Входная функция:" << "\nМода Гаусса (1)\nМода Гаусса-Эрмита (2)\nМода Гаусса-Лагерра (3)\nМода Гаусса для кластерного режима (4): ";
 			int select;
 			double parameter;
 			inputField selectedInputField;
@@ -100,7 +100,7 @@ int main() {
 			selectedInputField = static_cast<inputField>(select);
 			switch (select) {
 			case 1:
-				cout << "Введите параметр сигма:" << "\nsigma = ";
+				cout << "Введите ширину пучка (мм):" << "\nsigma = ";
 				while (!(cin >> parameter) || !(parameter > 0)) wrongInput();
 				fieldParameters.push_back(parameter);
 				cout << "Введите топологический заряд:" << "\nm = ";
@@ -108,7 +108,7 @@ int main() {
 				fieldParameters.push_back(parameter);
 				break;
 			case 2:
-				cout << "Введите параметр сигма:" << "\nsigma = ";
+				cout << "Введите ширину пучка (мм):" << "\nsigma = ";
 				while (!(cin >> parameter) || !(parameter > 0)) wrongInput();
 				fieldParameters.push_back(parameter);
 				cout << "Введите порядок m:" << "\nm = ";
@@ -119,7 +119,7 @@ int main() {
 				fieldParameters.push_back(parameter);
 				break;
 			case 3:
-				cout << "Введите параметр сигма:" << "\nsigma = ";
+				cout << "Введите ширину пучка (мм):" << "\nsigma = ";
 				while (!(cin >> parameter) || !(parameter > 0)) wrongInput();
 				fieldParameters.push_back(parameter);
 				cout << "Введите порядок m:" << "\nm = ";
@@ -129,14 +129,52 @@ int main() {
 				while (!(cin >> parameter)) wrongInput();
 				fieldParameters.push_back(parameter);
 				break;
+			case 4:
+				cout << "Введите ширину пучка (мм):" << "\nsigma = ";
+				while (!(cin >> parameter) || !(parameter > 0)) wrongInput();
+				fieldParameters.push_back(parameter);
+				cout << "Введите топологический заряд:" << "\nm = ";
+				while (!(cin >> parameter)) wrongInput();
+				fieldParameters.push_back(parameter);
+				break;
 			default:
 				error("Не выбрана исходная функция!");
 			}
 
-			auto output = field(limits, n1, n2, crossSection::Oxy, matrixABCD, selectedInputField, fieldParameters);
-			writingFile<BMP>(output.createBMP("fire", false), "absOutput.bmp");
-			writingFile<BMP>(output.createBMP("black_white", true), "argOutput.bmp");
+			char mode;
+			if (select == 4) {
+				mode = 'y';
+			}
+			else {
+				cout << "«Кластерный режим» (y)?" << "\nОтвет: ";
+				while (!(cin >> mode) || !(mode == 'y')) {
+					wrongInput();
+				}
+			}
+				
+			if (mode == 'y') {
+				int N;
+				cout << "Введите количество пучков:" << "\nN = ";
+				while (!(cin >> N)) wrongInput();
+				fieldParameters.push_back(static_cast<double>(N));
+				cout << "Введите радиус k*sigma:" << "\nk = ";
+				while (!(cin >> parameter)) wrongInput();
+				fieldParameters.push_back(parameter * fieldParameters.at(1));
+			}
 
+			auto output = field(limits, n1, n2, crossSection::Oxy, matrixABCD, selectedInputField, fieldParameters);
+			if (mode == 'y') {
+				output.setClusterMode(true);
+			}
+			string outputAbs;
+			string outputArg;
+			cout << "Введите название файла для амплитуды: ";
+			cin >> outputAbs;
+			cout << "Введите название файла для фазы: ";
+			cin >> outputArg;
+			writingFile<BMP>(output.createBMP("fire", false), outputAbs);
+			writingFile<BMP>(output.createBMP("black_white", true), outputArg);
+			
 			cout << endl << "Результаты записаны! Продолжить расчёты? Для выхода ввести 0" << endl;
 		}
 	}
