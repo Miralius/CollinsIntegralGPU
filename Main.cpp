@@ -147,7 +147,7 @@ int main() {
 			}
 			else {
 				cout << "«Кластерный режим» (y)?" << "\nОтвет: ";
-				while (!(cin >> mode) || !(mode == 'y')) {
+				while (!(cin >> mode)) {
 					wrongInput();
 				}
 			}
@@ -173,7 +173,7 @@ int main() {
 			cout << "Введите название файла для фазы: ";
 			cin >> outputArg;
 			writingFile<BMP>(output.createBMP("fire", false), outputAbs);
-			writingFile<BMP>(output.createBMP("black_white", true), outputArg);
+			writingFile<BMP>(output.createBMP("grays", true), outputArg);
 			
 			cout << endl << "Результаты записаны! Продолжить расчёты? Для выхода ввести 0" << endl;
 		}
