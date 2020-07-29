@@ -10,7 +10,7 @@ int main() {
 		while (1) {
 			vector<double> limits;
 			double limit;
-			cout << "Введите пределы интегрирования (a, b и c, d, мм):" << "\na = ";
+			cout << "Введите пределы интегрирования (a, b и c, d, мм):" << endl << "a = ";
 			while (!(cin >> limit)) {
 				wrongInput();
 			}
@@ -33,15 +33,15 @@ int main() {
 				wrongInput();
 			}
 			limits.push_back(limit);
-			cout << "Дробное преобразование Фурье (y или n)?" << "\nОтвет: ";
+			cout << "Дробное преобразование Фурье (y или n)?" << endl << "Ответ: ";
 			char fourier;
 			while (!(cin >> fourier) || !(fourier == 'y' || fourier == 'n')) {
 				wrongInput();
 			}
 			vector<vector<double>> matrixABCD;
+			double f, z;
 			if (fourier == 'y') {
-				double f, z;
-				cout << "Введите фокусное расстояние линзы (f, мм) и расстояние до изображения (z, мм):" << "\nf = ";
+				cout << "Введите фокусное расстояние линзы (f, мм) и расстояние до изображения (z, мм):" << endl << "f = ";
 				while (!(cin >> f)) {
 					wrongInput();
 				}
@@ -73,7 +73,7 @@ int main() {
 				}
 			}
 			
-			cout << "Введите количество отсчётов интегрирования (n входного поля и n выходного поля):" << "\nn1 = ";
+			cout << "Введите количество отсчётов интегрирования (n входного поля и n выходного поля):" << endl << "n1 = ";
 			int n1, n2;
 			while (!(cin >> n1) || !(n1 > 0)) {
 				wrongInput();
@@ -85,14 +85,14 @@ int main() {
 
 			vector<double> fieldParameters;
 
-			cout << "Введите длину волны света (нм):" << "\nwavelength = ";
+			cout << "Введите длину волны света (нм):" << endl << "wavelength = ";
 			double wavelength;
 			while (!(cin >> wavelength)) {
 				wrongInput();
 			}
 			fieldParameters.push_back(wavelength / 1000000);
 			
-			cout << "Входная функция:" << "\nМода Гаусса (1)\nМода Гаусса-Эрмита (2)\nМода Гаусса-Лагерра (3)\nМода Гаусса для кластерного режима (4): ";
+			cout << "Входная функция:" << endl << "Мода Гаусса (1)" << endl << "Мода Гаусса-Эрмита (2)" << endl << "Мода Гаусса-Лагерра (3)" << endl << "Мода Гаусса для кластерного режима (4): ";
 			int select;
 			double parameter;
 			inputField selectedInputField;
@@ -100,41 +100,61 @@ int main() {
 			selectedInputField = static_cast<inputField>(select);
 			switch (select) {
 			case 1:
-				cout << "Введите ширину пучка (мм):" << "\nsigma = ";
-				while (!(cin >> parameter) || !(parameter > 0)) wrongInput();
+				cout << "Введите ширину пучка (мм):" << endl << "sigma = ";
+				while (!(cin >> parameter) || !(parameter > 0)) {
+					wrongInput();
+				}
 				fieldParameters.push_back(parameter);
-				cout << "Введите топологический заряд:" << "\nm = ";
-				while (!(cin >> parameter)) wrongInput();
+				cout << "Введите топологический заряд:" << endl << "m = ";
+				while (!(cin >> parameter)) {
+					wrongInput();
+				}
 				fieldParameters.push_back(parameter);
 				break;
 			case 2:
-				cout << "Введите ширину пучка (мм):" << "\nsigma = ";
-				while (!(cin >> parameter) || !(parameter > 0)) wrongInput();
+				cout << "Введите ширину пучка (мм):" << endl << "sigma = ";
+				while (!(cin >> parameter) || !(parameter > 0)) {
+					wrongInput();
+				}
 				fieldParameters.push_back(parameter);
-				cout << "Введите порядок m:" << "\nm = ";
-				while (!(cin >> parameter)) wrongInput();
+				cout << "Введите порядок m:" << endl << "m = ";
+				while (!(cin >> parameter)) {
+					wrongInput();
+				}
 				fieldParameters.push_back(parameter);
-				cout << "Введите порядок n:" << "\nn = ";
-				while (!(cin >> parameter)) wrongInput();
+				cout << "Введите порядок n:" << endl << "n = ";
+				while (!(cin >> parameter)) {
+					wrongInput();
+				}
 				fieldParameters.push_back(parameter);
 				break;
 			case 3:
-				cout << "Введите ширину пучка (мм):" << "\nsigma = ";
-				while (!(cin >> parameter) || !(parameter > 0)) wrongInput();
+				cout << "Введите ширину пучка (мм):" << endl << "sigma = ";
+				while (!(cin >> parameter) || !(parameter > 0)) {
+					wrongInput();
+				}
 				fieldParameters.push_back(parameter);
-				cout << "Введите порядок m:" << "\nm = ";
-				while (!(cin >> parameter)) wrongInput();
+				cout << "Введите порядок m:" << endl << "m = ";
+				while (!(cin >> parameter)) {
+					wrongInput();
+				}
 				fieldParameters.push_back(parameter);
-				cout << "Введите порядок n:" << "\nn = ";
-				while (!(cin >> parameter)) wrongInput();
+				cout << "Введите порядок n:" << endl << "n = ";
+				while (!(cin >> parameter)) {
+					wrongInput();
+				}
 				fieldParameters.push_back(parameter);
 				break;
 			case 4:
-				cout << "Введите ширину пучка (мм):" << "\nsigma = ";
-				while (!(cin >> parameter) || !(parameter > 0)) wrongInput();
+				cout << "Введите ширину пучка (мм):" << endl << "sigma = ";
+				while (!(cin >> parameter) || !(parameter > 0)) {
+					wrongInput();
+				}
 				fieldParameters.push_back(parameter);
-				cout << "Введите топологический заряд:" << "\nm = ";
-				while (!(cin >> parameter)) wrongInput();
+				cout << "Введите топологический заряд:" << endl << "m = ";
+				while (!(cin >> parameter)) {
+					wrongInput();
+				}
 				fieldParameters.push_back(parameter);
 				break;
 			default:
@@ -146,19 +166,33 @@ int main() {
 				mode = 'y';
 			}
 			else {
-				cout << "«Кластерный режим» (y)?" << "\nОтвет: ";
+				cout << "«Кластерный режим» (y)?" << endl << "Ответ: ";
 				while (!(cin >> mode)) {
 					wrongInput();
 				}
 			}
 				
 			if (mode == 'y') {
+				if (fourier == 'y') {
+					fieldParameters.push_back(z);
+				}
+				else {
+					cout << "Введите расстояние от начальной до выходной плоскости изображения (z, мм):" << endl << "z = ";
+					while (!(cin >> parameter)) {
+						wrongInput();
+					}
+					fieldParameters.push_back(parameter);
+				}
 				int N;
-				cout << "Введите количество пучков:" << "\nN = ";
-				while (!(cin >> N)) wrongInput();
+				cout << "Введите количество пучков:" << endl << "N = ";
+				while (!(cin >> N)) {
+					wrongInput();
+				}
 				fieldParameters.push_back(static_cast<double>(N));
-				cout << "Введите радиус k*sigma:" << "\nk = ";
-				while (!(cin >> parameter)) wrongInput();
+				cout << "Введите радиус k*sigma:" << endl << "k = ";
+				while (!(cin >> parameter)) {
+					wrongInput();
+				}
 				fieldParameters.push_back(parameter * fieldParameters.at(1));
 			}
 
@@ -166,20 +200,27 @@ int main() {
 			if (mode == 'y') {
 				output.setClusterMode(true);
 			}
-			string outputAbs;
-			string outputArg;
+			string absFileName;
+			string argFileName;
+			string absSchemeName;
+			string argSchemeName;
 			cout << "Введите название файла для амплитуды: ";
-			cin >> outputAbs;
+			cin >> absFileName;
 			cout << "Введите название файла для фазы: ";
-			cin >> outputArg;
-			writingFile<BMP>(output.createBMP("fire", false), outputAbs);
-			writingFile<BMP>(output.createBMP("grays", true), outputArg);
+			cin >> argFileName;
+			cout << "Введите название цветовой схемы для амплитуды: ";
+			cin >> absSchemeName;
+			cout << "Введите название цветовой схемы для фазы: ";
+			cin >> argSchemeName;
+			writingFile<BMP>(output.createBMP(absSchemeName, false), absFileName);
+			writingFile<BMP>(output.createBMP(argSchemeName, true), argFileName);
 			
 			cout << endl << "Результаты записаны! Продолжить расчёты? Для выхода ввести 0" << endl;
 		}
 	}
 	catch (runtime_error & e) {
-		cerr << "Ошибка! " << e.what() << endl;
+		cerr << endl << "Ошибка! " << e.what() << endl;
+		main();
 	}
 	catch (...) {
 		cerr << "Неизвестная ошибка!" << endl;

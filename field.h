@@ -38,7 +38,7 @@ private:
 	vector<vector<complex<double>>> gauss(vector<double>& x1, vector<double>& x2, double sigma, double m);
 	vector<vector<complex<double>>> gaussHermite(vector<double>& x1, vector<double>& x2, double sigma, double m, double n);
 	vector<vector<complex<double>>> gaussLaguerre(vector<double>& x1, vector<double>& x2, double sigma, double m, double n);
-	vector<vector<complex<double>>> gaussFlatPhase(vector<double>& x1, vector<double>& x2, double sigma, double m, double N, double k);
+	vector<vector<complex<double>>> gaussFlatPhase(vector<double>& x1, vector<double>& x2, double sigma, double m, double L0, double N, double k);
 	vector<vector<complex<double>>> selectInputField(vector<double>& x1, vector<double>& x2);
 	vector<vector<complex<double>>> collins(vector<vector<complex<double>>>& inputFunction, vector<double>& x1, vector<double>& x2, vector<double>& x3, vector<double>& x4);
 	vector<vector<complex<double>>> collinsSingular(vector<vector<complex<double>>>& inputFunction, vector<double>& x1, vector<double>& x2, vector<double>& x3, vector<double>& x4);

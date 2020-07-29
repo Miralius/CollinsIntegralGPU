@@ -36,12 +36,12 @@ vector<vector<complex<double>>> field::gaussLaguerre(vector<double>& x1, vector<
 	return input;
 }
 
-vector<vector<complex<double>>> field::gaussFlatPhase(vector<double>& x1, vector<double>& x2, double sigma, double m, double N, double k) {
+vector<vector<complex<double>>> field::gaussFlatPhase(vector<double>& x1, vector<double>& x2, double sigma, double m, double L0, double N, double k) {
 	vector<vector<complex<double>>> input;
 	for (auto i = 0; i < x2.size(); i++) {
 		input.push_back(vector<complex<double>>());
 		for (auto j = 0; j < x1.size(); j++) {
-			input.back().push_back(exp(complex<double>(0, 2 * M_PI / fieldParameters.at(0) * matrixABCD.at(0).at(1))) * exp(complex<double>(-(x1.at(j) * x1.at(j) + x2.at(i) * x2.at(i)) / (sigma * sigma), 0)) * exp(complex<double>(0, m * M_PI * (2 * k - 1) / N)));
+			input.back().push_back(exp(complex<double>(0, 2 * M_PI / fieldParameters.at(0) * L0)) * exp(complex<double>(-(x1.at(j) * x1.at(j) + x2.at(i) * x2.at(i)) / (sigma * sigma), 0)) * exp(complex<double>(0, m * M_PI * (2 * k - 1) / N)));
 		}
 	}
 	return input;
@@ -56,7 +56,7 @@ vector<vector<complex<double>>> field::selectInputField(vector<double>& x1, vect
 	case inputField::gaussLaguerre:
 		return gaussLaguerre(x1, x2, fieldParameters.at(1), fieldParameters.at(2), fieldParameters.at(3));
 	case inputField::gaussFlatPhase:
-		return gaussFlatPhase(x1, x2, fieldParameters.at(1), fieldParameters.at(2), fieldParameters.at(3), fieldParameters.at(4));
+		return gaussFlatPhase(x1, x2, fieldParameters.at(1), fieldParameters.at(2), fieldParameters.at(3), fieldParameters.at(4), fieldParameters.at(5));
 	default:
 		return calculatedField;
 	}
@@ -74,7 +74,7 @@ vector<vector<complex<double>>> field::collinsSingular(vector<vector<complex<dou
 	for (auto p = 0; p < x4.size(); p++) {
 		output.push_back(vector<complex<double>>());
 		for (auto q = 0; q < x3.size(); q++) {
-			output.at(p).push_back(matrixABCD.at(1).at(1) * inputFunction.at(p).at(q) * exp(complex<double>(0, (k * matrixABCD.at(1).at(0) * matrixABCD.at(1).at(1) * (x3.at(q) * x3.at(q) + x4.at(p) * x4.at(p))) / 2)));
+			output.back().push_back(matrixABCD.at(1).at(1) * inputFunction.at(p).at(q) * exp(complex<double>(0, (k * matrixABCD.at(1).at(0) * matrixABCD.at(1).at(1) * (x3.at(q) * x3.at(q) + x4.at(p) * x4.at(p))) / 2)));
 		}
 	}
 	cout << "Сингулярный случай — световое поле посчитано мгновенно.";

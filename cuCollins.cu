@@ -197,7 +197,7 @@ cudaError_t collinsWithCuda(cuDoubleComplex* input, cuDoubleComplex* output, dou
     // Check for any errors launching the kernel
     cudaStatus = cudaGetLastError();
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "collinsKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
+        fprintf(stderr, "\ncollinsKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
         error("Запуск ядра CUDA не удался!");
     }
 
@@ -205,14 +205,13 @@ cudaError_t collinsWithCuda(cuDoubleComplex* input, cuDoubleComplex* output, dou
     // any errors encountered during the launch.
     cudaStatus = cudaDeviceSynchronize();
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching collinsKernel!\n", cudaStatus);
-        error("Синхронизация не удалась!");
+        fprintf(stderr, "\ncudaDeviceSynchronize returned error code %d after launching collinsKernel!\n", cudaStatus);
+        error("Синхронизация данных между хостом и устройством завершилась неудачей!");
     }
 
     // Copy output vector from GPU buffer to host memory.
     cudaStatus = cudaMemcpy(output, dev_out, n2 * n2 * sizeof(cuDoubleComplex), cudaMemcpyDeviceToHost);
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy failed!");
         error("Копирование результата в ОЗУ завершилось неудачей!");
     }
 
