@@ -92,8 +92,9 @@ int main() {
 			}
 			fieldParameters.push_back(wavelength / 1000000);
 			
-			cout << "Входная функция:" << endl << "Мода Гаусса (1)" << endl << "Мода Гаусса-Эрмита (2)" << endl << "Мода Гаусса-Лагерра (3)" << endl << "Мода Гаусса для кластерного режима (4): ";
+			cout << "Входная функция:" << endl << "Мода Гаусса (1)" << endl << "Мода Гаусса-Эрмита (2)" << endl << "Мода Гаусса-Лагерра (3)" << endl << "Мода Гаусса для кластерного режима как у Wang (2008) (4)" << endl << "Мода Гаусса для кластерного режима как у Song (2018) (5): ";
 			int select;
+			int N;
 			double parameter;
 			inputField selectedInputField;
 			cin >> select;
@@ -156,23 +157,6 @@ int main() {
 					wrongInput();
 				}
 				fieldParameters.push_back(parameter);
-				break;
-			default:
-				error("Не выбрана исходная функция!");
-			}
-
-			char mode;
-			if (select == 4) {
-				mode = 'y';
-			}
-			else {
-				cout << "«Кластерный режим» (y)?" << endl << "Ответ: ";
-				while (!(cin >> mode)) {
-					wrongInput();
-				}
-			}
-				
-			if (mode == 'y') {
 				if (fourier == 'y') {
 					fieldParameters.push_back(z);
 				}
@@ -183,7 +167,6 @@ int main() {
 					}
 					fieldParameters.push_back(parameter);
 				}
-				int N;
 				cout << "Введите количество пучков:" << endl << "N = ";
 				while (!(cin >> N)) {
 					wrongInput();
@@ -194,12 +177,44 @@ int main() {
 					wrongInput();
 				}
 				fieldParameters.push_back(parameter * fieldParameters.at(1));
+				break;
+			case 5:
+				cout << "Введите ширину пучка (мм):" << endl << "sigma = ";
+				while (!(cin >> parameter) || !(parameter > 0)) {
+					wrongInput();
+				}
+				fieldParameters.push_back(parameter);
+				cout << "Введите показатель преломления n0:" << endl << "n0 = ";
+				while (!(cin >> parameter)) {
+					wrongInput();
+				}
+				fieldParameters.push_back(parameter);
+				cout << "Введите радиус k*sigma:" << endl << "k = ";
+				while (!(cin >> parameter)) {
+					wrongInput();
+				}
+				fieldParameters.push_back(parameter * fieldParameters.at(1));
+				cout << "Введите начальную поперечную скорость пучков:" << endl << "ksi = ";
+				while (!(cin >> parameter)) {
+					wrongInput();
+				}
+				fieldParameters.push_back(parameter);
+				cout << "Введите отношение начальной мощности света к критической:" << endl << "eta = ";
+				while (!(cin >> parameter)) {
+					wrongInput();
+				}
+				fieldParameters.push_back(parameter);
+				cout << "Введите количество пучков:" << endl << "N = ";
+				while (!(cin >> N)) {
+					wrongInput();
+				}
+				fieldParameters.push_back(static_cast<double>(N));
+				break;
+			default:
+				error("Не выбрана исходная функция!");
 			}
 
 			auto output = field(limits, n1, n2, crossSection::Oxy, matrixABCD, selectedInputField, fieldParameters);
-			if (mode == 'y') {
-				output.setClusterMode(true);
-			}
 			string absFileName;
 			string argFileName;
 			string absSchemeName;

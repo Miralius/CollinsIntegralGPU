@@ -15,7 +15,7 @@
 using namespace std;
 
 enum class inputField {
-	undefined, gauss, gaussHermite, gaussLaguerre, gaussFlatPhase
+	undefined, gauss, gaussHermite, gaussLaguerre, gaussWang2008, gaussSong2018
 };
 
 enum class crossSection {
@@ -28,7 +28,6 @@ private:
 	int n2; //Dimension of the output field.
 	bool superposition; //The value of superposition attribute.
 	bool calculated; //This value means field is calculated.
-	bool clusterMode; //This value means field is calculated in cluster mode.
 	vector<double> limits; //The limits of the integration field.
 	inputField inputFunction; //The type of input function.
 	crossSection selectedCrossSection; //The cross section of field.
@@ -38,7 +37,10 @@ private:
 	vector<vector<complex<double>>> gauss(vector<double>& x1, vector<double>& x2, double sigma, double m);
 	vector<vector<complex<double>>> gaussHermite(vector<double>& x1, vector<double>& x2, double sigma, double m, double n);
 	vector<vector<complex<double>>> gaussLaguerre(vector<double>& x1, vector<double>& x2, double sigma, double m, double n);
-	vector<vector<complex<double>>> gaussFlatPhase(vector<double>& x1, vector<double>& x2, double sigma, double m, double L0, double N, double k);
+	vector<vector<complex<double>>> gaussWang2008(vector<double>& x1, vector<double>& x2, double wavelength, double sigma, double m, double L0, double N, double k);
+	vector<vector<complex<double>>> gaussSong2018(vector<double>& x1, vector<double>& x2, double wavelength, double sigma, double n0, double radius, double velocity, double relativePower, double beamNumber, double countOfBeams);
+	vector<vector<complex<double>>> clusterModeGaussWang2008(double wavelength, double sigma, double m, double L0, double N, double radius);
+	vector<vector<complex<double>>> clusterModeGaussSong2018(vector<double>& x1, vector<double>& x2, double wavelength, double sigma, double n0, double radius, double velocity, double relativePower, double countOfBeams);
 	vector<vector<complex<double>>> selectInputField(vector<double>& x1, vector<double>& x2);
 	vector<vector<complex<double>>> collins(vector<vector<complex<double>>>& inputFunction, vector<double>& x1, vector<double>& x2, vector<double>& x3, vector<double>& x4);
 	vector<vector<complex<double>>> collinsSingular(vector<vector<complex<double>>>& inputFunction, vector<double>& x1, vector<double>& x2, vector<double>& x3, vector<double>& x4);
@@ -51,18 +53,18 @@ public:
 	field(vector<double> limits, int n1, int n2, crossSection crossSection, vector<vector<double>> matrixABCD, inputField inputFunction, vector<double> fieldParameters);
 	static vector<vector<double>> abs(field& field);
 	static vector<vector<double>> arg(field& field);
+	static double power(field& field);
 	vector<vector<complex<double>>> getCalculatedField();
 	crossSection getCrossSection();
 	BMP createBMP(string schemeName, bool phase);
 	bool isSuperposition();
 	bool isCalculated();
-	bool isClusterMode();
-	void setClusterMode(bool clusterMode);
 	void calculate();
 };
 
-field operator+(field& firstField, field& secondField);
-vector<vector<complex<double>>> operator+(vector<vector<complex<double>>>& firstObj, vector<vector<complex<double>>>& secondObj);
-vector<vector<complex<double>>> operator+=(vector<vector<complex<double>>>& firstObj, vector<vector<complex<double>>>& secondObj);
+field operator+(field& left, field& right);
+vector<vector<complex<double>>> operator+(vector<vector<complex<double>>>& left, vector<vector<complex<double>>>& right);
+vector<vector<complex<double>>> operator+=(vector<vector<complex<double>>>& left, vector<vector<complex<double>>>& right);
+vector<vector<complex<double>>> operator*(double left, vector<vector<complex<double>>>& right);
 
 #endif
