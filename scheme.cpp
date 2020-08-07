@@ -1,5 +1,5 @@
 ﻿#include "scheme.h"
-#include "CollinsIntegralGPU.h"
+#include "Main.h"
 
 scheme::scheme() {
 	colorScheme = vector<vector<byte>>();

@@ -1,4 +1,4 @@
-﻿#include "CollinsIntegralGPU.h"
+﻿#include "Main.h"
 
 int main() {
 	SetConsoleCP(1251);
@@ -34,13 +34,13 @@ int main() {
 			}
 			limits.push_back(limit);
 			cout << "Дробное преобразование Фурье (y или n)?" << endl << "Ответ: ";
-			char fourier;
-			while (!(cin >> fourier) || !(fourier == 'y' || fourier == 'n')) {
+			char answer;
+			while (!(cin >> answer) || !(answer == 'y' || answer == 'n')) {
 				wrongInput();
 			}
 			vector<vector<double>> matrixABCD;
 			double f, z;
-			if (fourier == 'y') {
+			if (answer == 'y') {
 				cout << "Введите фокусное расстояние линзы (f, мм) и расстояние до изображения (z, мм):" << endl << "f = ";
 				while (!(cin >> f)) {
 					wrongInput();
@@ -83,138 +83,69 @@ int main() {
 				wrongInput();
 			}
 
-			vector<double> fieldParameters;
+			vector<vector<double>> fieldParameters;
+			fieldParameters.push_back(vector<double>());
 
 			cout << "Введите длину волны света (нм):" << endl << "wavelength = ";
 			double wavelength;
 			while (!(cin >> wavelength)) {
 				wrongInput();
 			}
-			fieldParameters.push_back(wavelength / 1000000);
+			fieldParameters.at(0).push_back(wavelength / 1000000);
 			
-			cout << "Входная функция:" << endl << "Мода Гаусса (1)" << endl << "Мода Гаусса-Эрмита (2)" << endl << "Мода Гаусса-Лагерра (3)" << endl << "Мода Гаусса для кластерного режима как у Wang (2008) (4)" << endl << "Мода Гаусса для кластерного режима как у Song (2018) (5): ";
+			cout << "Выберите шаблон входного поля:" << endl << "Одна мода (1)" << endl << "Радиально-симметричный кластер (2): ";
 			int select;
 			int N;
+			bool different;
+			bool clusterMode;
 			double parameter;
-			inputField selectedInputField;
+			patternField pattern;
 			cin >> select;
-			selectedInputField = static_cast<inputField>(select);
 			switch (select) {
 			case 1:
-				cout << "Введите ширину пучка (мм):" << endl << "sigma = ";
-				while (!(cin >> parameter) || !(parameter > 0)) {
-					wrongInput();
-				}
-				fieldParameters.push_back(parameter);
-				cout << "Введите топологический заряд:" << endl << "m = ";
-				while (!(cin >> parameter)) {
-					wrongInput();
-				}
-				fieldParameters.push_back(parameter);
+				different = false;
+				clusterMode = false;
+				fieldParameters.at(0).push_back(1);
+				fieldParameters.push_back(setInputFunction(clusterMode));
 				break;
 			case 2:
-				cout << "Введите ширину пучка (мм):" << endl << "sigma = ";
-				while (!(cin >> parameter) || !(parameter > 0)) {
+				clusterMode = true;
+				cout << "В кластере все пучки одинаковы (y или n)?" << endl << "Ответ: ";
+				while (!(cin >> answer) || !(answer == 'y' || answer == 'n')) {
 					wrongInput();
 				}
-				fieldParameters.push_back(parameter);
-				cout << "Введите порядок m:" << endl << "m = ";
+				different = answer == 'n' ? true : false;
+				cout << "Введите количество пучков:" << endl << "N = ";
+				while (!(cin >> N)) {
+					wrongInput();
+				}
+				fieldParameters.at(0).push_back(static_cast<double>(N));
+				cout << "Введите радиус кластера, мм:" << endl << "ro = ";
 				while (!(cin >> parameter)) {
 					wrongInput();
 				}
-				fieldParameters.push_back(parameter);
-				cout << "Введите порядок n:" << endl << "n = ";
-				while (!(cin >> parameter)) {
+				fieldParameters.at(0).push_back(parameter);
+				cout << "Последний пучок проходит через ось Ox (y или n)?" << endl << "Ответ: ";
+				while (!(cin >> answer) || !(answer == 'y' || answer == 'n')) {
 					wrongInput();
 				}
-				fieldParameters.push_back(parameter);
-				break;
-			case 3:
-				cout << "Введите ширину пучка (мм):" << endl << "sigma = ";
-				while (!(cin >> parameter) || !(parameter > 0)) {
-					wrongInput();
-				}
-				fieldParameters.push_back(parameter);
-				cout << "Введите порядок m:" << endl << "m = ";
-				while (!(cin >> parameter)) {
-					wrongInput();
-				}
-				fieldParameters.push_back(parameter);
-				cout << "Введите порядок n:" << endl << "n = ";
-				while (!(cin >> parameter)) {
-					wrongInput();
-				}
-				fieldParameters.push_back(parameter);
-				break;
-			case 4:
-				cout << "Введите ширину пучка (мм):" << endl << "sigma = ";
-				while (!(cin >> parameter) || !(parameter > 0)) {
-					wrongInput();
-				}
-				fieldParameters.push_back(parameter);
-				cout << "Введите топологический заряд:" << endl << "m = ";
-				while (!(cin >> parameter)) {
-					wrongInput();
-				}
-				fieldParameters.push_back(parameter);
-				if (fourier == 'y') {
-					fieldParameters.push_back(z);
+				fieldParameters.at(0).push_back(answer == 'y' ? 1 : 0);
+				if (different) {
+					for (auto i = 1; i <= N; i++) {
+						fieldParameters.push_back(setInputFunction(clusterMode));
+					}
 				}
 				else {
-					cout << "Введите расстояние от начальной до выходной плоскости изображения (z, мм):" << endl << "z = ";
-					while (!(cin >> parameter)) {
-						wrongInput();
-					}
-					fieldParameters.push_back(parameter);
+					fieldParameters.push_back(setInputFunction(clusterMode));
 				}
-				cout << "Введите количество пучков:" << endl << "N = ";
-				while (!(cin >> N)) {
-					wrongInput();
-				}
-				fieldParameters.push_back(static_cast<double>(N));
-				cout << "Введите радиус k*sigma:" << endl << "k = ";
-				while (!(cin >> parameter)) {
-					wrongInput();
-				}
-				fieldParameters.push_back(parameter * fieldParameters.at(1));
-				break;
-			case 5:
-				cout << "Введите ширину пучка (мм):" << endl << "sigma = ";
-				while (!(cin >> parameter) || !(parameter > 0)) {
-					wrongInput();
-				}
-				fieldParameters.push_back(parameter);
-				cout << "Введите показатель преломления n0:" << endl << "n0 = ";
-				while (!(cin >> parameter)) {
-					wrongInput();
-				}
-				fieldParameters.push_back(parameter);
-				cout << "Введите радиус k*sigma:" << endl << "k = ";
-				while (!(cin >> parameter)) {
-					wrongInput();
-				}
-				fieldParameters.push_back(parameter * fieldParameters.at(1));
-				cout << "Введите начальную поперечную скорость пучков:" << endl << "ksi = ";
-				while (!(cin >> parameter)) {
-					wrongInput();
-				}
-				fieldParameters.push_back(parameter);
-				cout << "Введите отношение начальной мощности света к критической:" << endl << "eta = ";
-				while (!(cin >> parameter)) {
-					wrongInput();
-				}
-				fieldParameters.push_back(parameter);
-				cout << "Введите количество пучков:" << endl << "N = ";
-				while (!(cin >> N)) {
-					wrongInput();
-				}
-				fieldParameters.push_back(static_cast<double>(N));
 				break;
 			default:
-				error("Не выбрана исходная функция!");
+				error("Выбран несуществующий шаблон!");
 			}
+			pattern = static_cast<patternField>(select);
 
-			auto output = field(limits, n1, n2, crossSection::Oxy, matrixABCD, selectedInputField, fieldParameters);
+			auto output = field(limits, n1, n2, crossSection::Oxy, matrixABCD, pattern);
+			output.setFieldParameters(different, fieldParameters);
 			string absFileName;
 			string argFileName;
 			string absSchemeName;

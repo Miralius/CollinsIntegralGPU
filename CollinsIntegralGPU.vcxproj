@@ -85,7 +85,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BMP.h" />
-    <ClInclude Include="CollinsIntegralGPU.h" />
+    <ClInclude Include="Main.h" />
     <ClInclude Include="field.h" />
     <ClInclude Include="scheme.h" />
   </ItemGroup>

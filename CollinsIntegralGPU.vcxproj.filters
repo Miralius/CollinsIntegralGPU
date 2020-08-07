@@ -23,13 +23,13 @@
     <ClInclude Include="BMP.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CollinsIntegralGPU.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="field.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="scheme.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Main.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
