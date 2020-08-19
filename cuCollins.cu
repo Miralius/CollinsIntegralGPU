@@ -109,6 +109,15 @@ vector<vector<complex<double>>> calculateCollinsCUDA(vector<vector<complex<doubl
     return result;
 }
 
+void freeGPUMemory(cuDoubleComplex* dev_in, cuDoubleComplex* dev_out, double* dev_x, double* dev_y, double* dev_u, double* dev_v) {
+    cudaFree(dev_in);
+    cudaFree(dev_out);
+    cudaFree(dev_x);
+    cudaFree(dev_y);
+    cudaFree(dev_u);
+    cudaFree(dev_v);
+}
+
 // Helper function for using CUDA to add vectors in parallel.
 cudaError_t collinsWithCuda(cuDoubleComplex* input, cuDoubleComplex* output, double* x, double* y, double* u, double* v, int n1, int n2, double* fieldParameters)
 {
@@ -130,62 +139,74 @@ cudaError_t collinsWithCuda(cuDoubleComplex* input, cuDoubleComplex* output, dou
     // Allocate GPU buffers for three vectors (two input, one output).
     cudaStatus = cudaMalloc((void**)&dev_in, n1 * n1 * sizeof(cuDoubleComplex));
     if (cudaStatus != cudaSuccess) {
+        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
         error("cudaMalloc failed!");
     }
 
     cudaStatus = cudaMalloc((void**)&dev_out, n2 * n2 * sizeof(cuDoubleComplex));
     if (cudaStatus != cudaSuccess) {
+        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
         error("cudaMalloc failed!");
     }
 
     cudaStatus = cudaMalloc((void**)&dev_x, n1 * sizeof(double));
     if (cudaStatus != cudaSuccess) {
+        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
         error("cudaMalloc failed!");
     }
 
     cudaStatus = cudaMalloc((void**)&dev_y, n1 * sizeof(double));
     if (cudaStatus != cudaSuccess) {
+        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
         error("cudaMalloc failed!");
     }
 
     cudaStatus = cudaMalloc((void**)&dev_u, n2 * sizeof(double));
     if (cudaStatus != cudaSuccess) {
+        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
         error("cudaMalloc failed!");
     }
 
     cudaStatus = cudaMalloc((void**)&dev_v, n2 * sizeof(double));
     if (cudaStatus != cudaSuccess) {
+        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
         error("cudaMalloc failed!");
     }
 
     cudaStatus = cudaMalloc((void**)&progress, sizeof(int));
     if (cudaStatus != cudaSuccess) {
+        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
         error("cudaMemcpy failed!");
     }
 
     // Copy input vectors from host memory to GPU buffers.
     cudaStatus = cudaMemcpy(dev_in, input, n1 * n1 * sizeof(cuDoubleComplex), cudaMemcpyHostToDevice);
     if (cudaStatus != cudaSuccess) {
+        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
         error("cudaMemcpy failed!");
     }
 
     cudaStatus = cudaMemcpy(dev_x, x, n1 * sizeof(double), cudaMemcpyHostToDevice);
     if (cudaStatus != cudaSuccess) {
+        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
         error("cudaMemcpy failed!");
     }
 
     cudaStatus = cudaMemcpy(dev_y, y, n1 * sizeof(double), cudaMemcpyHostToDevice);
     if (cudaStatus != cudaSuccess) {
+        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
         error("cudaMemcpy failed!");
     }
 
     cudaStatus = cudaMemcpy(dev_u, u, n2 * sizeof(double), cudaMemcpyHostToDevice);
     if (cudaStatus != cudaSuccess) {
+        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
         error("cudaMemcpy failed!");
     }
 
     cudaStatus = cudaMemcpy(dev_v, v, n2 * sizeof(double), cudaMemcpyHostToDevice);
     if (cudaStatus != cudaSuccess) {
+        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
         error("cudaMemcpy failed!");
     }
 
@@ -198,6 +219,7 @@ cudaError_t collinsWithCuda(cuDoubleComplex* input, cuDoubleComplex* output, dou
     cudaStatus = cudaGetLastError();
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "\ncollinsKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
+        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
         error("Запуск ядра CUDA не удался!");
     }
 
@@ -206,21 +228,18 @@ cudaError_t collinsWithCuda(cuDoubleComplex* input, cuDoubleComplex* output, dou
     cudaStatus = cudaDeviceSynchronize();
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "\ncudaDeviceSynchronize returned error code %d after launching collinsKernel!\n", cudaStatus);
+        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
         error("Синхронизация данных между хостом и устройством завершилась неудачей!");
     }
 
     // Copy output vector from GPU buffer to host memory.
     cudaStatus = cudaMemcpy(output, dev_out, n2 * n2 * sizeof(cuDoubleComplex), cudaMemcpyDeviceToHost);
     if (cudaStatus != cudaSuccess) {
+        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
         error("Копирование результата в ОЗУ завершилось неудачей!");
     }
 
-    cudaFree(dev_in);
-    cudaFree(dev_out);
-    cudaFree(dev_x);
-    cudaFree(dev_y);
-    cudaFree(dev_u);
-    cudaFree(dev_v);
+    freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
 
     return cudaStatus;
 }

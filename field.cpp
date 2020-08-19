@@ -17,7 +17,7 @@ vector<vector<complex<double>>> field::patternSolitone(vector<double>& x, vector
 	for (auto i = 0; i < y.size(); i++) {
 		input.push_back(vector<complex<double>>());
 		for (auto j = 0; j < x.size(); j++) {
-			input.back().push_back(selectInputMode(x.at(j), y.at(i), 1, i));
+			input.back().push_back(getNormalizedCoefficient(1) * selectInputMode(x.at(j), y.at(i), 1, i));
 		}
 	}
 	return input;
@@ -48,16 +48,48 @@ vector<vector<complex<double>>> field::patternRadiallySymmetricCluster(vector<do
 		auto gamma = sqrt(eta) / (sqrt(P0) * waveNumber * beamWaist * beamWaist);
 		auto beta = gamma * sqrt(P0);
 		auto ksi = fieldParameters.at(k).at(6);
-		auto G0 = beamWaist * beamWaist / sqrt(6 * exp((-waveNumber * waveNumber * ksi * ksi * beta * beta) / (beamWaist * beamWaist)) * (1 + 2 * exp(-3 * radius * radius * (pow(beamWaist, 4) - waveNumber * waveNumber * ksi * ksi * beta * beta) / (4 * beamWaist * beamWaist)) + 2 * exp(-radius * radius * (pow(beamWaist, 4) - waveNumber * waveNumber * ksi * ksi * beta * beta) / (4 * beamWaist * beamWaist))));
+		auto normalizedCoefficient = getNormalizedCoefficient(k, P0);
 		for (auto i = 0; i < y.size(); i++) {
 			for (auto j = 0; j < x.size(); j++) {
-				currentMode.at(i).at(j) *= G0 * sqrt(P0) / (sqrt(M_PI) * beamWaist) * exp(complex<double>(0, -waveNumber * ksi * beta * radius * (sin(phi_n) * x.at(j) - cos(phi_n) * y.at(i))));
+				currentMode.at(i).at(j) *= normalizedCoefficient * sqrt(P0) / (sqrt(M_PI) * beamWaist) * exp(complex<double>(0, -waveNumber * ksi * beta * radius * (sin(phi_n) * x.at(j) - cos(phi_n) * y.at(i))));
 			}
 		}
 		inputField += currentMode;
 		currentMode.clear();
 	}
 	return inputField;
+}
+
+complex<double> field::getNormalizedCoefficient(int beamNumber, double inputPower) {
+	auto normalizedCoefficientVariant = static_cast<int>(fieldParameters.at(beamNumber).at(8));
+	switch (normalizedCoefficientVariant) {
+	case 1:
+		return 1;
+	case 2:
+		return getNormalizedCoefficientWang2008();
+	case 3:
+		return getNormalizedCoefficientSong2018(beamNumber, inputPower);
+	default:
+		return complex<double>();
+	}
+}
+
+complex<double> field::getNormalizedCoefficientWang2008() {
+	auto k = 2 * M_PI / fieldParameters.at(0).at(0);
+	auto L0 = fieldParameters.at(0).at(4);
+	return exp(complex<double>(0, k * L0));
+}
+
+complex<double> field::getNormalizedCoefficientSong2018(int beamNumber, double inputPower) {
+	auto wavelength = fieldParameters.at(0).at(0);
+	auto radius = fieldParameters.at(0).at(2);
+	auto waveNumber = 2 * M_PI / wavelength;
+	auto eta = fieldParameters.at(beamNumber).at(7);
+	auto beamWaist = fieldParameters.at(beamNumber).at(1);
+	auto gamma = sqrt(eta) / (sqrt(inputPower) * waveNumber * beamWaist * beamWaist);
+	auto beta = gamma * sqrt(inputPower);
+	auto ksi = fieldParameters.at(beamNumber).at(6);
+	return beamWaist * beamWaist / sqrt(6 * exp((-waveNumber * waveNumber * ksi * ksi * beta * beta) / (beamWaist * beamWaist)) * (1 + 2 * exp(-3 * radius * radius * (pow(beamWaist, 4) - waveNumber * waveNumber * ksi * ksi * beta * beta) / (4 * beamWaist * beamWaist)) + 2 * exp(-radius * radius * (pow(beamWaist, 4) - waveNumber * waveNumber * ksi * ksi * beta * beta) / (4 * beamWaist * beamWaist))));
 }
 
 complex<double> field::selectInputMode(double x, double y, int beamNumber, int iterator) {

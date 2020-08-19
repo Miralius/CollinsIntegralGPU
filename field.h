@@ -40,6 +40,7 @@ private:
 	//						 at(1) — N count of beams
 	//						 at(2) — cluster's radius
 	//						 at(3) — is the angle between the last beam and the origin zero
+	//						 at(4) — the distance between input and output field
 	//fieldParameters.at(N): at(0) — selectedInputFunction
 	//						 at(1) — beam waist
 	//						 at(2) — beam waist coefficient
@@ -48,12 +49,15 @@ private:
 	//						 at(5) — n
 	//						 at(6) — ksi / initial transverse velocity parameter
 	//						 at(7) — eta / power ratio
-	//						 at(8) — initial phase variant
+	//						 at(8) — normalized coefficient variant
 	vector<vector<double>> matrixABCD; //The ABCD-matrix.
 	vector<vector<complex<double>>> calculatedField; //The calculated field after transform.
 	vector<vector<complex<double>>> selectPatternField(vector<double>& x, vector<double>& y);
 	vector<vector<complex<double>>> patternSolitone(vector<double>& x, vector<double>& y);
 	vector<vector<complex<double>>> patternRadiallySymmetricCluster(vector<double>& x, vector<double>& y);
+	complex<double> getNormalizedCoefficient(int beamNumber, double inputPower = 0);
+	complex<double> getNormalizedCoefficientWang2008();
+	complex<double> getNormalizedCoefficientSong2018(int beamNumber, double inputPower);
 	complex<double> selectInputMode(double x, double y, int beamNumber, int iterator);
 	complex<double> gaussMode(double x, double y, int beamNumber, int iterator, double beamWaistCoefficient, double initialPhaseVariant);
 	complex<double> gaussHermite(double x, double y, int beamNumber);

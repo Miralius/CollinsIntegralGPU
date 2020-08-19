@@ -114,6 +114,15 @@ inline vector<double> setInputFunction(bool clusterMode) {
 		}
 		modeParameters.push_back(parameter);
 	}
+	while (modeParameters.size() < 8) {
+		modeParameters.push_back(0);
+	}
+	modeParameters.push_back(parameter);
+	cout << "Выберите коэффициент нормализации:" << endl << "Единица (1)" << endl << "Как у Wang (2008) (2)" << endl << "Как у Song (2018) (3): ";
+	while (!(cin >> parameter)) {
+		wrongInput();
+	}
+	modeParameters.push_back(parameter);
 	return modeParameters;
 }
 

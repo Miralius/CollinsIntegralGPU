@@ -40,7 +40,9 @@ int main() {
 			}
 			vector<vector<double>> matrixABCD;
 			double f, z;
+			bool FrFT;
 			if (answer == 'y') {
+				FrFT = true;
 				cout << "Введите фокусное расстояние линзы (f, мм) и расстояние до изображения (z, мм):" << endl << "f = ";
 				while (!(cin >> f)) {
 					wrongInput();
@@ -57,6 +59,7 @@ int main() {
 				matrixABCD.at(1).push_back(cos(z / f * M_PI / 2));
 			}
 			else {
+				FrFT = false;
 				cout << "Введите коэффициенты ABCD-матрицы: " << endl;
 				double coefficient;
 				for (auto i = 0; i < 2; i++) {
@@ -143,6 +146,17 @@ int main() {
 				error("Выбран несуществующий шаблон!");
 			}
 			pattern = static_cast<patternField>(select);
+
+			if (FrFT) {
+				fieldParameters.at(0).push_back(z);
+			}
+			else {
+				cout << "Введите расстояние между входной и выходной плоскостями изображения (мм):" << endl << "z = ";
+				while (!(cin >> parameter)) {
+					wrongInput();
+				}
+				fieldParameters.at(0).push_back(parameter);
+			}
 
 			auto output = field(limits, n1, n2, crossSection::Oxy, matrixABCD, pattern);
 			output.setFieldParameters(different, fieldParameters);
