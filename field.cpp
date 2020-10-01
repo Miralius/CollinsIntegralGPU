@@ -69,6 +69,8 @@ complex<double> field::getNormalizedCoefficient(int beamNumber, double inputPowe
 		return getNormalizedCoefficientWang2008();
 	case 3:
 		return getNormalizedCoefficientSong2018(beamNumber, inputPower);
+	case 4:
+		return getNormalizedCoefficientSong2019(beamNumber, inputPower);
 	default:
 		return complex<double>();
 	}
@@ -92,26 +94,53 @@ complex<double> field::getNormalizedCoefficientSong2018(int beamNumber, double i
 	return beamWaist * beamWaist / sqrt(6 * exp((-waveNumber * waveNumber * ksi * ksi * beta * beta) / (beamWaist * beamWaist)) * (1 + 2 * exp(-3 * radius * radius * (pow(beamWaist, 4) - waveNumber * waveNumber * ksi * ksi * beta * beta) / (4 * beamWaist * beamWaist)) + 2 * exp(-radius * radius * (pow(beamWaist, 4) - waveNumber * waveNumber * ksi * ksi * beta * beta) / (4 * beamWaist * beamWaist))));
 }
 
+complex<double> field::getNormalizedCoefficientSong2019(int beamNumber, double inputPower) {
+	auto beamWaist = fieldParameters.at(beamNumber).at(1);
+	auto m = static_cast<int>(fieldParameters.at(beamNumber).at(4));
+	auto n = static_cast<int>(fieldParameters.at(beamNumber).at(5));
+	return sqrt(pow(2, 2 * n + m + 1) * inputPower / (M_PI * beamWaist * beamWaist * tgamma(2 * n + m + 1)));
+}
+
 complex<double> field::selectInputMode(double x, double y, int beamNumber, int iterator) {
 	inputField inputFunction = static_cast<inputField>(fieldParameters.at(beamNumber).at(0));
 	switch (inputFunction) {
 	case inputField::gauss:
-		return gaussMode(x, y, beamNumber, iterator, fieldParameters.at(beamNumber).at(2), fieldParameters.at(beamNumber).at(3));
+		return gaussMode(x, y, beamNumber, iterator);
 	case inputField::gaussHermite:
 		return gaussHermite(x, y, beamNumber);
 	case inputField::gaussLaguerre:
 		return gaussLaguerre(x, y, beamNumber, iterator);
+	case inputField::AVB:
+		return AVB(x, y, beamNumber, iterator);
+	case inputField::airy:
+		return airyMode(x, y, beamNumber);
 	default:
 		return complex<double>(0, 0);
 	}
 }
 
-complex<double> field::gaussMode(double x, double y, int beamNumber = 1, int iterator = 0, double beamWaistCoefficient = 2, double initialPhaseVariant = 0) {
+complex<double> field::gaussMode(double x, double y, int beamNumber, int iterator) {
 	auto phi = (iterator < (n1 / 2)) ? atan2(y, -x) : (atan2(y, -x) + 2 * M_PI);
 	auto countOfBeams = fieldParameters.at(0).at(1);
 	auto beamWaist = fieldParameters.at(beamNumber).at(1);
+	auto beamWaistCoefficient = fieldParameters.at(beamNumber).at(2);
+	auto initialPhaseVariant = static_cast<int>(fieldParameters.at(beamNumber).at(3));
 	auto m = fieldParameters.at(beamNumber).at(4);
-	return exp(complex<double>(-(x * x + y * y) / (beamWaistCoefficient * beamWaist * beamWaist), 0)) * (initialPhaseVariant ? exp(complex<double>(0, m * M_PI * (2 * static_cast<long long>(beamNumber) - 1) / countOfBeams)) : exp(complex<double>(0, m * phi)));
+	complex<double> initialPhase;
+	switch (initialPhaseVariant) {
+	case 0:
+		initialPhase = exp(complex<double>(0, m * phi));
+		break;
+	case 1:
+		initialPhase = exp(complex<double>(0, m * M_PI * (2 * static_cast<long long>(beamNumber) - 1) / countOfBeams));
+		break;
+	case 2:
+		initialPhase = exp(complex<double>(0, -m * phi));
+		break;
+	default:
+		initialPhase = 0;
+	}
+	return exp(complex<double>(-(x * x + y * y) / (beamWaistCoefficient * beamWaist * beamWaist), 0)) * initialPhase;
 }
 
 complex<double> field::gaussHermite(double x, double y, int beamNumber) {
@@ -127,14 +156,40 @@ complex<double> field::gaussLaguerre(double x, double y, int beamNumber, int ite
 	auto m = static_cast<int>(fieldParameters.at(beamNumber).at(4));
 	auto n = static_cast<int>(fieldParameters.at(beamNumber).at(5));
 	//std::assoc_laguerre() requires C++17
-	return (1 / beamWaist) * sqrt(2 * tgamma(n + 1) / (M_PI * tgamma(n + std::abs(m) + 1))) * gaussMode(x, y, beamNumber, iterator, 1) * pow(((sqrt(2 * (x * x + y * y))) / beamWaist), std::abs(m)) * assoc_laguerre(n, std::abs(m), 2 * (x * x + y * y) / (beamWaist * beamWaist));
+	return (1 / beamWaist) * sqrt(2 * tgamma(n + 1) / (M_PI * tgamma(n + std::abs(m) + 1))) * gaussMode(x, y, beamNumber, iterator) * pow(((sqrt(2 * (x * x + y * y))) / beamWaist), std::abs(m)) * assoc_laguerre(n, std::abs(m), 2 * (x * x + y * y) / (beamWaist * beamWaist));
 }
+
+complex<double> field::AVB(double x, double y, int beamNumber, int iterator) {
+	auto beamWaist = fieldParameters.at(beamNumber).at(1);
+	auto m = static_cast<int>(fieldParameters.at(beamNumber).at(4));
+	auto n = static_cast<int>(fieldParameters.at(beamNumber).at(5));
+	return pow(sqrt(x * x + y * y) / beamWaist, 2 * n + std::abs(m)) * gaussMode(x, y, beamNumber, iterator);
+}
+
+complex<double> field::airyMode(double x, double y, int beamNumber) {
+	auto beamWaist = fieldParameters.at(beamNumber).at(1);
+	auto airy = [](double x) {
+		if (x > 0) {
+			return M_1_PI * sqrt(x / 3) * cyl_bessel_k(1. / 3, (2. / 3) * pow(x, 3. / 2));
+		}
+		else if (x < 0) {
+			return (sqrt(-x) / 3) * (cyl_bessel_j(1. / 3, (2. / 3) * pow(-x, 3. / 2)) + cyl_bessel_j(-1. / 3, (2. / 3) * pow(-x, 3. / 2)));
+		}
+		else {
+			return 1 / (pow(3, 2. / 3) * tgamma(2. / 3));
+		}
+	};
+	return airy(x) * airy(y) * gaussMode(x, y, beamNumber, 0);
+}
+
 
 //calculateCollinsCUDA() requires CUDA toolkit
 vector<vector<complex<double>>> field::collins(vector<vector<complex<double>>>& inputFunction, vector<double>& x, vector<double>& y, vector<double>& u, vector<double>& v) {
 	cout << "Используется GPU для вычисления светового поля. Пожалуйста, подождите…" << endl;
 	auto wavelength = fieldParameters.at(0).at(0);
-	return calculateCollinsCUDA(inputFunction, x, y, u, v, n1, n2, 2 * M_PI / wavelength, limits, matrixABCD);
+	auto field = calculateCollinsCUDA(inputFunction, x, y, u, v, n1, n2, 2 * M_PI / wavelength, limits, matrixABCD);
+	cout << "\rВыполнено 100.00%";
+	return field;
 }
 
 vector<vector<complex<double>>> field::collinsSingular(vector<vector<complex<double>>>& inputFunction, vector<double>& x, vector<double>& y, vector<double>& u, vector<double>& v) {

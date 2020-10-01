@@ -19,7 +19,7 @@ enum class patternField {
 };
 
 enum class inputField {
-	undefined, gauss, gaussHermite, gaussLaguerre
+	undefined, gauss, gaussHermite, gaussLaguerre, AVB, airy
 };
 
 enum class crossSection {
@@ -55,13 +55,16 @@ private:
 	vector<vector<complex<double>>> selectPatternField(vector<double>& x, vector<double>& y);
 	vector<vector<complex<double>>> patternSolitone(vector<double>& x, vector<double>& y);
 	vector<vector<complex<double>>> patternRadiallySymmetricCluster(vector<double>& x, vector<double>& y);
-	complex<double> getNormalizedCoefficient(int beamNumber, double inputPower = 0);
+	complex<double> getNormalizedCoefficient(int beamNumber, double inputPower = 1);
 	complex<double> getNormalizedCoefficientWang2008();
 	complex<double> getNormalizedCoefficientSong2018(int beamNumber, double inputPower);
+	complex<double> getNormalizedCoefficientSong2019(int beamNumber, double inputPower);
 	complex<double> selectInputMode(double x, double y, int beamNumber, int iterator);
-	complex<double> gaussMode(double x, double y, int beamNumber, int iterator, double beamWaistCoefficient, double initialPhaseVariant);
+	complex<double> gaussMode(double x, double y, int beamNumber = 1, int iterator = 0);
 	complex<double> gaussHermite(double x, double y, int beamNumber);
 	complex<double> gaussLaguerre(double x, double y, int beamNumber, int iterator);
+	complex<double> AVB(double x, double y, int beamNumber, int iterator);
+	complex<double> airyMode(double x, double y, int beamNumber);
 	vector<vector<complex<double>>> collins(vector<vector<complex<double>>>& inputFunction, vector<double>& x, vector<double>& y, vector<double>& u, vector<double>& v);
 	vector<vector<complex<double>>> collinsSingular(vector<vector<complex<double>>>& inputFunction, vector<double>& x, vector<double>& y, vector<double>& u, vector<double>& v);
 	vector<double> calcPoints(double interval, double count, double shift);

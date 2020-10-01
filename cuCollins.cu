@@ -129,7 +129,7 @@ cudaError_t collinsWithCuda(cuDoubleComplex* input, cuDoubleComplex* output, dou
     double* dev_v = 0;
     cudaError_t cudaStatus;
     int* progress(0);
-
+    
     // Choose which GPU to run on, change this on a multi-GPU system.
     cudaStatus = cudaSetDevice(0);
     if (cudaStatus != cudaSuccess) {

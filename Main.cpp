@@ -108,7 +108,9 @@ int main() {
 			case 1:
 				different = false;
 				clusterMode = false;
-				fieldParameters.at(0).push_back(1);
+				fieldParameters.at(0).push_back(1); // N = 1
+				fieldParameters.at(0).push_back(0); // ro = 0
+				fieldParameters.at(0).push_back(0); // angle = 0
 				fieldParameters.push_back(setInputFunction(clusterMode));
 				break;
 			case 2:
@@ -172,15 +174,32 @@ int main() {
 			cin >> absSchemeName;
 			cout << "Введите название цветовой схемы для фазы: ";
 			cin >> argSchemeName;
+
 			writingFile<BMP>(output.createBMP(absSchemeName, false), absFileName);
 			writingFile<BMP>(output.createBMP(argSchemeName, true), argFileName);
+
+			//debug cycle
+			limits.at(2) = 2;
+			limits.at(3) = 2;
+			for (auto i = 900; i <= 2000; i = (i == 1100) ? 2000 : i + 1) {
+				cout << endl;
+				z = static_cast<double>(i);
+				fieldParameters.at(0).at(4) = z;
+				matrixABCD.at(0).at(0) = cos(z / f * M_PI / 2);
+				matrixABCD.at(0).at(1) = f * sin(z / f * M_PI / 2);
+				matrixABCD.at(1).at(0) = -sin(z / f * M_PI / 2) / f;
+				matrixABCD.at(1).at(1) = cos(z / f * M_PI / 2);
+				output = field(limits, n1, n2, crossSection::Oxy, matrixABCD, pattern);
+				output.setFieldParameters(different, fieldParameters);
+				writingFile<BMP>(output.createBMP(absSchemeName, false), to_string(i) + ".bmp");
+			}
 			
 			cout << endl << "Результаты записаны! Продолжить расчёты? Для выхода ввести 0" << endl;
 		}
 	}
 	catch (runtime_error & e) {
 		cerr << endl << "Ошибка! " << e.what() << endl;
-		main();
+		system("pause");
 	}
 	catch (...) {
 		cerr << "Неизвестная ошибка!" << endl;
