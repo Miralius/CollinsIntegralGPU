@@ -19,17 +19,17 @@ int main() {
 				break;
 			}
 			cout << "b = ";
-			while (!(cin >> limit)) {
+			while (!(cin >> limit) || !(limit > 0)) {
 				wrongInput();
 			}
 			limits.push_back(limit);
 			cout << "c = ";
-			while (!(cin >> limit)) {
+			while (!(cin >> limit) || !(limit > 0)) {
 				wrongInput();
 			}
 			limits.push_back(limit);
 			cout << "d = ";
-			while (!(cin >> limit)) {
+			while (!(cin >> limit) || !(limit > 0)) {
 				wrongInput();
 			}
 			limits.push_back(limit);
@@ -44,7 +44,7 @@ int main() {
 			if (answer == 'y') {
 				FrFT = true;
 				cout << "Введите фокусное расстояние линзы (f, мм) и расстояние до изображения (z, мм):" << endl << "f = ";
-				while (!(cin >> f)) {
+				while (!(cin >> f) || !(f > 0)) {
 					wrongInput();
 				}
 				cout << "z = ";
@@ -91,7 +91,7 @@ int main() {
 
 			cout << "Введите длину волны света (нм):" << endl << "wavelength = ";
 			double wavelength;
-			while (!(cin >> wavelength)) {
+			while (!(cin >> wavelength) || !(wavelength > 0)) {
 				wrongInput();
 			}
 			fieldParameters.at(0).push_back(wavelength / 1000000);
@@ -179,7 +179,7 @@ int main() {
 			writingFile<BMP>(output.createBMP(argSchemeName, true), argFileName);
 
 			//debug cycle
-			limits.at(2) = 2;
+			/*limits.at(2) = 2;
 			limits.at(3) = 2;
 			for (auto i = 900; i <= 2000; i = (i == 1100) ? 2000 : i + 1) {
 				cout << endl;
@@ -192,7 +192,7 @@ int main() {
 				output = field(limits, n1, n2, crossSection::Oxy, matrixABCD, pattern);
 				output.setFieldParameters(different, fieldParameters);
 				writingFile<BMP>(output.createBMP(absSchemeName, false), to_string(i) + ".bmp");
-			}
+			}*/
 			
 			cout << endl << "Результаты записаны! Продолжить расчёты? Для выхода ввести 0" << endl;
 		}
