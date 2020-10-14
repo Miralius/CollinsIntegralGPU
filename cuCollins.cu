@@ -13,7 +13,7 @@ cudaError_t collinsWithCuda(cuDoubleComplex* input, cuDoubleComplex* output, dou
 
 int getNumberThreads(int N) {
     int result = static_cast<int>(round(sqrt(N)));
-    while ((N % result) != 0) {
+    while (((N % result) != 0) || (result * result > 1024)) {
         result--;
     }
     return result;

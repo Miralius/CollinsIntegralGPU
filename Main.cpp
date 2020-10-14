@@ -179,10 +179,11 @@ int main() {
 			writingFile<BMP>(output.createBMP(argSchemeName, true), argFileName);
 
 			//debug cycle
-			/*limits.at(2) = 2;
-			limits.at(3) = 2;
-			for (auto i = 900; i <= 2000; i = (i == 1100) ? 2000 : i + 1) {
+			
+			/*for (auto i = 900; i <= 2000; i = (i == 1100) ? 2000 : i + 25) {
 				cout << endl;
+				limits.at(2) = (((i == 900) || (i == 1100)) ? 1.5 : (((i == 925) || (i == 1075)) ? 1.25 : (((i == 950) || (i == 1050)) ? 1 : (((i == 975) || (i == 1025)) ? 0.75 : 0.5))));
+				limits.at(3) = (((i == 900) || (i == 1100)) ? 1.5 : (((i == 925) || (i == 1075)) ? 1.25 : (((i == 950) || (i == 1050)) ? 1 : (((i == 975) || (i == 1025)) ? 0.75 : 0.5))));
 				z = static_cast<double>(i);
 				fieldParameters.at(0).at(4) = z;
 				matrixABCD.at(0).at(0) = cos(z / f * M_PI / 2);
