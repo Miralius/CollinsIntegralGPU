@@ -19,7 +19,7 @@ enum class patternField {
 };
 
 enum class inputField {
-	undefined, gauss, gaussHermite, gaussLaguerre, AVB, airy
+	undefined, gauss, gaussHermite, gaussLaguerre, AVB, airy, airyShift
 };
 
 enum class crossSection {
@@ -45,11 +45,13 @@ private:
 	//						 at(1) — beam waist
 	//						 at(2) — beam waist coefficient
 	//						 at(3) — initial phase variant
-	//						 at(4) — m / topological charge
-	//						 at(5) — n
-	//						 at(6) — ksi / initial transverse velocity parameter
-	//						 at(7) — eta / power ratio
-	//						 at(8) — normalized coefficient variant
+	//						 at(4) — m / topological charge / alpha
+	//						 at(5) — n / beta
+	//						 at(6) — alpha0 
+	//						 at(7) — beta0 
+	//						 at(8) — ksi / initial transverse velocity parameter
+	//						 at(9) — eta / power ratio
+	//						 at(10) — normalized coefficient variant
 	vector<vector<double>> matrixABCD; //The ABCD-matrix.
 	vector<vector<complex<double>>> calculatedField; //The calculated field after transform.
 	vector<vector<complex<double>>> selectPatternField(vector<double>& x, vector<double>& y);
@@ -65,6 +67,7 @@ private:
 	complex<double> gaussLaguerre(double x, double y, int beamNumber, int iterator);
 	complex<double> AVB(double x, double y, int beamNumber, int iterator);
 	complex<double> airyMode(double x, double y, int beamNumber);
+	complex<double> airyShiftMode(double x, double y, int beamNumber);
 	vector<vector<complex<double>>> collins(vector<vector<complex<double>>>& inputFunction, vector<double>& x, vector<double>& y, vector<double>& u, vector<double>& v);
 	vector<vector<complex<double>>> collinsSingular(vector<vector<complex<double>>>& inputFunction, vector<double>& x, vector<double>& y, vector<double>& u, vector<double>& v);
 	vector<double> calcPoints(double interval, double count, double shift);
@@ -79,6 +82,7 @@ public:
 	static double power(field& field);
 	void setFieldParameters(bool different, vector<vector<double>> parameters);
 	vector<vector<complex<double>>> getCalculatedField();
+	vector<vector<complex<double>>> shift(double x0, double y0);
 	crossSection getCrossSection();
 	BMP createBMP(string schemeName, bool phase);
 	bool isSuperposition();

@@ -1,6 +1,74 @@
 ﻿#include "field.h"
 extern vector<vector<complex<double>>> calculateCollinsCUDA(vector<vector<complex<double>>>& inputFunction, vector<double>& x, vector<double>& y, vector<double>& u, vector<double>& v, int n1, int n2, double waveNumber, vector<double> limits, vector<vector<double>> matrixABCD);
 
+vector<double> field::calcPoints(double interval, double count, double shift = 0) {
+	auto pointValue = -interval;
+	vector<double> points;
+	auto h = 2 * interval / count;
+	for (auto i = 0; i < count; i++) {
+		points.push_back((std::abs(matrixABCD.at(0).at(1)) < FLT_EPSILON) ? pointValue * matrixABCD.at(1).at(1) - shift : pointValue - shift);
+		pointValue += h;
+	}
+	return points;
+}
+
+vector<vector<complex<double>>> field::shift(double x0, double y0) {
+	vector<vector<complex<double>>> shiftedField;
+	auto oldX = calcPoints(limits.at(0), n1);
+	auto oldY = calcPoints(limits.at(1), n1);
+	reverse(oldY.begin(), oldY.end());
+	auto newX = calcPoints(limits.at(0), n1, x0);
+	auto newY = calcPoints(limits.at(1), n1, y0);
+	reverse(newY.begin(), newY.end());
+	int leftX;
+	int rightX;
+	int downY;
+	int upY;
+	if (x0 > 0) {
+		leftX = 0;
+		rightX = 0;
+		do {
+			rightX++;
+		} while (oldX.at(rightX) < (limits.at(0) - x0));
+	}
+	else {
+		rightX = n1;
+		leftX = 0;
+		while (oldX.at(leftX) < (-limits.at(0) + x0)) {
+			leftX++;
+		}
+	}
+	if (y0 > 0) {
+		downY = n1;
+		upY = 0;
+		while (oldY.at(upY) > (limits.at(1) - y0)) {
+			upY++;
+		}
+	}
+	else {
+		upY = 0;
+		downY = 0;
+		do {
+			downY++;
+		} while (oldY.at(downY) > (-limits.at(1) + y0));
+	}
+	for (auto i = 0; i < n1; i++) {
+		shiftedField.push_back(vector<complex<double>>());
+		for (auto j = 0; j < n1; j++) {
+			if (x0 > 0) {
+				if (y0 > 0) {
+					shiftedField.back().push_back((((i + (n1 - rightX)) <= n1) & ((j + upY) <= n1)) ? calculatedField.at(i + (n1 - rightX)).at(j + upY) : 0);
+				}
+				else {
+					shiftedField.back().push_back((((i + (n1 - rightX)) <= n1) & ((j + upY) <= n1)) ? calculatedField.at(i + (n1 - rightX)).at(j + upY) : 0);
+				}
+			}
+			
+		}
+	}
+	return shiftedField;
+}
+
 vector<vector<complex<double>>> field::selectPatternField(vector<double>& x, vector<double>& y) {
 	switch (pattern) {
 	case patternField::solitone:
@@ -36,22 +104,31 @@ vector<vector<complex<double>>> field::patternRadiallySymmetricCluster(vector<do
 		for (auto i = 0; i < y.size(); i++) {
 			currentMode.push_back(vector<complex<double>>());
 			for (auto j = 0; j < x.size(); j++) {
-				currentMode.back().push_back(selectInputMode(x.at(j) - c_xn, y.at(i) - c_yn, k, i));
+				currentMode.back().push_back((static_cast<int>(fieldParameters.at(k).at(0)) == 6) ? selectInputMode(x.at(j), y.at(i), k, i) : selectInputMode(x.at(j) - c_xn, y.at(i) - c_yn, k, i));
 			}
 		}
 		calculatedField = currentMode;
+		if (static_cast<int>(fieldParameters.at(k).at(0)) == 6) {
+			auto matrixABCDtemp = matrixABCD;
+			matrixABCD = { {0., 1000.}, {-0.001, 0} };
+			auto inputFieldTemp = calculatedField;
+			calculatedField = (std::abs(matrixABCD.at(0).at(1)) < FLT_EPSILON) ? collinsSingular(inputFieldTemp, x, y, x, y) : collins(inputFieldTemp, x, y, x, y);
+			matrixABCD = matrixABCDtemp;
+			currentMode = calculatedField;
+		}
 		auto P0 = power(*this);
 		auto wavelength = fieldParameters.at(0).at(0);
 		auto waveNumber = 2 * M_PI / wavelength;
-		auto eta = fieldParameters.at(k).at(7);
+		auto eta = fieldParameters.at(k).at(9);
 		auto beamWaist = fieldParameters.at(k).at(1);
 		auto gamma = sqrt(eta) / (sqrt(P0) * waveNumber * beamWaist * beamWaist);
 		auto beta = gamma * sqrt(P0);
-		auto ksi = fieldParameters.at(k).at(6);
+		auto ksi = fieldParameters.at(k).at(8);
 		auto normalizedCoefficient = getNormalizedCoefficient(k, P0);
 		for (auto i = 0; i < y.size(); i++) {
 			for (auto j = 0; j < x.size(); j++) {
 				currentMode.at(i).at(j) *= normalizedCoefficient * sqrt(P0) / (sqrt(M_PI) * beamWaist) * exp(complex<double>(0, -waveNumber * ksi * beta * radius * (sin(phi_n) * x.at(j) - cos(phi_n) * y.at(i))));
+				currentMode.at(i).at(j) *= (static_cast<int>(fieldParameters.at(k).at(0)) == 6) ? gaussMode(x.at(j), y.at(i), k, 0) : 1;
 			}
 		}
 		inputField += currentMode;
@@ -61,7 +138,7 @@ vector<vector<complex<double>>> field::patternRadiallySymmetricCluster(vector<do
 }
 
 complex<double> field::getNormalizedCoefficient(int beamNumber, double inputPower) {
-	auto normalizedCoefficientVariant = static_cast<int>(fieldParameters.at(beamNumber).at(8));
+	auto normalizedCoefficientVariant = static_cast<int>(fieldParameters.at(beamNumber).at(10));
 	switch (normalizedCoefficientVariant) {
 	case 1:
 		return 1;
@@ -86,11 +163,11 @@ complex<double> field::getNormalizedCoefficientSong2018(int beamNumber, double i
 	auto wavelength = fieldParameters.at(0).at(0);
 	auto radius = fieldParameters.at(0).at(2);
 	auto waveNumber = 2 * M_PI / wavelength;
-	auto eta = fieldParameters.at(beamNumber).at(7);
+	auto eta = fieldParameters.at(beamNumber).at(9);
 	auto beamWaist = fieldParameters.at(beamNumber).at(1);
 	auto gamma = sqrt(eta) / (sqrt(inputPower) * waveNumber * beamWaist * beamWaist);
 	auto beta = gamma * sqrt(inputPower);
-	auto ksi = fieldParameters.at(beamNumber).at(6);
+	auto ksi = fieldParameters.at(beamNumber).at(8);
 	return beamWaist * beamWaist / sqrt(6 * exp((-waveNumber * waveNumber * ksi * ksi * beta * beta) / (beamWaist * beamWaist)) * (1 + 2 * exp(-3 * radius * radius * (pow(beamWaist, 4) - waveNumber * waveNumber * ksi * ksi * beta * beta) / (4 * beamWaist * beamWaist)) + 2 * exp(-radius * radius * (pow(beamWaist, 4) - waveNumber * waveNumber * ksi * ksi * beta * beta) / (4 * beamWaist * beamWaist))));
 }
 
@@ -114,6 +191,8 @@ complex<double> field::selectInputMode(double x, double y, int beamNumber, int i
 		return AVB(x, y, beamNumber, iterator);
 	case inputField::airy:
 		return airyMode(x, y, beamNumber);
+	case inputField::airyShift:
+		return airyShiftMode(x, y, beamNumber);
 	default:
 		return complex<double>(0, 0);
 	}
@@ -157,6 +236,7 @@ complex<double> field::gaussLaguerre(double x, double y, int beamNumber, int ite
 	auto n = static_cast<int>(fieldParameters.at(beamNumber).at(5));
 	//std::assoc_laguerre() requires C++17
 	return (1 / beamWaist) * sqrt(2 * tgamma(n + 1) / (M_PI * tgamma(n + std::abs(m) + 1))) * gaussMode(x, y, beamNumber, iterator) * pow(((sqrt(2 * (x * x + y * y))) / beamWaist), std::abs(m)) * assoc_laguerre(n, std::abs(m), 2 * (x * x + y * y) / (beamWaist * beamWaist));
+	//return gaussMode(x, y, beamNumber, iterator) * pow(((sqrt((x * x + y * y)))), std::abs(m)) * assoc_laguerre(n, std::abs(m), (x * x + y * y));
 }
 
 complex<double> field::AVB(double x, double y, int beamNumber, int iterator) {
@@ -167,8 +247,7 @@ complex<double> field::AVB(double x, double y, int beamNumber, int iterator) {
 }
 
 complex<double> field::airyMode(double x, double y, int beamNumber) {
-	auto beamWaist = fieldParameters.at(beamNumber).at(1);
-	auto airy = [](double x) {
+	/*auto airy = [](double x) {
 		if (x > 0) {
 			return M_1_PI * sqrt(x / 3) * cyl_bessel_k(1. / 3, (2. / 3) * pow(x, 3. / 2));
 		}
@@ -179,9 +258,29 @@ complex<double> field::airyMode(double x, double y, int beamNumber) {
 			return 1 / (pow(3, 2. / 3) * tgamma(2. / 3));
 		}
 	};
-	return airy(x) * airy(y) * gaussMode(x, y, beamNumber, 0);
+	return airy(x) * airy(y) * gaussMode(x, y, beamNumber, 0);*/
+	auto a = [](double phi) {
+		return exp(complex<double>(0, phi));
+	};
+	complex<double> integ = 0;
+	auto h = 2 * M_PI / n1;
+	double phi = 0;
+	while (phi <= 2 * M_PI) {
+		integ += a(phi) * exp(complex<double>(0, beamNumber * (x * cos(phi) + y * sin(phi))));
+		phi += h;
+	}
+	auto k = 2 * M_PI / fieldParameters.at(0).at(0);
+	auto k_z = sqrt(k * k - beamNumber * beamNumber);
+	return integ * exp(complex<double>(0, k_z * 1000));
 }
 
+complex<double> field::airyShiftMode(double x, double y, int beamNumber) {
+	auto alpha = fieldParameters.at(beamNumber).at(4);
+	auto beta = fieldParameters.at(beamNumber).at(5);
+	auto alpha0 = fieldParameters.at(beamNumber).at(6);
+	auto beta0 = fieldParameters.at(beamNumber).at(7);
+	return exp(complex<double>(0, alpha * pow(x, 3) + beta * pow(y, 3) + alpha0 * x + beta0 * y));
+}
 
 //calculateCollinsCUDA() requires CUDA toolkit
 vector<vector<complex<double>>> field::collins(vector<vector<complex<double>>>& inputFunction, vector<double>& x, vector<double>& y, vector<double>& u, vector<double>& v) {
@@ -203,17 +302,6 @@ vector<vector<complex<double>>> field::collinsSingular(vector<vector<complex<dou
 	}
 	cout << "Сингулярный случай — световое поле посчитано мгновенно.";
 	return output;
-}
-
-vector<double> field::calcPoints(double interval, double count, double shift = 0) {
-	auto pointValue = -interval;
-	vector<double> points;
-	auto h = 2 * interval / count;
-	for (auto i = 0; i < count; i++) {
-		points.push_back((std::abs(matrixABCD.at(0).at(1)) < FLT_EPSILON) ? pointValue * matrixABCD.at(1).at(1) - shift : pointValue - shift);
-		pointValue += h;
-	}
-	return points;
 }
 
 double field::maximum(vector<vector<double>>& field) {

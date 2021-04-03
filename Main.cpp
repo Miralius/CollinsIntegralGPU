@@ -180,20 +180,26 @@ int main() {
 
 			//debug cycle
 			
-			/*for (auto i = 900; i <= 2000; i = (i == 1100) ? 2000 : i + 25) {
-				cout << endl;
-				limits.at(2) = (((i == 900) || (i == 1100)) ? 1.5 : (((i == 925) || (i == 1075)) ? 1.25 : (((i == 950) || (i == 1050)) ? 1 : (((i == 975) || (i == 1025)) ? 0.75 : 0.5))));
-				limits.at(3) = (((i == 900) || (i == 1100)) ? 1.5 : (((i == 925) || (i == 1075)) ? 1.25 : (((i == 950) || (i == 1050)) ? 1 : (((i == 975) || (i == 1025)) ? 0.75 : 0.5))));
-				z = static_cast<double>(i);
-				fieldParameters.at(0).at(4) = z;
-				matrixABCD.at(0).at(0) = cos(z / f * M_PI / 2);
-				matrixABCD.at(0).at(1) = f * sin(z / f * M_PI / 2);
-				matrixABCD.at(1).at(0) = -sin(z / f * M_PI / 2) / f;
-				matrixABCD.at(1).at(1) = cos(z / f * M_PI / 2);
-				output = field(limits, n1, n2, crossSection::Oxy, matrixABCD, pattern);
-				output.setFieldParameters(different, fieldParameters);
-				writingFile<BMP>(output.createBMP(absSchemeName, false), to_string(i) + ".bmp");
-			}*/
+			//for (auto i = 830; i <= 1000; i += 5/*i = (i == 1200) ? 2000 : i + 1*/) {
+			//	cout << endl << "Расстояние z = " << i;
+			//	//limits.at(2) = (((i == 900) || (i == 1100)) ? 1.5 : (((i == 925) || (i == 1075)) ? 1.25 : (((i == 950) || (i == 1050)) ? 1 : (((i == 975) || (i == 1025)) ? 0.75 : 0.5))));
+			//	//limits.at(3) = (((i == 900) || (i == 1100)) ? 1.5 : (((i == 925) || (i == 1075)) ? 1.25 : (((i == 950) || (i == 1050)) ? 1 : (((i == 975) || (i == 1025)) ? 0.75 : 0.5))));
+			//	z = static_cast<double>(i);
+			//	fieldParameters.at(0).at(4) = z;
+			//	matrixABCD.at(0).at(0) = cos(z / f * M_PI / 2);
+			//	matrixABCD.at(0).at(1) = f * sin(z / f * M_PI / 2);
+			//	matrixABCD.at(1).at(0) = -sin(z / f * M_PI / 2) / f;
+			//	matrixABCD.at(1).at(1) = cos(z / f * M_PI / 2);
+			//	for (auto j = 0.25; j <= 6; j += 0.25) {
+			//		cout << endl << "Масштаб u, v = " << -j << " .. " << j << endl;
+			//		limits.at(2) = j;
+			//		limits.at(3) = j;
+			//		output = field(limits, n1, n2, crossSection::Oxy, matrixABCD, pattern);
+			//		output.setFieldParameters(different, fieldParameters);
+			//		writingFile<BMP>(output.createBMP(absSchemeName, false), to_string(i) + "_" + to_string(j) + ".bmp");
+			//		writingFile<BMP>(output.createBMP(argSchemeName, true), "p_" + to_string(i) + "_" + to_string(j) + ".bmp");
+			//	}
+			//}
 			
 			cout << endl << "Результаты записаны! Продолжить расчёты? Для выхода ввести 0" << endl;
 		}

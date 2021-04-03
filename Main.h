@@ -16,7 +16,7 @@ inline void wrongInput() {
 }
 
 inline vector<double> setInputFunction(bool clusterMode) {
-	cout << "Входная функция:" << endl << "Мода Гаусса (1)" << endl << "Мода Гаусса-Эрмита (2)" << endl << "Мода Гаусса-Лагерра (3)" << endl << "Аномальная вихревая мода (AVB) (4)" << endl << "Мода Эйри (5): ";
+	cout << "Входная функция:" << endl << "Мода Гаусса (1)" << endl << "Мода Гаусса-Эрмита (2)" << endl << "Мода Гаусса-Лагерра (3)" << endl << "Аномальная вихревая мода (AVB) (4)" << endl << "Мода Эйри (5)" << endl << "Смещённая мода Эйри (6): ";
 	int select;
 	double parameter;
 	vector<double> modeParameters;
@@ -50,6 +50,8 @@ inline vector<double> setInputFunction(bool clusterMode) {
 		}
 		modeParameters.push_back(parameter);
 		modeParameters.push_back(0); // n = 0
+		modeParameters.push_back(0); // alpha0 = 0
+		modeParameters.push_back(0); // beta0 = 0
 		break;
 	case 2:
 		cout << "Введите ширину пучка (мм):" << endl << "beam waist = ";
@@ -88,6 +90,8 @@ inline vector<double> setInputFunction(bool clusterMode) {
 			wrongInput();
 		}
 		modeParameters.push_back(parameter);
+		modeParameters.push_back(0); // alpha0 = 0
+		modeParameters.push_back(0); // beta0 = 0
 		break;
 	case 4:
 		cout << "Введите ширину пучка (мм):" << endl << "beam waist = ";
@@ -107,6 +111,8 @@ inline vector<double> setInputFunction(bool clusterMode) {
 			wrongInput();
 		}
 		modeParameters.push_back(parameter);
+		modeParameters.push_back(0); // alpha0 = 0
+		modeParameters.push_back(0); // beta0 = 0
 		break;
 	case 5:
 		cout << "Введите ширину пучка (мм):" << endl << "beam waist = ";
@@ -118,6 +124,37 @@ inline vector<double> setInputFunction(bool clusterMode) {
 		modeParameters.push_back(0); // initial phase exp(imф)
 		modeParameters.push_back(0); // m = 0
 		modeParameters.push_back(0); // n = 0
+		modeParameters.push_back(0); // alpha0 = 0
+		modeParameters.push_back(0); // beta0 = 0
+		break;
+	case 6:
+		cout << "Введите ширину пучка (мм):" << endl << "beam waist = ";
+		while (!(cin >> parameter) || !(parameter > 0)) {
+			wrongInput();
+		}
+		modeParameters.push_back(parameter);
+		modeParameters.push_back(1); // beam waist coefficient 1
+		modeParameters.push_back(0); // initial phase exp(imф)
+		cout << "Введите параметр alpha:" << endl << "alpha = ";
+		while (!(cin >> parameter)) {
+			wrongInput();
+		}
+		modeParameters.push_back(parameter);
+		cout << "Введите параметр beta:" << endl << "beta = ";
+		while (!(cin >> parameter)) {
+			wrongInput();
+		}
+		modeParameters.push_back(parameter);
+		cout << "Введите параметр alpha 0:" << endl << "alpha0 = ";
+		while (!(cin >> parameter)) {
+			wrongInput();
+		}
+		modeParameters.push_back(parameter);
+		cout << "Введите параметр beta 0:" << endl << "beta 0 = ";
+		while (!(cin >> parameter)) {
+			wrongInput();
+		}
+		modeParameters.push_back(parameter);
 		break;
 	default:
 		error("Не выбрана исходная функция!");
@@ -176,7 +213,7 @@ template <typename T> vector<T> loadingData(string nameFile) {
 	return vectorName;
 }
 
-template <typename T> void writingFile(T& data, string nameFile) {
+template <typename T> void writingFile(T data, string nameFile) {
 	ofstream output(nameFile, ios::binary | ios::trunc | ios::out);
 	if (!output) {
 		error("Запись в файл " + nameFile + " невозможна!");
