@@ -9,89 +9,42 @@
 #include <cmath>
 #include <complex>
 #include <iomanip>
+#include <functional>
 #include "scheme.h"
 #include "BMP.h"
 
 using namespace std;
 
-enum class patternField {
-	undefinedPattern, solitone, radiallySymmetricCluster
-};
-
-enum class inputField {
-	undefined, gauss, gaussHermite, gaussLaguerre, AVB, airy, airyShift
-};
-
-enum class crossSection {
-	Oxy, Oxz, Oyx, Oyz, Ozx, Ozy
+enum class transformType {
+	fractionalFourier, fresnel
 };
 
 class field {
 private:
-	int n1; //Dimension of the input field.
-	int n2; //Dimension of the output field.
-	bool superposition; //The value of superposition attribute.
-	bool calculated; //This value means field is calculated.
-	vector<double> limits; //The limits of the integration field.
-	patternField pattern; //The selected pattern of the input field.
-	crossSection selectedCrossSection; //The cross section of field.
-	vector<vector<double>> fieldParameters; //The parameters of input field.
-	//fieldParameters.at(0): at(0) — wavelength
-	//						 at(1) — N count of beams
-	//						 at(2) — cluster's radius
-	//						 at(3) — is the angle between the last beam and the origin zero
-	//						 at(4) — the distance between input and output field
-	//fieldParameters.at(N): at(0) — selectedInputFunction
-	//						 at(1) — beam waist
-	//						 at(2) — beam waist coefficient
-	//						 at(3) — initial phase variant
-	//						 at(4) — m / topological charge / alpha
-	//						 at(5) — n / beta
-	//						 at(6) — alpha0 
-	//						 at(7) — beta0 
-	//						 at(8) — ksi / initial transverse velocity parameter
-	//						 at(9) — eta / power ratio
-	//						 at(10) — normalized coefficient variant
-	vector<vector<double>> matrixABCD; //The ABCD-matrix.
-	vector<vector<complex<double>>> calculatedField; //The calculated field after transform.
-	vector<vector<complex<double>>> selectPatternField(vector<double>& x, vector<double>& y);
-	vector<vector<complex<double>>> patternSolitone(vector<double>& x, vector<double>& y);
-	vector<vector<complex<double>>> patternRadiallySymmetricCluster(vector<double>& x, vector<double>& y);
-	complex<double> getNormalizedCoefficient(int beamNumber, double inputPower = 1);
-	complex<double> getNormalizedCoefficientWang2008();
-	complex<double> getNormalizedCoefficientSong2018(int beamNumber, double inputPower);
-	complex<double> getNormalizedCoefficientSong2019(int beamNumber, double inputPower);
-	complex<double> selectInputMode(double x, double y, int beamNumber, int iterator);
-	complex<double> gaussMode(double x, double y, int beamNumber = 1, int iterator = 0);
-	complex<double> gaussHermite(double x, double y, int beamNumber);
-	complex<double> gaussLaguerre(double x, double y, int beamNumber, int iterator);
-	complex<double> AVB(double x, double y, int beamNumber, int iterator);
-	complex<double> airyMode(double x, double y, int beamNumber);
-	complex<double> airyShiftMode(double x, double y, int beamNumber);
-	vector<vector<complex<double>>> collins(vector<vector<complex<double>>>& inputFunction, vector<double>& x, vector<double>& y, vector<double>& u, vector<double>& v);
-	vector<vector<complex<double>>> collinsSingular(vector<vector<complex<double>>>& inputFunction, vector<double>& x, vector<double>& y, vector<double>& u, vector<double>& v);
-	vector<double> calcPoints(double interval, double count, double shift);
+	vector<double> x;
+	vector<double> y;
+	vector<vector<complex<double>>> calculatedField;
+	vector<double> fieldParameters;
+	vector<double> calcPoints(double begin, double end, double count);
+	void createField(const function<complex<double>(double, double)>& mode);
 	static double maximum(vector<vector<double>>& field);
 	
 public:
 	field();
-	field(vector<vector<complex<double>>>& superpositionField, crossSection crossSection);
-	field(vector<double> limits, int n1, int n2, crossSection crossSection, vector<vector<double>> matrixABCD, patternField selectedPattern);
+	field(double a, double b, double n);
+	field(vector<vector<complex<double>>> field, vector<double> x, vector<double> y);
+	vector<double> getX();
+	vector<double> getY();
+	vector<vector<complex<double>>> getCalculatedField();
+	void transform(double a, double b, double n, double wavelength, transformType transformType, double z, double f=0);
+	//void transform(double a, double b, double n, double wavelength, transformType transformType, double z_begin, double z_end, double z_n, double f=0);
 	static vector<vector<double>> abs(field& field);
 	static vector<vector<double>> arg(field& field);
-	static double power(field& field);
-	void setFieldParameters(bool different, vector<vector<double>> parameters);
-	vector<vector<complex<double>>> getCalculatedField();
-	vector<vector<complex<double>>> shift(double x0, double y0);
-	crossSection getCrossSection();
 	BMP createBMP(string schemeName, bool phase);
-	bool isSuperposition();
-	bool isCalculated();
-	void calculate();
+	void gaussMode(double sigma, double m);
+	void airyMode(double alpha, double beta, double alpha0, double beta0, double sigma);
 };
 
-field operator+(field& left, field& right);
-vector<vector<complex<double>>> operator+(vector<vector<complex<double>>>& left, vector<vector<complex<double>>>& right);
-vector<vector<complex<double>>> operator+=(vector<vector<complex<double>>>& left, vector<vector<complex<double>>>& right);
-
+field operator*(field& left, field& right);
+field operator*=(field& left, field& right);
 #endif
