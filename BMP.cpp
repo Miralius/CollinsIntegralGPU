@@ -13,7 +13,7 @@ BMP::BMP() {
 }
 
 BMP::BMP(vector<vector<vector<byte>>>& picture) : pixels(picture) {
-	initHeaders(static_cast<int>(picture.size()), static_cast<int>(picture.at(0).size()));
+	initHeaders(static_cast<int>(picture.at(0).size()), static_cast<int>(picture.size()));
 }
 
 BMP::BMP(const BMP& obj) {

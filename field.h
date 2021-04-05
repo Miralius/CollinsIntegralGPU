@@ -28,7 +28,8 @@ private:
 	vector<double> calcPoints(double begin, double end, double count);
 	void createField(const function<complex<double>(double, double)>& mode);
 	static double maximum(vector<vector<double>>& field);
-	
+	static double maximum(vector<complex<double>>& column);
+	static vector<vector<complex<double>>> transpose(vector<vector<complex<double>>>& matrix);
 public:
 	field();
 	field(double a, double b, double n);
@@ -37,9 +38,10 @@ public:
 	vector<double> getY();
 	vector<vector<complex<double>>> getCalculatedField();
 	void transform(double a, double b, double n, double wavelength, transformType transformType, double z, double f=0);
-	//void transform(double a, double b, double n, double wavelength, transformType transformType, double z_begin, double z_end, double z_n, double f=0);
+	void transform(double a, double b, double n, double u, double wavelength, transformType transformType, double z_begin, double z_end, double z_n, double f=0);
 	static vector<vector<double>> abs(field& field);
 	static vector<vector<double>> arg(field& field);
+	void normalize();
 	BMP createBMP(string schemeName, bool phase);
 	void gaussMode(double sigma, double m);
 	void airyMode(double alpha, double beta, double alpha0, double beta0, double sigma);

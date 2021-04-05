@@ -1,5 +1,6 @@
 ﻿#include "field.h"
 extern vector<vector<complex<double>>> calculateCollinsCUDA(vector<vector<complex<double>>>& inputFunction, vector<double>& x, vector<double>& y, vector<double>& u, vector<double>& v, int n1, int n2, double waveNumber, vector<double> limits, vector<vector<double>> matrixABCD);
+extern vector<vector<complex<double>>> calculateCollinsCUDAoxz(vector<vector<complex<double>>>& inputFunction, vector<double>& x1, vector<double>& x2, vector<double>& x3, vector<double>& x4, int n1, int n2, int n_z, int transform, double u, double f, double waveNumber);
 
 vector<double> field::calcPoints(double begin, double end, double count) {
 	auto pointValue = begin;
@@ -29,6 +30,25 @@ double field::maximum(vector<vector<double>>& field) {
 		}
 	}
 	return maxValue;
+}
+
+double field::maximum(vector<complex<double>>& column) {
+	auto maxValue = DBL_MIN;
+	for (auto value : column) {
+		maxValue = max(maxValue, std::abs(value));
+	}
+	return maxValue;
+}
+
+vector<vector<complex<double>>> field::transpose(vector<vector<complex<double>>>& matrix) {
+	vector<vector<complex<double>>> transposed;
+	for (auto j = 0; j < matrix.at(0).size(); j++) {
+		transposed.push_back(vector<complex<double>>());
+		for (auto i = 0; i < matrix.size(); i++) {
+			transposed.back().push_back(matrix.at(i).at(j));
+		}
+	}
+	return transposed;
 }
 
 field::field() : x(vector<double>()), y(vector<double>()), calculatedField(vector<vector<complex<double>>>()) {
@@ -91,6 +111,15 @@ void field::transform(double a, double b, double n, double wavelength, transform
 	y = v;
 }
 
+void field::transform(double a, double b, double n, double u, double wavelength, transformType transform, double z_begin, double z_end, double z_n, double f) {
+	auto z = calcPoints(z_begin, z_end, z_n);
+	auto v = calcPoints(-b, b, n);
+	reverse(v.begin(), v.end());
+	auto k = 2 * M_PI / wavelength;
+	calculatedField = calculateCollinsCUDAoxz(calculatedField, x, y, z, v, x.size(), n, z_n, static_cast<int>(transform), u, f, k);
+	x = z;
+	y = v;
+}
 
 vector<vector<double>> field::abs(field& field) {
 	vector<vector<double>> absField;
@@ -112,6 +141,17 @@ vector<vector<double>> field::arg(field& field) {
 		}
 	}
 	return argField;
+}
+
+void field::normalize() {
+	auto normalized = transpose(calculatedField);
+	for (auto i = 0; i < normalized.size(); i++) {
+		auto max = maximum(normalized.at(i));
+		for (auto j = 0; j < normalized.at(0).size(); j++) {
+			normalized.at(i).at(j) /= max;
+		}
+	}
+	calculatedField = transpose(normalized);
 }
 
 BMP field::createBMP(string schemeName, bool phase) {
@@ -157,14 +197,16 @@ void field::airyMode(double alpha, double beta, double alpha0, double beta0, dou
 }
 
 field operator*(field& left, field& right) {
-	if ((left.getCalculatedField().at(1).size() != right.getCalculatedField().at(1).size()) || (left.getCalculatedField().size() != right.getCalculatedField().size())) {
+	auto leftMatrix = left.getCalculatedField();
+	auto rigthMatrix = right.getCalculatedField();
+	if ((leftMatrix.at(1).size() != rigthMatrix.at(1).size()) || (leftMatrix.size() != rigthMatrix.size())) {
 		return field();
 	}
 	vector<vector<complex<double>>> product;
-	for (auto i = 0; i < left.getCalculatedField().at(1).size(); i++) {
+	for (auto i = 0; i < leftMatrix.at(1).size(); i++) {
 		product.push_back(vector<complex<double>>());
-		for (auto j = 0; j < left.getCalculatedField().size(); j++) {
-			product.at(i).push_back(left.getCalculatedField().at(i).at(j) * right.getCalculatedField().at(i).at(j));
+		for (auto j = 0; j < leftMatrix.size(); j++) {
+			product.at(i).push_back(leftMatrix.at(i).at(j) * rigthMatrix.at(i).at(j));
 		}
 	}
 	return field(product, left.getX(), left.getY());

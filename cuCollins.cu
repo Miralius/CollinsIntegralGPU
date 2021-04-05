@@ -10,6 +10,7 @@
 using namespace std;
 
 cudaError_t collinsWithCuda(cuDoubleComplex* input, cuDoubleComplex* output, double* x, double* y, double* u, double* v, int n1, int n2, double* fieldParameters);
+cudaError_t collinsWithCudaOxz(cuDoubleComplex* input, cuDoubleComplex* output, double* x, double* y, double* z, double* v, int n1, int n2, int n_z, int transform, double* fieldParameters);
 
 int getNumberThreads(int N) {
     int result = static_cast<int>(round(sqrt(N)));
@@ -240,6 +241,213 @@ cudaError_t collinsWithCuda(cuDoubleComplex* input, cuDoubleComplex* output, dou
     }
 
     freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
+
+    return cudaStatus;
+}
+
+__global__ void collinsKernelOxz(cuDoubleComplex* output, cuDoubleComplex* input, double* x, double* y, double* z, double* v, int n1, int n2, int n_z, int transform, double u, double f, double hx, double hy, double k, int* progress)
+{
+    int q = blockIdx.x * blockDim.x + threadIdx.x;
+    int p = blockIdx.y * blockDim.y + threadIdx.y;
+    double A = transform ? 1. : cos(3.14159265358979323846 * z[q] / (2 * f));
+    double B = transform ? z[q] : f * sin(3.14159265358979323846 * z[q] / (2 * f));
+    double D = transform ? 1. : cos(3.14159265358979323846 * z[q] / (2 * f));
+    cuDoubleComplex value = make_cuDoubleComplex(0, 0);
+    for (int i = 0; i < n1; i++) {
+        for (int j = 0; j < n1; j++) {
+            double arg = (k / (2 * B)) * (A * (y[i] * y[i] + x[j] * x[j]) - 2 * (y[i] * v[p] + x[j] * u) + D * (v[p] * v[p] + u * u));
+            value = cuCadd(value, cuCmul(input[i * n1 + j], make_cuDoubleComplex(cos(arg), sin(arg))));
+        }
+    }
+    atomicAdd(progress, 1);
+    processing(*progress, n2 * n_z);
+    output[p * n_z + q] = cuCmul(make_cuDoubleComplex(0, -(k / (2 * 3.14159265358979323846 * B))), cuCmul(value, make_cuDoubleComplex(hx * hy, 0)));
+}
+
+vector<vector<complex<double>>> calculateCollinsCUDAoxz(vector<vector<complex<double>>>& inputFunction, vector<double>& x1, vector<double>& x2, vector<double>& x3, vector<double>& x4, int n1, int n2, int n_z, int transform, double u, double f, double waveNumber)
+{
+    auto input = new cuDoubleComplex[inputFunction.size() * inputFunction.at(0).size()];
+    for (auto i = 0; i < inputFunction.size(); i++) {
+        for (auto j = 0; j < inputFunction.at(0).size(); j++) {
+            input[i * n1 + j] = make_cuDoubleComplex(inputFunction.at(i).at(j).real(), inputFunction.at(i).at(j).imag());
+        }
+    }
+
+    auto output = new cuDoubleComplex[n2 * n_z];
+
+    auto x = new double[x1.size()];
+    for (auto i = 0; i < x1.size(); i++) {
+        x[i] = x1.at(i);
+    }
+
+    auto y = new double[x2.size()];
+    for (auto i = 0; i < x2.size(); i++) {
+        y[i] = x2.at(i);
+    }
+
+    auto z = new double[x3.size()];
+    for (auto i = 0; i < x3.size(); i++) {
+        z[i] = x3.at(i);
+    }
+
+    auto v = new double[x4.size()];
+    for (auto i = 0; i < x4.size(); i++) {
+        v[i] = x4.at(i);
+    }
+
+    auto fieldParameters = new double[5];
+    fieldParameters[0] = u;
+    fieldParameters[1] = f;
+    fieldParameters[2] = x[1] - x[0];
+    fieldParameters[3] = y[1] - y[0];
+    fieldParameters[4] = waveNumber;
+
+    // Add vectors in parallel.
+    cudaError_t cudaStatus = collinsWithCudaOxz(input, output, x, y, z, v, n1, n2, n_z, transform, fieldParameters);
+    if (cudaStatus != cudaSuccess) {
+        error("collinsWithCuda failed!");
+    }
+
+    // cudaDeviceReset must be called before exiting in order for profiling and
+    // tracing tools such as Nsight and Visual Profiler to show complete traces.
+    cudaStatus = cudaDeviceReset();
+    if (cudaStatus != cudaSuccess) {
+        error("cudaDeviceReset failed!");
+    }
+
+    vector<vector<complex<double>>> result;
+    for (auto i = 0; i < x4.size(); i++) {
+        result.push_back(vector<complex<double>>());
+        for (auto j = 0; j < x3.size(); j++) {
+            result.back().push_back(complex<double>(output[i * n_z + j].x, output[i * n_z + j].y));
+        }
+    }
+
+    return result;
+}
+
+// Helper function for using CUDA to add vectors in parallel.
+cudaError_t collinsWithCudaOxz(cuDoubleComplex* input, cuDoubleComplex* output, double* x, double* y, double* z, double* v, int n1, int n2, int n_z, int transform, double* fieldParameters)
+{
+    cuDoubleComplex* dev_in = 0;
+    cuDoubleComplex* dev_out = 0;
+    double* dev_x = 0;
+    double* dev_y = 0;
+    double* dev_z = 0;
+    double* dev_v = 0;
+    cudaError_t cudaStatus;
+    int* progress(0);
+
+    // Choose which GPU to run on, change this on a multi-GPU system.
+    cudaStatus = cudaSetDevice(0);
+    if (cudaStatus != cudaSuccess) {
+        error("cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?");
+    }
+
+    // Allocate GPU buffers for three vectors (two input, one output).
+    cudaStatus = cudaMalloc((void**)&dev_in, n1 * n1 * sizeof(cuDoubleComplex));
+    if (cudaStatus != cudaSuccess) {
+        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_z, dev_v);
+        error("cudaMalloc failed!");
+    }
+
+    cudaStatus = cudaMalloc((void**)&dev_out, n2 * n_z * sizeof(cuDoubleComplex));
+    if (cudaStatus != cudaSuccess) {
+        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_z, dev_v);
+        error("cudaMalloc failed!");
+    }
+
+    cudaStatus = cudaMalloc((void**)&dev_x, n1 * sizeof(double));
+    if (cudaStatus != cudaSuccess) {
+        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_z, dev_v);
+        error("cudaMalloc failed!");
+    }
+
+    cudaStatus = cudaMalloc((void**)&dev_y, n1 * sizeof(double));
+    if (cudaStatus != cudaSuccess) {
+        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_z, dev_v);
+        error("cudaMalloc failed!");
+    }
+
+    cudaStatus = cudaMalloc((void**)&dev_z, n_z * sizeof(double));
+    if (cudaStatus != cudaSuccess) {
+        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_z, dev_v);
+        error("cudaMalloc failed!");
+    }
+
+    cudaStatus = cudaMalloc((void**)&dev_v, n2 * sizeof(double));
+    if (cudaStatus != cudaSuccess) {
+        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_z, dev_v);
+        error("cudaMalloc failed!");
+    }
+
+    cudaStatus = cudaMalloc((void**)&progress, sizeof(int));
+    if (cudaStatus != cudaSuccess) {
+        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_z, dev_v);
+        error("cudaMemcpy failed!");
+    }
+
+    // Copy input vectors from host memory to GPU buffers.
+    cudaStatus = cudaMemcpy(dev_in, input, n1 * n1 * sizeof(cuDoubleComplex), cudaMemcpyHostToDevice);
+    if (cudaStatus != cudaSuccess) {
+        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_z, dev_v);
+        error("cudaMemcpy failed!");
+    }
+
+    cudaStatus = cudaMemcpy(dev_x, x, n1 * sizeof(double), cudaMemcpyHostToDevice);
+    if (cudaStatus != cudaSuccess) {
+        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_z, dev_v);
+        error("cudaMemcpy failed!");
+    }
+
+    cudaStatus = cudaMemcpy(dev_y, y, n1 * sizeof(double), cudaMemcpyHostToDevice);
+    if (cudaStatus != cudaSuccess) {
+        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_z, dev_v);
+        error("cudaMemcpy failed!");
+    }
+
+    cudaStatus = cudaMemcpy(dev_z, z, n_z * sizeof(double), cudaMemcpyHostToDevice);
+    if (cudaStatus != cudaSuccess) {
+        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_z, dev_v);
+        error("cudaMemcpy failed!");
+    }
+
+    cudaStatus = cudaMemcpy(dev_v, v, n2 * sizeof(double), cudaMemcpyHostToDevice);
+    if (cudaStatus != cudaSuccess) {
+        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_z, dev_v);
+        error("cudaMemcpy failed!");
+    }
+
+    // Launch a kernel on the GPU with one thread for each element.
+    dim3 threadsPerBlock(getNumberThreads(n_z), getNumberThreads(n2));
+    dim3 numBlocks(n_z / threadsPerBlock.x, n2 / threadsPerBlock.y);
+    collinsKernelOxz << <numBlocks, threadsPerBlock >> > (dev_out, dev_in, dev_x, dev_y, dev_z, dev_v, n1, n2, n_z, transform, fieldParameters[0], fieldParameters[1], fieldParameters[2], fieldParameters[3], fieldParameters[4], progress);
+
+    // Check for any errors launching the kernel
+    cudaStatus = cudaGetLastError();
+    if (cudaStatus != cudaSuccess) {
+        fprintf(stderr, "\ncollinsKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
+        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_z, dev_v);
+        error("Запуск ядра CUDA не удался!");
+    }
+
+    // cudaDeviceSynchronize waits for the kernel to finish, and returns
+    // any errors encountered during the launch.
+    cudaStatus = cudaDeviceSynchronize();
+    if (cudaStatus != cudaSuccess) {
+        fprintf(stderr, "\ncudaDeviceSynchronize returned error code %d after launching collinsKernel!\n", cudaStatus);
+        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_z, dev_v);
+        error("Синхронизация данных между хостом и устройством завершилась неудачей!");
+    }
+
+    // Copy output vector from GPU buffer to host memory.
+    cudaStatus = cudaMemcpy(output, dev_out, n2 * n_z * sizeof(cuDoubleComplex), cudaMemcpyDeviceToHost);
+    if (cudaStatus != cudaSuccess) {
+        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_z, dev_v);
+        error("Копирование результата в ОЗУ завершилось неудачей!");
+    }
+
+    freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_z, dev_v);
 
     return cudaStatus;
 }
