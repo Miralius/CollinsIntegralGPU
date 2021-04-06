@@ -82,7 +82,7 @@ void field::transform(double a, double b, double n, double wavelength, transform
 	auto v = calcPoints(-b, b, n);
 	reverse(v.begin(), v.end());
 	auto k = 2 * M_PI / wavelength;
-	auto limits = vector<double>({ -x.at(0), y.at(0), a, b});
+	auto limits = vector<double>({ -x.at(0), y.at(0), a, b });
 	auto matrixABCD = vector<vector<double>>({ {0., 0.}, {0., 0.} });
 	switch (transform) {
 	case transformType::fractionalFourier:
@@ -143,6 +143,21 @@ vector<vector<double>> field::arg(field& field) {
 	return argField;
 }
 
+void field::shift(double x, double y) {
+	auto hx = this->x.at(1) - this->x.at(0);
+	auto hy = this->y.at(1) - this->y.at(0);
+	auto x_shift_n = static_cast<int>(x / hx);
+	auto y_shift_n = static_cast<int>(-y / hy);
+	vector<vector<complex<double>>> shifted;
+	for (auto j = 0; j < calculatedField.size(); j++) {
+		shifted.push_back(vector<complex<double>>());
+		for (auto i = 0; i < calculatedField.at(0).size(); i++) {
+			shifted.back().push_back(((((i - x_shift_n) >= 0) && ((i - x_shift_n) < calculatedField.at(0).size())) && (((j - y_shift_n) >= 0) && ((j - y_shift_n) < calculatedField.size()))) ? calculatedField.at(i - x_shift_n).at(j - y_shift_n) : complex<double>(0, 0));
+		}
+	}
+	calculatedField = shifted;
+}
+
 void field::normalize() {
 	auto normalized = transpose(calculatedField);
 	for (auto i = 0; i < normalized.size(); i++) {
@@ -194,6 +209,35 @@ void field::airyMode(double alpha, double beta, double alpha0, double beta0, dou
 	};
 	createField(airy);
 	this->transform(-x.at(0), y.at(0), x.size(), 650. / 1000000, transformType::fractionalFourier, 1000, 1000);
+}
+
+void field::setInitialTransverseVelocityAndPowerFactor(double ksi, double eta, double sigma, double x_shift, double y_shift) {
+	for (auto j = 0; j < calculatedField.size(); j++) {
+		for (auto i = 0; i < calculatedField.at(0).size(); i++) {
+			calculatedField.at(i).at(j) *= exp(complex<double>(0, -ksi * (sqrt(eta) / (sigma * sigma)) * (y_shift * x.at(i) - x_shift * y.at(j))));
+		}
+	}
+}
+
+field operator+(field& left, field& right) {
+	auto leftMatrix = left.getCalculatedField();
+	auto rigthMatrix = right.getCalculatedField();
+	if ((leftMatrix.at(1).size() != rigthMatrix.at(1).size()) || (leftMatrix.size() != rigthMatrix.size())) {
+		return field();
+	}
+	vector<vector<complex<double>>> sum;
+	for (auto i = 0; i < leftMatrix.at(1).size(); i++) {
+		sum.push_back(vector<complex<double>>());
+		for (auto j = 0; j < leftMatrix.size(); j++) {
+			sum.at(i).push_back(leftMatrix.at(i).at(j) + rigthMatrix.at(i).at(j));
+		}
+	}
+	return field(sum, left.getX(), left.getY());
+}
+
+field operator+=(field& left, field& right) {
+	left = left + right;
+	return left;
 }
 
 field operator*(field& left, field& right) {

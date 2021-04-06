@@ -41,12 +41,16 @@ public:
 	void transform(double a, double b, double n, double u, double wavelength, transformType transformType, double z_begin, double z_end, double z_n, double f=0);
 	static vector<vector<double>> abs(field& field);
 	static vector<vector<double>> arg(field& field);
+	void shift(double x, double y);
 	void normalize();
 	BMP createBMP(string schemeName, bool phase);
 	void gaussMode(double sigma, double m);
 	void airyMode(double alpha, double beta, double alpha0, double beta0, double sigma);
+	void setInitialTransverseVelocityAndPowerFactor(double ksi, double eta, double sigma, double x_shift, double y_shift);
 };
 
+field operator+(field& left, field& right);
+field operator+=(field& left, field& right);
 field operator*(field& left, field& right);
 field operator*=(field& left, field& right);
 #endif
