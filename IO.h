@@ -1,11 +1,11 @@
-#ifndef IO_H
+п»ї#ifndef IO_H
 #define IO_H
 
 #include <iostream>
 #include <vector>
 #include <fstream>
 
-// Загрузка файла (nameFiel — имя файла)
+// Р—Р°РіСЂСѓР·РєР° С„Р°Р№Р»Р° (nameFiel вЂ” РёРјСЏ С„Р°Р№Р»Р°)
 template <typename T> T loadingFile(std::string nameFile) {
 	std::ifstream in(nameFile, std::ios::binary | std::ios::in);
 	in.unsetf(std::ios_base::skipws);
@@ -13,18 +13,18 @@ template <typename T> T loadingFile(std::string nameFile) {
 	if (!in.fail()) {
 		if (!(in >> data))
 		{
-			throw std::runtime_error("Файл " + nameFile + " пуст или содержит неверные данные!");
+			throw std::runtime_error("Р¤Р°Р№Р» " + nameFile + " РїСѓСЃС‚ РёР»Рё СЃРѕРґРµСЂР¶РёС‚ РЅРµРІРµСЂРЅС‹Рµ РґР°РЅРЅС‹Рµ!");
 		}
 	}
 	else {
 		{
-			throw std::runtime_error("Файл " + nameFile + " не найден!");
+			throw std::runtime_error("Р¤Р°Р№Р» " + nameFile + " РЅРµ РЅР°Р№РґРµРЅ!");
 		}
 	}
 	return data;
 }
 
-// Загрузка вектора из файла (nameFile — имя файла)
+// Р—Р°РіСЂСѓР·РєР° РІРµРєС‚РѕСЂР° РёР· С„Р°Р№Р»Р° (nameFile вЂ” РёРјСЏ С„Р°Р№Р»Р°)
 template <typename T> std::vector<T> loadingData(std::string nameFile) {
 	std::ifstream in(nameFile);
 	std:: vector<T> vectorName;
@@ -37,22 +37,22 @@ template <typename T> std::vector<T> loadingData(std::string nameFile) {
 		in.close();
 		if (vectorName.size() == 0)
 		{
-			throw std::runtime_error("Файл " + nameFile + " пуст или содержит неверные данные!");
+			throw std::runtime_error("Р¤Р°Р№Р» " + nameFile + " РїСѓСЃС‚ РёР»Рё СЃРѕРґРµСЂР¶РёС‚ РЅРµРІРµСЂРЅС‹Рµ РґР°РЅРЅС‹Рµ!");
 		}
 	}
 	else
 	{
-		throw std::runtime_error("Файл " + nameFile + " не найден!");
+		throw std::runtime_error("Р¤Р°Р№Р» " + nameFile + " РЅРµ РЅР°Р№РґРµРЅ!");
 	}
 	return vectorName;
 }
 
-// Запись в файл (data — данные для записи, nameFile — имя файла)
+// Р—Р°РїРёСЃСЊ РІ С„Р°Р№Р» (data вЂ” РґР°РЅРЅС‹Рµ РґР»СЏ Р·Р°РїРёСЃРё, nameFile вЂ” РёРјСЏ С„Р°Р№Р»Р°)
 template <typename T> void writingFile(T& data, std::string nameFile) {
 	std::ofstream output(nameFile, std::ios::binary | std::ios::trunc | std::ios::out);
 	if (!output) {
 		{
-			throw std::runtime_error("Запись в файл " + nameFile + " невозможна!");
+			throw std::runtime_error("Р—Р°РїРёСЃСЊ РІ С„Р°Р№Р» " + nameFile + " РЅРµРІРѕР·РјРѕР¶РЅР°!");
 		}
 	}
 	output << data;
