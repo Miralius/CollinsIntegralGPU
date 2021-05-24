@@ -5,24 +5,25 @@ int main() {
 	SetConsoleOutputCP(1251);
 
 	try {
-		auto a = 3.;
+		std::cout << std::endl << "Моделирование входного пучка" << std::endl;
+		auto a = -3.;
 		auto b = 3.;
-		auto n = 500;
+		auto n = 100;
 		auto solitone = field(a, b, n);
-		auto alpha = 1.;
-		auto beta = 1.;
-		auto alpha0 = 0.;
-		auto beta0 = 0.;
-		auto sigma = 0.5;
-		auto ksi = 1.;
+		auto alpha = 5.;
+		auto beta = 5.;
+		auto alpha0 = -5.;
+		auto beta0 = -5.;
+		auto sigma = 1.;
+		/*auto ksi = 0.;
 		auto eta = 1.;
 		auto r = 1.5;
-		auto number = 8;
-		solitone.airyMode(alpha, beta, alpha0, beta0, sigma);
+		auto number = 8;*/
+		solitone.airyMode(alpha, beta, alpha0, beta0);
 		auto aperture = field(a, b, n);
-		aperture.gaussMode(sigma, 0.);
+		aperture.gaussMode(sigma, 2);
 		solitone *= aperture;
-		auto superposition = solitone;
+		/*auto superposition = solitone;
 		superposition.shift(r, 0);
 		superposition.setInitialTransverseVelocityAndPowerFactor(ksi, eta, sigma, r, 0.);
 		for (auto i = 1; i < number; i++) {
@@ -33,38 +34,45 @@ int main() {
 			solitoneShifted.shift(c_xn, c_yn);
 			solitoneShifted.setInitialTransverseVelocityAndPowerFactor(ksi, eta, sigma, c_xn, c_yn);
 			superposition += solitoneShifted;
-		}
-		string absFileName = "input_abs.bmp";
-		string argFileName = "input_phase.bmp";
-		string absSchemeName = "fire";
-		string argSchemeName = "rainbow";
-		writingFile<BMP>(superposition.createBMP(absSchemeName, false), absFileName);
-		writingFile<BMP>(superposition.createBMP(argSchemeName, true), argFileName);
+		}*/
+		std::string absFileName = "input_abs.bmp";
+		std::string argFileName = "input_phase.bmp";
+		std::string absSchemeName = "fire";
+		std::string argSchemeName = "rainbow";
+		BMP test = solitone.createBMP(absSchemeName, false);
+		BMP test2 = solitone.createBMP(argSchemeName, true);
+		writingFile<BMP>(test, absFileName);
+		writingFile<BMP>(test2, argFileName);
 		auto u = 0.;
 		auto wavelength = 650. / 1000000;
-		auto z_begin = 100.;
-		auto z_end = 1900.;
-		auto z_n = 2000.;
+		auto z_begin = 50.;
+		auto z_end = 1950.;
+		auto z_n = 2000;
 		auto f = 1000.;
 		for (auto i = 250; i <= 1750; i += 250) {
-			auto oxy = superposition;
-			oxy.transform(a, b, n, wavelength, transformType::fractionalFourier, i, f);
-			absFileName = "oxy_abs_" + to_string(i) + ".bmp";
-			argFileName = "oxy_arg_" + to_string(i) + ".bmp";
-			writingFile<BMP>(oxy.createBMP(absSchemeName, false), absFileName);
-			writingFile<BMP>(oxy.createBMP(argSchemeName, true), argFileName);
+			std::cout << std::endl << "Моделирование ДрПФ при z = " << i << std::endl;
+			field oxy = solitone;
+			oxy.ouvFractionalFourierTransform(a, b, n, wavelength, i, f);
+			absFileName = "oxy_abs_" + std::to_string(i) + ".bmp";
+			argFileName = "oxy_arg_" + std::to_string(i) + ".bmp";
+			test = oxy.createBMP(absSchemeName, false);
+			test2 = oxy.createBMP(argSchemeName, true);
+			writingFile<BMP>(test, absFileName);
+			writingFile<BMP>(test2, argFileName);
 		}
-		auto oxz = superposition;
-		oxz.transform(a, b, n, u, wavelength, transformType::fractionalFourier, z_begin, z_end, z_n, f);
+		std::cout << std::endl << "Моделирование продольного сечения пучка" << std::endl;
+		field oxz = solitone;
+		oxz.ovzFractionalFourierTransform(a, b, n, z_begin, z_end, z_n, wavelength, u, f);
 		absFileName = "oxz_abs.bmp";
-		writingFile<BMP>(oxz.createBMP(absSchemeName, false), absFileName);
+		test = oxz.createBMP(absSchemeName, false);
+		writingFile<BMP>(test, absFileName);
 	}
-	catch (runtime_error & e) {
-		cerr << endl << "Ошибка! " << e.what() << endl;
+	catch (std::runtime_error & e) {
+		std::cerr << std::endl << "Ошибка! " << e.what() << std::endl;
 		system("pause");
 	}
 	catch (...) {
-		cerr << "Неизвестная ошибка!" << endl;
+		std::cerr << "Неизвестная ошибка!" << std::endl;
 	}
 	return 0;
 }

@@ -1,38 +1,45 @@
 ﻿#ifndef BMP_H
 #define BMP_H
 
-#define _HAS_STD_BYTE 0
 #include <vector>
 #include <Windows.h>
 #include <algorithm>
 #include <iostream>
-#include <fstream>
 
-using namespace std;
-
+// Класс изображения BMP
 class BMP {
 private:
-	static auto const countRGBChannel = 4;
-	static auto const BMPFILEHEADERsize = 14;
-	static auto const BMPINFOHEADERsize = 124;
-	static auto const COLORPROFILEsize = 12;
-	vector<vector<vector<byte>>> pixels;
-	vector<vector<int>> bmpFileHeader; //This vector replaces the struct BITMAPFILEHEADER. Each first element — value, each second element — size of type of var.
-	vector<vector<int>> bmpInfoHeader; //This vector replaces the struct BITMAPINFOHEADER. Each first element — value, each second element — size of type of var.
-	vector<vector<int>> colorProfile;
+	static auto const countRGBChannel = 4; // Количество цветовых каналов
+	static auto const BMPFILEHEADERsize = 14; // Размер заголовка BMP файла
+	static auto const BMPINFOHEADERsize = 124; // Размер заголовка информации об изображении
+	static auto const COLORPROFILEsize = 12; // Размер цветового профиля
+	std::vector<std::vector<std::vector<byte>>> pixels; // Трёхмерная матрица изображения (первая размерность — строка, 2-ая — столбец, 3-я — вектор пикселя, значения каждого — интенсивность цвета)
+	std::vector<std::vector<int>> bmpFileHeader; // Этот вектор заменяет структуру BITMAPFILEHEADER. Первый элемент каждого вложенного вектора — значение, а второй — размер типа значения.
+	std::vector<std::vector<int>> bmpInfoHeader; // Этот вектор заменяет структуру BITMAPINFOHEADER. Первый элемент каждого вложенного вектора — значение, а второй — размер типа значения.
+	std::vector<std::vector<int>> colorProfile; // Вектор цветового профиля
+	// Функция инициализации заголовков (int width — ширина изображения в пикселях, int height — высота)
 	void initHeaders(int width, int height);
 
 public:
+	// Конструктор BMP по умолчанию
 	BMP();
-	BMP(vector<vector<vector<byte>>>& picture);
+	// Конструктор BMP (const vector<vector<vector<byte>>>& picture — трехмёрная матрица изображения (первая размерность — строка, 2-ая — столбец, 3-я — вектор пикселя, значения каждого — интенсивность цвета))
+	BMP(const std::vector<std::vector<std::vector<byte>>>& picture);
+	// Конструктор копирования BMP (const BMP& obj — изображение, которое необходимо скопировать)
 	BMP(const BMP& obj);
-	static vector<byte> toBinary(vector<int> number);
-	static int toNumber(vector<byte> binary);
+	// Статический метод преобразования значения в бинарный вид (const vector<int>& number — значение (пара значение-размер значения))
+	static std::vector<byte> toBinary(const std::vector<int>& number);
+	// Статический метод преобразования байтов в значение (const vector<byte>& binary — набор байтов)
+	static int toNumber(const std::vector<byte>& binary);
+	// Оператор присваивания (const BMP& obj — объект, который необходимо присвоить)
 	BMP& operator=(const BMP& obj);
-	operator vector<byte>();
+	// Оператор преобразования изображения в вектор байтов
+	operator std::vector<byte>();
 };
 
-istream& operator>>(istream& input, BMP& bmp);
-ostream& operator<<(ostream& output, BMP& bmp);
+// Оператор ввода изображения (input — поток ввода, bmp — ссылка на объект, в который изображение должно быть записано)
+std::istream& operator>>(std::istream& input, BMP& bmp);
+// Оператор вывода (output — поток вывода, bmp — изображение)
+std::ostream& operator<<(std::ostream& output, const BMP& bmp);
 
 #endif

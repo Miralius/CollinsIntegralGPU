@@ -1,33 +1,33 @@
 ﻿#include "scheme.h"
-#include "Main.h"
 
 scheme::scheme() {
-	colorScheme = vector<vector<byte>>();
+	colorScheme = std::vector<std::vector<byte>>();
 	schemeName = "";
 }
 
-scheme::scheme(string schemeName) {
+scheme::scheme(std::string schemeName) {
 	auto colors = loadingData<pixel>("schemes\\" + schemeName + ".txt");
-	for_each(colors.rbegin(), colors.rend(), [&](pixel pixel) {
-		colorScheme.push_back(pixel);
+	colorScheme.reserve(colors.size());
+	std::for_each(colors.rbegin(), colors.rend(), [&](pixel pixel) {
+		colorScheme.emplace_back(pixel);
 	});
 }
 
-scheme::operator vector<vector<byte>>() {
+scheme::operator std::vector<std::vector<byte>>() {
 	return colorScheme;
 }
 
-pixel::pixel() : colors(vector<byte>()) {
+pixel::pixel() : colors(std::vector<byte>()) {
 }
 
 pixel::pixel(byte blue, byte green, byte red, byte alpha) : colors({ blue, green, red, alpha }) {
 }
 
-pixel::operator vector<byte>() {
+pixel::operator std::vector<byte>() {
 	return colors;
 }
 
-istream& operator>>(istream& input, pixel& obj) {
+std::istream& operator>>(std::istream& input, pixel& obj) {
 	int blue, green, red;
 	input >> red >> green >> blue;
 	if (!input) {

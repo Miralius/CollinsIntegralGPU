@@ -1,227 +1,202 @@
-﻿#include <cmath>
-#include <iostream>
+﻿#include <iostream>
 #include <vector>
 #include <complex>
-#include "Main.h"
+#include <cuComplex.h>
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
-#include <cuComplex.h>
 
-using namespace std;
+// Функция освобождения памяти GPU (device_pointer_input — указатель на входное поле, device_pointer_output — на выходное поле (результат), device_pointer_x1 — на вектор x, device_pointer_x2 — на вектор y, device_pointer_x3 — на вектор u или z, device_pointer_x4 — на вектор v, device_pointer_parameters — на вектор параметров преобразования, device_pointer_dimension — на вектор размерностей, device_pointer_progress — на атомарную переменную прогресса процесса)
+void freeGPUMemory(cuDoubleComplex* device_pointer_input, cuDoubleComplex* device_pointer_output, double* device_pointer_x1, double* device_pointer_x2, double* device_pointer_x3, double* device_pointer_x4, double* device_pointer_parameters, int* device_pointer_dimension, int* device_pointer_progress) {
+    cudaFree(device_pointer_input);
+    cudaFree(device_pointer_output);
+    cudaFree(device_pointer_x1);
+    cudaFree(device_pointer_x2);
+    cudaFree(device_pointer_x3);
+    cudaFree(device_pointer_x4);
+    cudaFree(device_pointer_parameters);
+    cudaFree(device_pointer_dimension);
+    cudaFree(device_pointer_progress);
+}
 
-cudaError_t collinsWithCuda(cuDoubleComplex* input, cuDoubleComplex* output, double* x, double* y, double* u, double* v, int n1, int n2, double* fieldParameters);
-cudaError_t collinsWithCudaOxz(cuDoubleComplex* input, cuDoubleComplex* output, double* x, double* y, double* z, double* v, int n1, int n2, int n_z, int transform, double* fieldParameters);
+// Сложение двух CUDA double комплексных чисел (left — число слева, right — справа)
+__device__ cuDoubleComplex operator+(const cuDoubleComplex& left, const cuDoubleComplex& right) {
+    return cuCadd(left, right);
+}
 
+// Сложение двух CUDA double комплексных чисел с присвоением (left — переменная до знака "=", right — после)
+__device__ cuDoubleComplex operator+=(cuDoubleComplex& left, const cuDoubleComplex& right) {
+    left = left + right;
+    return left;
+}
+
+// Перемножение двух CUDA double комплексных чисел (left — число слева, right — справа)
+__device__ cuDoubleComplex operator*(const cuDoubleComplex& left, const cuDoubleComplex& right) {
+    return cuCmul(left, right);
+}
+
+// Умножение CUDA double комплексного числа на вещественное double число (left — комплексное CUDA число, right — вещественное double число)
+__device__ cuDoubleComplex operator*(const cuDoubleComplex& left, const double& right) {
+    return cuCmul(left, make_cuDoubleComplex(right, 0));
+}
+
+// Умножение вещественного double числа на CUDA double комплексное число (left — вещественное double число, right — комплексное CUDA число)
+__device__ cuDoubleComplex operator*(const double& left, const cuDoubleComplex& right) {
+    return cuCmul(make_cuDoubleComplex(left, 0), right);
+}
+
+// Экспонента, принимающая в качестве аргумента CUDA double комплексное число
+__device__ cuDoubleComplex exp(const cuDoubleComplex& value) {
+    return exp(value.x) * make_cuDoubleComplex(cos(value.y), sin(value.y));
+}
+
+// Нахождение оптимального количества нитей в блоке (N — количество точек по одной оси)
 int getNumberThreads(int N) {
-    int result = static_cast<int>(round(sqrt(N)));
+    auto result = static_cast<int>(round(sqrt(N)));
     while (((N % result) != 0) || (result * result > 1024)) {
         result--;
     }
     return result;
 }
 
+// Функция отображения прогресса выполнения преобразования (now — сколько сейчас выполнено операций, max — общее кол-во операций)
 __device__ void processing(int now, int max) {
     double percent;
     if (now == max) {
-        percent = 100;
+        percent = 100.;
     }
     else {
-        percent = trunc(10000 * (static_cast<double>(now) / static_cast<double>(max))) / 100;
+        percent = trunc(10000. * (static_cast<double>(now) / max)) / 100;
     }
     printf("\rВыполнено %2.2f%", percent);
 }
 
-__global__ void collinsKernel(cuDoubleComplex* output, cuDoubleComplex* input, double* x, double* y, double* u, double* v, int n1, int n2, double hx, double hy, double A, double B, double D, double k, int* progress)
+// Обобщенное ядро вычисления интеграла Коллинза (output — массив результата (выходное поле), input — входное поле, x1 — вектор x, x2 — вектор y, x3 — вектор u или z, x4 — вектор v, parameters — массив параметров преобразования, dimension — массив размерностей, progress — атомарная переменная прогресса процесса вычисления интеграла Коллинза, transformType (вид преобразования: 0 — дробное преобразование Фурье, 1 — преобразование Френеля, 2 — другое (с заданной определенной ABCD матрицей)), OxyCrossSection (выбранное сечение: 1 — сечение в плоскости Ouv (поперечное), 0 — сечение в плоскости Ovz (продольное)))
+__global__ void collinsKernel(cuDoubleComplex* output, const cuDoubleComplex* input, const double* x1, const double* x2, const double* x3, const double* x4, const double* parameters, const int* dimension, int* progress, int transformType, bool OxyCrossSection)
 {
-    int q = blockIdx.x *blockDim.x + threadIdx.x;
-    int p = blockIdx.y *blockDim.y + threadIdx.y;
-    cuDoubleComplex value = make_cuDoubleComplex(0, 0);
-    for (int i = 0; i < n1; i++) {
-        for (int j = 0; j < n1; j++) {
-            double arg = (k / (2 * B)) * (A * (y[i] * y[i] + x[j] * x[j]) - 2 * (y[i] * v[p] + x[j] * u[q]) + D * (v[p] * v[p] + u[q] * u[q]));
-            value = cuCadd(value, cuCmul(input[i * n1 + j], make_cuDoubleComplex(cos(arg), sin(arg))));
+    auto pi = 3.14159265358979323846;
+    auto q = blockIdx.x * blockDim.x + threadIdx.x;
+    auto p = blockIdx.y * blockDim.y + threadIdx.y;
+    auto hx = x1[1] - x1[0];
+    auto hy = x2[1] - x2[0];
+    auto wavelength = parameters[0];
+    auto z = OxyCrossSection ? parameters[1] : x3[q];
+    auto u = OxyCrossSection ? x3[q] : parameters[1];
+    auto f = !transformType ? parameters[2] : 0;
+    auto k = 2 * pi / wavelength;
+    auto n1 = dimension[0];
+    auto n2 = dimension[1];
+    auto n3 = OxyCrossSection ? dimension[1] : dimension[2];
+    auto A = 0.0;
+    auto B = 0.0;
+    auto D = 0.0;
+    switch (transformType) {
+    case 0:
+        A = cos(pi * z / (2 * f));
+        B = f * sin(pi * z / (2 * f));
+        D = cos(pi * z / (2 * f));
+        break;
+    case 1:
+        A = 1.;
+        B = z;
+        D = 1.;
+        break;
+    default:
+        A = OxyCrossSection ? parameters[1] : parameters[2];
+        B = OxyCrossSection ? parameters[2] : parameters[3];
+        D = OxyCrossSection ? parameters[3] : parameters[4];
+    }
+    auto value = make_cuDoubleComplex(0, 0);
+    for (auto i = 0; i < n1; i++) {
+        for (auto j = 0; j < n1; j++) {
+            auto arg = (k / (2 * B)) * (A * (x2[i] * x2[i] + x1[j] * x1[j]) - 2 * (x2[i] * x4[p] + x1[j] * u) + D * (x4[p] * x4[p] + u * u));
+            value += input[i * n1 + j] * exp(make_cuDoubleComplex(0, arg));
         }
     }
     atomicAdd(progress, 1);
-    processing(*progress, n2 * n2);
-    output[p * n2 + q] = cuCmul(make_cuDoubleComplex(0, -(k / (2 * 3.14159265358979323846 * B))), cuCmul(value, make_cuDoubleComplex(hx * hy, 0)));
+    processing(*progress, n2 * n3);
+    output[p * n3 + q] = make_cuDoubleComplex(0, -(k / (2 * pi * B))) * value * hx * hy;
 }
 
-vector<vector<complex<double>>> calculateCollinsCUDA(vector<vector<complex<double>>>& inputFunction, vector<double>& x1, vector<double>& x2, vector<double>& x3, vector<double>& x4, int n1, int n2, double waveNumber, vector<double> limits, vector<vector<double>> matrixABCD)
+std::vector<std::vector<std::complex<double>>> calculateCollinsCUDA(const std::vector<std::vector<std::complex<double>>>& input, const std::vector<double>& x1, const std::vector<double>& x2, const std::vector<double>& x3, const std::vector<double>& x4, const std::vector<double>& parameters, const std::vector<int>& dimension, int transformType)
 {
-    auto input = new cuDoubleComplex[inputFunction.size() * inputFunction.at(0).size()];
-    for (auto i = 0; i < inputFunction.size(); i++) {
-    	for (auto j = 0; j < inputFunction.at(0).size(); j++) {
-    		input[i * n1 + j] = make_cuDoubleComplex(inputFunction.at(i).at(j).real(), inputFunction.at(i).at(j).imag());
-    	}
-    }
-
-    auto output = new cuDoubleComplex[n2 * n2];
-
-    auto x = new double[x1.size()];
-	for (auto i = 0; i < x1.size(); i++) {
-		x[i] = x1.at(i);
-	}
-
-	auto y = new double[x2.size()];
-	for (auto i = 0; i < x2.size(); i++) {
-		y[i] = x2.at(i);
-	}
-
-	auto u = new double[x3.size()];
-	for (auto i = 0; i < x3.size(); i++) {
-		u[i] = x3.at(i);
-	}
-
-	auto v = new double[x4.size()];
-	for (auto i = 0; i < x4.size(); i++) {
-		v[i] = x4.at(i);
-	}
-
-    auto fieldParameters = new double[6];
-    fieldParameters[0] = 2 * limits.at(0) / n1;
-    fieldParameters[1] = 2 * limits.at(1) / n1;
-    fieldParameters[2] = matrixABCD.at(0).at(0);
-    fieldParameters[3] = matrixABCD.at(0).at(1);
-    fieldParameters[4] = matrixABCD.at(1).at(1);
-    fieldParameters[5] = waveNumber;
-
-    // Add vectors in parallel.
-    cudaError_t cudaStatus = collinsWithCuda(input, output, x, y, u, v, n1, n2, fieldParameters);
+    // Choose which GPU to run on, change this on a multi-GPU system.
+    cudaError_t cudaStatus = cudaSetDevice(0);
     if (cudaStatus != cudaSuccess) {
-        error("collinsWithCuda failed!");
+        throw std::runtime_error("cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?");
     }
 
-    // cudaDeviceReset must be called before exiting in order for profiling and
-    // tracing tools such as Nsight and Visual Profiler to show complete traces.
-    cudaStatus = cudaDeviceReset();
-    if (cudaStatus != cudaSuccess) {
-        error("cudaDeviceReset failed!");
-    }
+    bool OxyCrossSection = dimension.size() == 3 ? false : true;
 
-    vector<vector<complex<double>>> result;
-    for (auto i = 0; i < inputFunction.size(); i++) {
-        result.push_back(vector<complex<double>>());
-        for (auto j = 0; j < inputFunction.at(0).size(); j++) {
-            result.back().push_back(complex<double>(output[i * n2 + j].x, output[i * n2 + j].y));
-        }
-    }
+    // Allocate GPU buffers for vectors.
 
-    return result;
-}
+    auto n1 = dimension.at(0);
+    auto n2 = dimension.at(1);
+    auto n3 = OxyCrossSection ? dimension.at(1) : dimension.at(2);
 
-void freeGPUMemory(cuDoubleComplex* dev_in, cuDoubleComplex* dev_out, double* dev_x, double* dev_y, double* dev_u, double* dev_v) {
-    cudaFree(dev_in);
-    cudaFree(dev_out);
-    cudaFree(dev_x);
-    cudaFree(dev_y);
-    cudaFree(dev_u);
-    cudaFree(dev_v);
-}
-
-// Helper function for using CUDA to add vectors in parallel.
-cudaError_t collinsWithCuda(cuDoubleComplex* input, cuDoubleComplex* output, double* x, double* y, double* u, double* v, int n1, int n2, double* fieldParameters)
-{
-    cuDoubleComplex* dev_in = 0;
-    cuDoubleComplex* dev_out = 0;
-    double* dev_x = 0;
-    double* dev_y = 0;
-    double* dev_u = 0;
-    double* dev_v = 0;
-    cudaError_t cudaStatus;
-    int* progress(0);
+    auto device_output = new cuDoubleComplex[n2 * n3];
+    cuDoubleComplex* device_pointer_output = 0;
+    cudaStatus = cudaMalloc((void**)&device_pointer_output, static_cast<unsigned long long>(n2) * n3 * sizeof(cuDoubleComplex));
     
-    // Choose which GPU to run on, change this on a multi-GPU system.
-    cudaStatus = cudaSetDevice(0);
-    if (cudaStatus != cudaSuccess) {
-        error("cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?");
+    auto device_input = new cuDoubleComplex[input.size() * input.at(0).size()];
+    for (auto i = 0; i < input.size(); i++) {
+        for (auto j = 0; j < input.at(0).size(); j++) {
+            device_input[i * n1 + j] = make_cuDoubleComplex(input.at(i).at(j).real(), input.at(i).at(j).imag());
+        }
     }
+    cuDoubleComplex* device_pointer_input = 0;
+    cudaStatus = cudaMalloc((void**)&device_pointer_input, static_cast<unsigned long long>(n1) * n1 * sizeof(cuDoubleComplex));
+    cudaStatus = cudaMemcpy(device_pointer_input, device_input, static_cast<unsigned long long>(n1) * n1 * sizeof(cuDoubleComplex), cudaMemcpyHostToDevice);
+    
+    std::vector<double> host_x1 = x1;
+    double* pointer_x1 = host_x1.data();
+    double* device_pointer_x1 = 0;
+    cudaStatus = cudaMalloc((void**)&device_pointer_x1, n1 * sizeof(double));
+    cudaStatus = cudaMemcpy(device_pointer_x1, pointer_x1, n1 * sizeof(double), cudaMemcpyHostToDevice);
 
-    // Allocate GPU buffers for three vectors (two input, one output).
-    cudaStatus = cudaMalloc((void**)&dev_in, n1 * n1 * sizeof(cuDoubleComplex));
-    if (cudaStatus != cudaSuccess) {
-        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
-        error("cudaMalloc failed!");
-    }
+    std::vector<double> host_x2 = x2;
+    double* pointer_x2 = host_x2.data();
+    double* device_pointer_x2 = 0;
+    cudaStatus = cudaMalloc((void**)&device_pointer_x2, n1 * sizeof(double));
+    cudaStatus = cudaMemcpy(device_pointer_x2, pointer_x2, n1 * sizeof(double), cudaMemcpyHostToDevice);
 
-    cudaStatus = cudaMalloc((void**)&dev_out, n2 * n2 * sizeof(cuDoubleComplex));
-    if (cudaStatus != cudaSuccess) {
-        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
-        error("cudaMalloc failed!");
-    }
+    std::vector<double> host_x3 = x3;
+    double* pointer_x3 = host_x3.data();
+    double* device_pointer_x3 = 0;
+    cudaStatus = cudaMalloc((void**)&device_pointer_x3, n3 * sizeof(double));
+    cudaStatus = cudaMemcpy(device_pointer_x3, pointer_x3, n3 * sizeof(double), cudaMemcpyHostToDevice);
 
-    cudaStatus = cudaMalloc((void**)&dev_x, n1 * sizeof(double));
-    if (cudaStatus != cudaSuccess) {
-        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
-        error("cudaMalloc failed!");
-    }
+    std::vector<double> host_x4 = x4;
+    double* pointer_x4 = host_x4.data();
+    double* device_pointer_x4 = 0;
+    cudaStatus = cudaMalloc((void**)&device_pointer_x4, n2 * sizeof(double));
+    cudaStatus = cudaMemcpy(device_pointer_x4, pointer_x4, n2 * sizeof(double), cudaMemcpyHostToDevice);
 
-    cudaStatus = cudaMalloc((void**)&dev_y, n1 * sizeof(double));
-    if (cudaStatus != cudaSuccess) {
-        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
-        error("cudaMalloc failed!");
-    }
+    std::vector<double> host_parameters = parameters;
+    double* pointer_parameters = host_parameters.data();
+    double* device_pointer_parameters = 0;
+    cudaStatus = cudaMalloc((void**)&device_pointer_parameters, host_parameters.size() * sizeof(double));
+    cudaStatus = cudaMemcpy(device_pointer_parameters, pointer_parameters, host_parameters.size() * sizeof(double), cudaMemcpyHostToDevice);
 
-    cudaStatus = cudaMalloc((void**)&dev_u, n2 * sizeof(double));
-    if (cudaStatus != cudaSuccess) {
-        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
-        error("cudaMalloc failed!");
-    }
-
-    cudaStatus = cudaMalloc((void**)&dev_v, n2 * sizeof(double));
-    if (cudaStatus != cudaSuccess) {
-        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
-        error("cudaMalloc failed!");
-    }
-
-    cudaStatus = cudaMalloc((void**)&progress, sizeof(int));
-    if (cudaStatus != cudaSuccess) {
-        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
-        error("cudaMemcpy failed!");
-    }
-
-    // Copy input vectors from host memory to GPU buffers.
-    cudaStatus = cudaMemcpy(dev_in, input, n1 * n1 * sizeof(cuDoubleComplex), cudaMemcpyHostToDevice);
-    if (cudaStatus != cudaSuccess) {
-        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
-        error("cudaMemcpy failed!");
-    }
-
-    cudaStatus = cudaMemcpy(dev_x, x, n1 * sizeof(double), cudaMemcpyHostToDevice);
-    if (cudaStatus != cudaSuccess) {
-        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
-        error("cudaMemcpy failed!");
-    }
-
-    cudaStatus = cudaMemcpy(dev_y, y, n1 * sizeof(double), cudaMemcpyHostToDevice);
-    if (cudaStatus != cudaSuccess) {
-        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
-        error("cudaMemcpy failed!");
-    }
-
-    cudaStatus = cudaMemcpy(dev_u, u, n2 * sizeof(double), cudaMemcpyHostToDevice);
-    if (cudaStatus != cudaSuccess) {
-        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
-        error("cudaMemcpy failed!");
-    }
-
-    cudaStatus = cudaMemcpy(dev_v, v, n2 * sizeof(double), cudaMemcpyHostToDevice);
-    if (cudaStatus != cudaSuccess) {
-        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
-        error("cudaMemcpy failed!");
-    }
+    std::vector<int> host_dimension = dimension;
+    int* pointer_dimension = host_dimension.data();
+    int* device_pointer_dimension = 0;
+    cudaStatus = cudaMalloc((void**)&device_pointer_dimension, host_dimension.size() * sizeof(int));
+    cudaStatus = cudaMemcpy(device_pointer_dimension, pointer_dimension, host_dimension.size() * sizeof(int), cudaMemcpyHostToDevice);
+    
+    int* device_pointer_progress = 0;
+    cudaStatus = cudaMalloc((void**)&device_pointer_progress, sizeof(int));
 
     // Launch a kernel on the GPU with one thread for each element.
-    dim3 threadsPerBlock(getNumberThreads(n2), getNumberThreads(n2));
-    dim3 numBlocks(n2 / threadsPerBlock.x, n2 / threadsPerBlock.y);
-    collinsKernel << <numBlocks, threadsPerBlock >> > (dev_out, dev_in, dev_x, dev_y, dev_u, dev_v, n1, n2, fieldParameters[0], fieldParameters[1], fieldParameters[2], fieldParameters[3], fieldParameters[4], fieldParameters[5], progress);
-
+    dim3 threadsPerBlock(getNumberThreads(n3), getNumberThreads(n2));
+    dim3 numBlocks(n3 / threadsPerBlock.x, n2 / threadsPerBlock.y);
+    collinsKernel<<<numBlocks, threadsPerBlock>>>(device_pointer_output, device_pointer_input, device_pointer_x1, device_pointer_x2, device_pointer_x3, device_pointer_x4, device_pointer_parameters, device_pointer_dimension, device_pointer_progress, transformType, OxyCrossSection);
+    
     // Check for any errors launching the kernel
     cudaStatus = cudaGetLastError();
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "\ncollinsKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
-        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
-        error("Запуск ядра CUDA не удался!");
+        freeGPUMemory(device_pointer_input, device_pointer_output, device_pointer_x1, device_pointer_x2, device_pointer_x3, device_pointer_x4, device_pointer_parameters, device_pointer_dimension, device_pointer_progress);
+        throw std::runtime_error("Запуск ядра CUDA не удался!");
     }
 
     // cudaDeviceSynchronize waits for the kernel to finish, and returns
@@ -229,225 +204,36 @@ cudaError_t collinsWithCuda(cuDoubleComplex* input, cuDoubleComplex* output, dou
     cudaStatus = cudaDeviceSynchronize();
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "\ncudaDeviceSynchronize returned error code %d after launching collinsKernel!\n", cudaStatus);
-        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
-        error("Синхронизация данных между хостом и устройством завершилась неудачей!");
+        freeGPUMemory(device_pointer_input, device_pointer_output, device_pointer_x1, device_pointer_x2, device_pointer_x3, device_pointer_x4, device_pointer_parameters, device_pointer_dimension, device_pointer_progress);
+        throw std::runtime_error("Синхронизация данных между хостом и устройством завершилась неудачей!");
     }
 
     // Copy output vector from GPU buffer to host memory.
-    cudaStatus = cudaMemcpy(output, dev_out, n2 * n2 * sizeof(cuDoubleComplex), cudaMemcpyDeviceToHost);
+    cudaStatus = cudaMemcpy(device_output, device_pointer_output, static_cast<unsigned long long>(n2) * n3 * sizeof(cuDoubleComplex), cudaMemcpyDeviceToHost);
     if (cudaStatus != cudaSuccess) {
-        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
-        error("Копирование результата в ОЗУ завершилось неудачей!");
+        freeGPUMemory(device_pointer_input, device_pointer_output, device_pointer_x1, device_pointer_x2, device_pointer_x3, device_pointer_x4, device_pointer_parameters, device_pointer_dimension, device_pointer_progress);
+        throw std::runtime_error("Копирование результата в ОЗУ завершилось неудачей!");
     }
 
-    freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_u, dev_v);
-
-    return cudaStatus;
-}
-
-__global__ void collinsKernelOxz(cuDoubleComplex* output, cuDoubleComplex* input, double* x, double* y, double* z, double* v, int n1, int n2, int n_z, int transform, double u, double f, double hx, double hy, double k, int* progress)
-{
-    int q = blockIdx.x * blockDim.x + threadIdx.x;
-    int p = blockIdx.y * blockDim.y + threadIdx.y;
-    double A = transform ? 1. : cos(3.14159265358979323846 * z[q] / (2 * f));
-    double B = transform ? z[q] : f * sin(3.14159265358979323846 * z[q] / (2 * f));
-    double D = transform ? 1. : cos(3.14159265358979323846 * z[q] / (2 * f));
-    cuDoubleComplex value = make_cuDoubleComplex(0, 0);
-    for (int i = 0; i < n1; i++) {
-        for (int j = 0; j < n1; j++) {
-            double arg = (k / (2 * B)) * (A * (y[i] * y[i] + x[j] * x[j]) - 2 * (y[i] * v[p] + x[j] * u) + D * (v[p] * v[p] + u * u));
-            value = cuCadd(value, cuCmul(input[i * n1 + j], make_cuDoubleComplex(cos(arg), sin(arg))));
-        }
-    }
-    atomicAdd(progress, 1);
-    processing(*progress, n2 * n_z);
-    output[p * n_z + q] = cuCmul(make_cuDoubleComplex(0, -(k / (2 * 3.14159265358979323846 * B))), cuCmul(value, make_cuDoubleComplex(hx * hy, 0)));
-}
-
-vector<vector<complex<double>>> calculateCollinsCUDAoxz(vector<vector<complex<double>>>& inputFunction, vector<double>& x1, vector<double>& x2, vector<double>& x3, vector<double>& x4, int n1, int n2, int n_z, int transform, double u, double f, double waveNumber)
-{
-    auto input = new cuDoubleComplex[inputFunction.size() * inputFunction.at(0).size()];
-    for (auto i = 0; i < inputFunction.size(); i++) {
-        for (auto j = 0; j < inputFunction.at(0).size(); j++) {
-            input[i * n1 + j] = make_cuDoubleComplex(inputFunction.at(i).at(j).real(), inputFunction.at(i).at(j).imag());
-        }
-    }
-
-    auto output = new cuDoubleComplex[n2 * n_z];
-
-    auto x = new double[x1.size()];
-    for (auto i = 0; i < x1.size(); i++) {
-        x[i] = x1.at(i);
-    }
-
-    auto y = new double[x2.size()];
-    for (auto i = 0; i < x2.size(); i++) {
-        y[i] = x2.at(i);
-    }
-
-    auto z = new double[x3.size()];
-    for (auto i = 0; i < x3.size(); i++) {
-        z[i] = x3.at(i);
-    }
-
-    auto v = new double[x4.size()];
-    for (auto i = 0; i < x4.size(); i++) {
-        v[i] = x4.at(i);
-    }
-
-    auto fieldParameters = new double[5];
-    fieldParameters[0] = u;
-    fieldParameters[1] = f;
-    fieldParameters[2] = x[1] - x[0];
-    fieldParameters[3] = y[1] - y[0];
-    fieldParameters[4] = waveNumber;
-
-    // Add vectors in parallel.
-    cudaError_t cudaStatus = collinsWithCudaOxz(input, output, x, y, z, v, n1, n2, n_z, transform, fieldParameters);
-    if (cudaStatus != cudaSuccess) {
-        error("collinsWithCuda failed!");
-    }
+    freeGPUMemory(device_pointer_input, device_pointer_output, device_pointer_x1, device_pointer_x2, device_pointer_x3, device_pointer_x4, device_pointer_parameters, device_pointer_dimension, device_pointer_progress);
 
     // cudaDeviceReset must be called before exiting in order for profiling and
     // tracing tools such as Nsight and Visual Profiler to show complete traces.
     cudaStatus = cudaDeviceReset();
     if (cudaStatus != cudaSuccess) {
-        error("cudaDeviceReset failed!");
+        throw std::runtime_error("cudaDeviceReset failed!");
     }
 
-    vector<vector<complex<double>>> result;
+    std::vector<std::vector<std::complex<double>>> result;
+    result.reserve(x4.size());
     for (auto i = 0; i < x4.size(); i++) {
-        result.push_back(vector<complex<double>>());
+        auto row = std::vector<std::complex<double>>();
+        row.reserve(x4.size());
         for (auto j = 0; j < x3.size(); j++) {
-            result.back().push_back(complex<double>(output[i * n_z + j].x, output[i * n_z + j].y));
+            row.emplace_back(std::complex<double>(device_output[i * n3 + j].x, device_output[i * n3 + j].y));
         }
+        result.emplace_back(row);
     }
 
     return result;
-}
-
-// Helper function for using CUDA to add vectors in parallel.
-cudaError_t collinsWithCudaOxz(cuDoubleComplex* input, cuDoubleComplex* output, double* x, double* y, double* z, double* v, int n1, int n2, int n_z, int transform, double* fieldParameters)
-{
-    cuDoubleComplex* dev_in = 0;
-    cuDoubleComplex* dev_out = 0;
-    double* dev_x = 0;
-    double* dev_y = 0;
-    double* dev_z = 0;
-    double* dev_v = 0;
-    cudaError_t cudaStatus;
-    int* progress(0);
-
-    // Choose which GPU to run on, change this on a multi-GPU system.
-    cudaStatus = cudaSetDevice(0);
-    if (cudaStatus != cudaSuccess) {
-        error("cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?");
-    }
-
-    // Allocate GPU buffers for three vectors (two input, one output).
-    cudaStatus = cudaMalloc((void**)&dev_in, n1 * n1 * sizeof(cuDoubleComplex));
-    if (cudaStatus != cudaSuccess) {
-        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_z, dev_v);
-        error("cudaMalloc failed!");
-    }
-
-    cudaStatus = cudaMalloc((void**)&dev_out, n2 * n_z * sizeof(cuDoubleComplex));
-    if (cudaStatus != cudaSuccess) {
-        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_z, dev_v);
-        error("cudaMalloc failed!");
-    }
-
-    cudaStatus = cudaMalloc((void**)&dev_x, n1 * sizeof(double));
-    if (cudaStatus != cudaSuccess) {
-        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_z, dev_v);
-        error("cudaMalloc failed!");
-    }
-
-    cudaStatus = cudaMalloc((void**)&dev_y, n1 * sizeof(double));
-    if (cudaStatus != cudaSuccess) {
-        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_z, dev_v);
-        error("cudaMalloc failed!");
-    }
-
-    cudaStatus = cudaMalloc((void**)&dev_z, n_z * sizeof(double));
-    if (cudaStatus != cudaSuccess) {
-        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_z, dev_v);
-        error("cudaMalloc failed!");
-    }
-
-    cudaStatus = cudaMalloc((void**)&dev_v, n2 * sizeof(double));
-    if (cudaStatus != cudaSuccess) {
-        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_z, dev_v);
-        error("cudaMalloc failed!");
-    }
-
-    cudaStatus = cudaMalloc((void**)&progress, sizeof(int));
-    if (cudaStatus != cudaSuccess) {
-        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_z, dev_v);
-        error("cudaMemcpy failed!");
-    }
-
-    // Copy input vectors from host memory to GPU buffers.
-    cudaStatus = cudaMemcpy(dev_in, input, n1 * n1 * sizeof(cuDoubleComplex), cudaMemcpyHostToDevice);
-    if (cudaStatus != cudaSuccess) {
-        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_z, dev_v);
-        error("cudaMemcpy failed!");
-    }
-
-    cudaStatus = cudaMemcpy(dev_x, x, n1 * sizeof(double), cudaMemcpyHostToDevice);
-    if (cudaStatus != cudaSuccess) {
-        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_z, dev_v);
-        error("cudaMemcpy failed!");
-    }
-
-    cudaStatus = cudaMemcpy(dev_y, y, n1 * sizeof(double), cudaMemcpyHostToDevice);
-    if (cudaStatus != cudaSuccess) {
-        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_z, dev_v);
-        error("cudaMemcpy failed!");
-    }
-
-    cudaStatus = cudaMemcpy(dev_z, z, n_z * sizeof(double), cudaMemcpyHostToDevice);
-    if (cudaStatus != cudaSuccess) {
-        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_z, dev_v);
-        error("cudaMemcpy failed!");
-    }
-
-    cudaStatus = cudaMemcpy(dev_v, v, n2 * sizeof(double), cudaMemcpyHostToDevice);
-    if (cudaStatus != cudaSuccess) {
-        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_z, dev_v);
-        error("cudaMemcpy failed!");
-    }
-
-    // Launch a kernel on the GPU with one thread for each element.
-    dim3 threadsPerBlock(getNumberThreads(n_z), getNumberThreads(n2));
-    dim3 numBlocks(n_z / threadsPerBlock.x, n2 / threadsPerBlock.y);
-    collinsKernelOxz << <numBlocks, threadsPerBlock >> > (dev_out, dev_in, dev_x, dev_y, dev_z, dev_v, n1, n2, n_z, transform, fieldParameters[0], fieldParameters[1], fieldParameters[2], fieldParameters[3], fieldParameters[4], progress);
-
-    // Check for any errors launching the kernel
-    cudaStatus = cudaGetLastError();
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "\ncollinsKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
-        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_z, dev_v);
-        error("Запуск ядра CUDA не удался!");
-    }
-
-    // cudaDeviceSynchronize waits for the kernel to finish, and returns
-    // any errors encountered during the launch.
-    cudaStatus = cudaDeviceSynchronize();
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "\ncudaDeviceSynchronize returned error code %d after launching collinsKernel!\n", cudaStatus);
-        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_z, dev_v);
-        error("Синхронизация данных между хостом и устройством завершилась неудачей!");
-    }
-
-    // Copy output vector from GPU buffer to host memory.
-    cudaStatus = cudaMemcpy(output, dev_out, n2 * n_z * sizeof(cuDoubleComplex), cudaMemcpyDeviceToHost);
-    if (cudaStatus != cudaSuccess) {
-        freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_z, dev_v);
-        error("Копирование результата в ОЗУ завершилось неудачей!");
-    }
-
-    freeGPUMemory(dev_in, dev_out, dev_x, dev_y, dev_z, dev_v);
-
-    return cudaStatus;
 }

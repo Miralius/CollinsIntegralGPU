@@ -12,7 +12,7 @@ BMP::BMP() {
 	initHeaders(0, 0);
 }
 
-BMP::BMP(vector<vector<vector<byte>>>& picture) : pixels(picture) {
+BMP::BMP(const std::vector<std::vector<std::vector<byte>>>& picture) : pixels(picture) {
 	initHeaders(static_cast<int>(picture.at(0).size()), static_cast<int>(picture.size()));
 }
 
@@ -23,15 +23,16 @@ BMP::BMP(const BMP& obj) {
 	colorProfile = obj.colorProfile;
 }
 
-vector<byte> BMP::toBinary(vector<int> number) {
-	vector<byte> binary;
+std::vector<byte> BMP::toBinary(const std::vector<int>& number) {
+	std::vector<byte> binary;
+	binary.reserve(number.at(1));
 	for (auto i = 0; i < number.at(1); i++) {
-		binary.push_back(number.at(0) >> (8 * i));
+		binary.emplace_back(number.at(0) >> (8 * i));
 	}
 	return binary;
 }
 
-int BMP::toNumber(vector<byte> binary) {
+int BMP::toNumber(const std::vector<byte>& binary) {
 	auto temp = 0;
 	for (auto i = 0; i < binary.size(); i++) {
 		temp |= binary.at(i) << (8 * i);
@@ -48,53 +49,53 @@ BMP& BMP::operator=(const BMP& obj) {
 	return *this;
 }
 
-BMP::operator vector<byte>() {
-	vector<byte> serializedBMP;
+BMP::operator std::vector<byte>() {
+	std::vector<byte> serializedBMP;
 	serializedBMP.reserve(bmpFileHeader.at(1).at(0));
-	for (auto data : bmpFileHeader) {
+	for (auto &data : bmpFileHeader) {
 		for (auto byte : toBinary(data)) {
-			serializedBMP.push_back(byte);
+			serializedBMP.emplace_back(byte);
 		}
 	}
-	for (auto data : bmpInfoHeader) {
+	for (auto &data : bmpInfoHeader) {
 		for (auto byte : toBinary(data)) {
-			serializedBMP.push_back(byte);
+			serializedBMP.emplace_back(byte);
 		}
 	}
-	for (auto data : colorProfile) {
+	for (auto &data : colorProfile) {
 		for (auto byte : toBinary(data)) {
-			serializedBMP.push_back(byte);
+			serializedBMP.emplace_back(byte);
 		}
 	}
 	for_each(pixels.rbegin(), pixels.rend(), [&](auto row) {
-		for (auto pixel : row) {
+		for (auto &pixel : row) {
 			for (auto color : pixel) {
-				serializedBMP.push_back(color);
+				serializedBMP.emplace_back(color);
 			}
 		}
 	});
 	return serializedBMP;
 }
 
-ostream& operator<<(ostream& output, BMP& bmp) {
-	vector<byte> data = bmp;
-	for (auto value : data) {
+std::ostream& operator<<(std::ostream& output, const BMP& bmp) {
+	BMP data = bmp;
+	for (auto value : static_cast<std::vector<byte>>(data)) {
 		output << value;
 	}
 	return output;
 }
 
-istream& operator>>(istream& input, BMP& bmp) {
+std::istream& operator>>(std::istream& input, BMP& bmp) {
 	auto const bytesBeforeOffset = 10; //count of bytes which following before pixel's offset
 	byte buffer;
 	for (auto i = 0; i < bytesBeforeOffset; i++) {
 		if (!(input >> buffer)) return input;
 	}
 
-	vector<byte> bufferVector;
+	std::vector<byte> bufferVector;
 	for (auto i = 0; i < sizeof(int); i++) {
 		if (!(input >> buffer)) return input;
-		bufferVector.push_back(buffer);
+		bufferVector.emplace_back(buffer);
 	}
 	auto offset = BMP().toNumber(bufferVector);
 
@@ -103,14 +104,14 @@ istream& operator>>(istream& input, BMP& bmp) {
 		if (!(input >> buffer)) return input;
 	}
 
-	vector<int> size;
+	std::vector<int> size;
 	bufferVector.clear();
 	for (auto i = 0; i < 2; i++) { //2 because width & height
 		for (auto j = 0; j < sizeof(int); j++) {
 			if (!(input >> buffer)) return input;
-			bufferVector.push_back(buffer);
+			bufferVector.emplace_back(buffer);
 		}
-		size.push_back(BMP().toNumber(bufferVector));
+		size.emplace_back(BMP().toNumber(bufferVector));
 		bufferVector.clear();
 	}
 
@@ -121,7 +122,7 @@ istream& operator>>(istream& input, BMP& bmp) {
 
 	for (auto i = 0; i < sizeof(short); i++) {
 		if (!(input >> buffer)) return input;
-		bufferVector.push_back(buffer);
+		bufferVector.emplace_back(buffer);
 	}
 	auto bitCount = BMP().toNumber(bufferVector);
 
@@ -130,25 +131,25 @@ istream& operator>>(istream& input, BMP& bmp) {
 		if (!(input >> buffer)) return input;
 	}
 
-	vector<vector<vector<byte>>> pixels;
-	vector<byte> pixel;
+	std::vector<std::vector<std::vector<byte>>> pixels;
+	std::vector<byte> pixel;
 	for (auto i = 0; i < size.at(0); i++) {
-		pixels.push_back(vector<vector<byte>>());
+		pixels.emplace_back(std::vector<std::vector<byte>>());
 		for (auto j = 0; j < size.at(1); j++) {
 			if (bitCount == 32) {
 				for (auto k = 0; k < 4; k++) { //because BGR + alpha
 					if (!(input >> buffer)) return input;
-					pixel.push_back(buffer);
+					pixel.emplace_back(buffer);
 				}
 			}
 			if (bitCount == 24) {
 				for (auto k = 0; k < 3; k++) { //because BGR
 					if (!(input >> buffer)) return input;
-					pixel.push_back(buffer);
+					pixel.emplace_back(buffer);
 				}
-				pixel.push_back(255);
+				pixel.emplace_back(255);
 			}
-			pixels.back().push_back(pixel);
+			pixels.back().emplace_back(pixel);
 			pixel.clear();
 		}
 	}

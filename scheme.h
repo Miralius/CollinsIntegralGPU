@@ -1,35 +1,42 @@
 ﻿#ifndef SCHEME_H
 #define SCHEME_H
 
-#define _HAS_STD_BYTE 0
 #include <vector>
 #include <Windows.h>
 #include <algorithm>
 #include <iostream>
+#include "IO.h"
 
-using namespace std;
-
+// Класс цветовой схемы
 class scheme {
 private:
-	vector<vector<byte>> colorScheme;
-	string schemeName;
+	std::vector<std::vector<byte>> colorScheme; // Цветовая схема
+	std::string schemeName; // Имя схемы
 
 public:
+	// Конструктор по умолчанию
 	scheme();
-	scheme(string schemeName);
-	operator vector<vector<byte>>();
+	// Конструктор цветовой схемы (schemeName — путь с именем файла до цветовой схемы)
+	scheme(std::string schemeName);
+	// Оператор преобразования цветовой схемы в двумерный вектор байтов
+	operator std::vector<std::vector<byte>>();
 };
 
+// Класс пикселя
 class pixel {
 private:
-	vector<byte> colors;
+	std::vector<byte> colors; // Вектор субпикселей
 
 public:
+	// Конструктор пикселя по умолчанию
 	pixel();
+	// Конструктор пикселя (blue — синий канал, green — зелёный, red — красный, alpha — прозрачность)
 	pixel(byte blue, byte green, byte red, byte alpha);
-	operator vector<byte>();
+	// Оператор преобразования пикселя в вектор субпикселей
+	operator std::vector<byte>();
 };
 
-istream& operator>>(istream& input, pixel& obj);
+// Оператор ввода пикселей (input — поток ввода, obj — пиксель)
+std::istream& operator>>(std::istream& input, pixel& obj);
 
 #endif
