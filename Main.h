@@ -11,4 +11,6 @@ inline void wrongInput() {
 	std::cin.ignore(std::cin.rdbuf()->in_avail(), '\n');
 }
 
+field getRadialSymmetricClusterMode(const field& solitone, double sigma, double radius, int number, double ksi = 0.0, double eta = 0.0);
+
 #endif

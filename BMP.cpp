@@ -78,8 +78,7 @@ BMP::operator std::vector<byte>() {
 }
 
 std::ostream& operator<<(std::ostream& output, const BMP& bmp) {
-	BMP data = bmp;
-	for (auto value : static_cast<std::vector<byte>>(data)) {
+	for (auto value : static_cast<std::vector<byte>>(const_cast<BMP&>(bmp))) {
 		output << value;
 	}
 	return output;

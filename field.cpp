@@ -13,6 +13,7 @@ std::vector<double> field::calcPoints(double begin, double end, int count) {
 }
 
 void field::createField(const std::function<std::complex<double>(double, double)>& mode) {
+	calculatedField.clear();
 	calculatedField.reserve(y.size());
 	for (auto row : y) {
 		auto vectorRow = std::vector<std::complex<double>>();
@@ -271,11 +272,10 @@ void field::ovzTransform(double a, double b, int n, double a_z, double b_z, int 
 
 std::vector<std::vector<double>> field::abs(const field& obj) {
 	std::vector<std::vector<double>> absField;
-	field data = obj;
-	absField.reserve(data.getY().size());
-	for (auto &row : data.getCalculatedField()) {
+	absField.reserve(const_cast<field&>(obj).getY().size());
+	for (auto &row : const_cast<field&>(obj).getCalculatedField()) {
 		auto vectorRow = std::vector<double>();
-		vectorRow.reserve(data.getX().size());
+		vectorRow.reserve(const_cast<field&>(obj).getX().size());
 		for (auto &value : row) {
 			vectorRow.emplace_back(std::abs(value));
 		}
@@ -286,11 +286,10 @@ std::vector<std::vector<double>> field::abs(const field& obj) {
 
 std::vector<std::vector<double>> field::arg(const field& obj) {
 	std::vector<std::vector<double>> argField;
-	field data = obj;
-	argField.reserve(data.getY().size());
-	for (auto &row : data.getCalculatedField()) {
+	argField.reserve(const_cast<field&>(obj).getY().size());
+	for (auto &row : const_cast<field&>(obj).getCalculatedField()) {
 		auto vectorRow = std::vector<double>();
-		vectorRow.reserve(data.getX().size());
+		vectorRow.reserve(const_cast<field&>(obj).getX().size());
 		for (auto &value : row) {
 			vectorRow.emplace_back((value.imag() < 0) ? (std::arg(value) + 2 * M_PI) : std::arg(value));
 		}
@@ -334,12 +333,40 @@ void field::gaussMode(double sigma, double factorSigma) {
 	createField(gauss);
 }
 
+void field::gaussHermiteMode(int m, int n, double sigma)
+{
+	auto gaussHermite = [&](double x, double y) {
+		return (std::hermite(n, y / sigma) / sqrt(pow(2, n) * tgamma(n + 1) * sqrt(M_PI))) * (std::hermite(m, x / sigma) / sqrt(pow(2, m) * tgamma(m + 1) * sqrt(M_PI))) * exp(std::complex<double>(-(x * x + y * y) / (2 * sigma * sigma), 0));
+	};
+	createField(gaussHermite);
+}
+
+void field::gaussLaguerreMode(int m, int n, double sigma)
+{
+	auto gaussLaguerre = [&](double x, double y) {
+		auto gaussMode = exp(std::complex<double>(-(x * x + y * y) / (sigma * sigma), 0));
+		auto phi = y > 0 ? atan2(y, x) : atan2(y, x) + 2 * M_PI;
+		auto vortexMode = exp(std::complex<double>(0, m * phi));
+		return (1 / sigma) * sqrt(2 * tgamma(n + 1) / (M_PI * tgamma(n + std::abs(m) + 1))) * gaussMode * pow(((sqrt(2 * (x * x + y * y))) / sigma), std::abs(m)) * std::assoc_laguerre(n, std::abs(m), 2 * (x * x + y * y) / (sigma * sigma)) * vortexMode;
+	};
+	createField(gaussLaguerre);
+}
+
 void field::airyMode(double alpha, double beta, double alpha0, double beta0) {
 	auto airy = [&](double x, double y) {
 		return exp(std::complex<double>(0, alpha * pow(x, 3) + beta * pow(y, 3) + alpha0 * x + beta0 * y));
 	};
 	createField(airy);
 	this->ouvFractionalFourierTransform(y.back(), -y.back(), static_cast<int>(y.size()), 650. / 1000000, 1000, 1000);
+}
+
+void field::vortexMode(double m)
+{
+	auto vortex = [&](double x, double y) {
+		auto phi = y > 0 ? atan2(y, x) : atan2(y, x) + 2 * M_PI;
+		return exp(std::complex<double>(0, m * phi));
+	};
+	createField(vortex);
 }
 
 void field::initialTransverseVelocityAndPowerFactorExpMode(double ksi, double eta, double sigma, double x_shift, double y_shift) {
@@ -350,24 +377,20 @@ void field::initialTransverseVelocityAndPowerFactorExpMode(double ksi, double et
 }
 
 field operator+(const field& left, const field& right) {
-	field leftField = left;
-	field rightField = right;
-	auto leftMatrix = leftField.getCalculatedField();
-	auto rigthMatrix = rightField.getCalculatedField();
-	if ((leftMatrix.at(0).size() != rigthMatrix.at(0).size()) || (leftMatrix.size() != rigthMatrix.size())) {
+	if ((const_cast<field&>(left).getCalculatedField().at(0).size() != const_cast<field&>(right).getCalculatedField().at(0).size()) || (const_cast<field&>(left).getCalculatedField().size() != const_cast<field&>(right).getCalculatedField().size()) || (const_cast<field&>(left).getX() != const_cast<field&>(right).getX()) || (const_cast<field&>(left).getY() != const_cast<field&>(right).getY())) {
 		return field();
 	}
 	std::vector<std::vector<std::complex<double>>> sum;
-	sum.reserve(leftMatrix.size());
-	for (auto i = 0; i < leftMatrix.size(); i++) {
+	sum.reserve(const_cast<field&>(left).getCalculatedField().size());
+	for (auto i = 0; i < const_cast<field&>(left).getCalculatedField().size(); i++) {
 		auto row = std::vector<std::complex<double>>();
-		row.reserve(leftMatrix.at(0).size());
-		for (auto j = 0; j < leftMatrix.at(0).size(); j++) {
-			row.emplace_back(leftMatrix.at(i).at(j) + rigthMatrix.at(i).at(j));
+		row.reserve(const_cast<field&>(left).getCalculatedField().at(0).size());
+		for (auto j = 0; j < const_cast<field&>(left).getCalculatedField().at(0).size(); j++) {
+			row.emplace_back(const_cast<field&>(left).getCalculatedField().at(i).at(j) + const_cast<field&>(right).getCalculatedField().at(i).at(j));
 		}
 		sum.emplace_back(row);
 	}
-	return field(sum, leftField.getX(), leftField.getY());
+	return field(sum, const_cast<field&>(left).getX(), const_cast<field&>(left).getY());
 }
 
 field operator+=(field& left, const field& right) {
@@ -376,24 +399,20 @@ field operator+=(field& left, const field& right) {
 }
 
 field operator*(const field& left, const field& right) {
-	field leftField = left;
-	field rightField = right;
-	auto leftMatrix = leftField.getCalculatedField();
-	auto rigthMatrix = rightField.getCalculatedField();
-	if ((leftMatrix.at(0).size() != rigthMatrix.at(0).size()) || (leftMatrix.size() != rigthMatrix.size())) {
+	if ((const_cast<field&>(left).getCalculatedField().at(0).size() != const_cast<field&>(right).getCalculatedField().at(0).size()) || (const_cast<field&>(left).getCalculatedField().size() != const_cast<field&>(right).getCalculatedField().size()) || (const_cast<field&>(left).getX() != const_cast<field&>(right).getX()) || (const_cast<field&>(left).getY() != const_cast<field&>(right).getY())) {
 		return field();
 	}
 	std::vector<std::vector<std::complex<double>>> product;
-	product.reserve(leftMatrix.size());
-	for (auto i = 0; i < leftMatrix.size(); i++) {
+	product.reserve(const_cast<field&>(left).getCalculatedField().size());
+	for (auto i = 0; i < const_cast<field&>(left).getCalculatedField().size(); i++) {
 		auto row = std::vector<std::complex<double>>();
-		product.reserve(leftMatrix.at(0).size());
-		for (auto j = 0; j < leftMatrix.at(0).size(); j++) {
-			row.emplace_back(leftMatrix.at(i).at(j) * rigthMatrix.at(i).at(j));
+		row.reserve(const_cast<field&>(left).getCalculatedField().at(0).size());
+		for (auto j = 0; j < const_cast<field&>(left).getCalculatedField().at(0).size(); j++) {
+			row.emplace_back(const_cast<field&>(left).getCalculatedField().at(i).at(j) * const_cast<field&>(right).getCalculatedField().at(i).at(j));
 		}
 		product.emplace_back(row);
 	}
-	return field(product, leftField.getX(), leftField.getY());
+	return field(product, const_cast<field&>(left).getX(), const_cast<field&>(left).getY());
 }
 
 field operator*=(field& left, const field& right) {
