@@ -1,5 +1,5 @@
 ﻿#include "Main.h"
-
+#include <QtCore/QCoreApplication>
 
 field getRadialSymmetricClusterMode(const field& solitone, double sigma, double radius, int number, double ksi, double eta)
 {
@@ -21,8 +21,12 @@ field getRadialSymmetricClusterMode(const field& solitone, double sigma, double 
 	return superposition;
 }
 
-int main() {
-	SetConsoleCP(1251);
+int main(int argc, char* argv[]) {
+
+	QCoreApplication a(argc, argv);
+
+	return a.exec();
+	/*SetConsoleCP(1251);
 	SetConsoleOutputCP(1251);
 
 	try {
@@ -84,5 +88,5 @@ int main() {
 	catch (...) {
 		std::cerr << "Неизвестная ошибка!" << std::endl;
 	}
-	return 0;
+	return 0;*/
 }
