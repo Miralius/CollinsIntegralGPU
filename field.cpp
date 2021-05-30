@@ -115,8 +115,8 @@ void field::shift(double x, double y) {
 void field::rotate(double angle)
 {
 	std::vector<std::vector<std::complex<double>>> rotated;
-	auto heightHalf = calculatedField.size() / 2;
-	auto widthHalf = calculatedField.at(0).size() / 2;
+	auto heightHalf = calculatedField.size() / static_cast<double>(2);
+	auto widthHalf = calculatedField.at(0).size() / static_cast<double>(2);
 	rotated.reserve(calculatedField.size());
 	for (auto i = 0; i < calculatedField.size(); i++) {
 		auto row = std::vector<std::complex<double>>();
