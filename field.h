@@ -22,8 +22,12 @@ private:
 	static std::vector<double> calcPoints(double begin, double end, int count);
 	// createField создает световое поле по заданному правилу mode (по сути в аргументе передается лямбда-функция f(x, y)). Входной параметр — лямбда-функция входного поля f(x,y). Результат записывается в поле calculatedField.
 	void createField(const std::function<std::complex<double>(double, double)>& mode);
-	// Статическая функция нахождения максимального по модулю значения в световом поле
+	// Статическая функция нахождения максимального по модулю значения в двумерной матрице вещественных чисел
 	static double maximum(const std::vector<std::vector<double>>& field);
+	// Статическая функция нахождения максимального по модулю значения в векторе комплексных чисел
+	static double maximum(std::vector<std::complex<double>>& column);
+	// Транспонирование матрицы. Возвращается транспонированная двумерная комплексная матрица. Входной параметр matrix — двумерная комплексная матрица, которую необходимо транспонировать.
+	std::vector<std::vector<std::complex<double>>> transpose(std::vector<std::vector<std::complex<double>>>& matrix);
 public:
 	// Конструктор по умолчанию field
 	field();
@@ -37,6 +41,8 @@ public:
 	std::vector<double> getY();
 	// Геттер матрицы светового поля
 	std::vector<std::vector<std::complex<double>>> getCalculatedField();
+	// Нормализация светового поля (максимальная интенсивность в каждом столбце равна 1)
+	void normalize();
 	// Сдвиг светового поля по координатам x и y. Входные параметры: x — сдвиг по оси x в миллиметрах (положительное значение — сдвиг вправо, отрицательное — влево), y — сдвиг по оси y в миллиметрах (положительное значение — сдвиг вверх, отрицательное — вниз).
 	void shift(double x, double y);
 	// Поворот светового поля. Входной параметр angle (в радианах) — поворот по часовой стрелке, если angle > 0, против часовой стрелке если angle < 0. 

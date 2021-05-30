@@ -1,4 +1,5 @@
 ﻿#include "Main.h"
+#include "ui_main.h"
 #include <QtCore/QCoreApplication>
 
 field getRadialSymmetricClusterMode(const field& solitone, double sigma, double radius, int number, double ksi, double eta)
@@ -21,52 +22,66 @@ field getRadialSymmetricClusterMode(const field& solitone, double sigma, double 
 	return superposition;
 }
 
+//class App : public QMainWindow, Ui_MainWindow
+//{
+//public:
+//	App()
+//	{
+//		this->setupUi(this);
+//	}
+//};
+
 int main(int argc, char* argv[]) {
 
-	QCoreApplication a(argc, argv);
+	/*QCoreApplication a(argc, argv);
 
-	return a.exec();
-	/*SetConsoleCP(1251);
+	auto window = App();
+	window.setWindowTitle("ыыы");
+	window.show();
+
+	return a.exec();*/
+	SetConsoleCP(1251);
 	SetConsoleOutputCP(1251);
 
 	try {
 		std::cout << std::endl << "Моделирование входного пучка" << std::endl;
-		auto a = -10.;
-		auto b = 10.;
+		auto a = -6.;
+		auto b = 6.;
 		auto n = 500;
 		auto solitone = field(a, b, n);
-		auto alpha = 5.;
-		auto beta = 5.;
-		auto alpha0 = -5.;
-		auto beta0 = -5.;
+		auto alpha = 1.;
+		auto beta = 1.;
+		auto alpha0 = 0.;
+		auto beta0 = 0.;
 		auto sigma = 1.;
-		auto ksi = 1.;
-		auto eta = 1.;
-		auto r = 5;
-		auto number = 8;
+		auto ksi = 0.;
+		auto eta = 0.;
+		auto r = 3;
+		auto number = 3;
 		solitone.gaussMode(sigma, 1);
-		auto aperture = field(a, b, n);
-		aperture.vortexMode(0);
-		solitone *= aperture;
-		auto superposition = getRadialSymmetricClusterMode(solitone, sigma, r, number, ksi, eta);
+		solitone.rotate(M_PI);
+		//auto aperture = field(a, b, n);
+		//aperture.gaussMode(sigma, 1);
+		//solitone *= aperture;
+		//auto superposition = getRadialSymmetricClusterMode(solitone, sigma, r, number, ksi, eta);
 		std::string absFileName = "input_abs.bmp";
 		std::string argFileName = "input_phase.bmp";
 		std::string absSchemeName = "fire";
 		std::string argSchemeName = "grays";
-		BMP test = superposition.createBMP(absSchemeName, false);
-		BMP test2 = superposition.createBMP(argSchemeName, true);
+		BMP test = solitone.createBMP(absSchemeName, false);
+		BMP test2 = solitone.createBMP(argSchemeName, true);
 		writingFile<BMP>(test, absFileName);
 		writingFile<BMP>(test2, argFileName);
 		auto u = 0.;
 		auto wavelength = 650. / 1000000;
-		auto z_begin = 50.;
-		auto z_end = 1950.;
+		auto z_begin = 250.;
+		auto z_end = 1750.;
 		auto z_n = 2000;
 		auto f = 1000.;
-		for (auto i = 750; i <= 1750; i += 250) {
+		for (auto i = 900; i <= 1100; i += 25) {
 			std::cout << std::endl << "Моделирование ДрПФ при z = " << i << std::endl;
-			field oxy = superposition;
-			oxy.ouvFractionalFourierTransform(a, b, n, wavelength, i, f);
+			field oxy = solitone;
+			oxy.ouvFractionalFourierTransform(a / 5, b / 5, n, wavelength, i, f);
 			absFileName = "oxy_abs_" + std::to_string(i) + ".bmp";
 			argFileName = "oxy_arg_" + std::to_string(i) + ".bmp";
 			test = oxy.createBMP(absSchemeName, false);
@@ -75,8 +90,9 @@ int main(int argc, char* argv[]) {
 			writingFile<BMP>(test2, argFileName);
 		}
 		std::cout << std::endl << "Моделирование продольного сечения пучка" << std::endl;
-		field oxz = superposition;
+		field oxz = solitone;
 		oxz.ovzFractionalFourierTransform(a, b, n, z_begin, z_end, z_n, wavelength, u, f);
+		oxz.normalize();
 		absFileName = "oxz_abs.bmp";
 		test = oxz.createBMP(absSchemeName, false);
 		writingFile<BMP>(test, absFileName);
@@ -88,5 +104,5 @@ int main(int argc, char* argv[]) {
 	catch (...) {
 		std::cerr << "Неизвестная ошибка!" << std::endl;
 	}
-	return 0;*/
+	return 0;
 }

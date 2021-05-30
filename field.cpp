@@ -35,6 +35,14 @@ double field::maximum(const std::vector<std::vector<double>>& field) {
 	return maxValue;
 }
 
+double field::maximum(std::vector<std::complex<double>>& column) {
+	auto maxValue = DBL_MIN;
+	for (auto &value : column) {
+		maxValue = max(maxValue, std::abs(value));
+	}
+	return maxValue;
+}
+
 field::field() : x(std::vector<double>()), y(std::vector<double>()), calculatedField(std::vector<std::vector<std::complex<double>>>()) {
 }
 
@@ -59,6 +67,31 @@ std::vector<double> field::getY()
 
 std::vector<std::vector<std::complex<double>>> field::getCalculatedField() {
 	return calculatedField;
+}
+
+std::vector<std::vector<std::complex<double>>> field::transpose(std::vector<std::vector<std::complex<double>>>& matrix) {
+	std::vector<std::vector<std::complex<double>>> transposed;
+	transposed.reserve(matrix.at(0).size());
+	for (auto j = 0; j < matrix.at(0).size(); j++) {
+		auto column = std::vector<std::complex<double>>();
+		column.reserve(matrix.size());
+		for (auto i = 0; i < matrix.size(); i++) {
+			column.emplace_back(matrix.at(i).at(j));
+		}
+		transposed.emplace_back(column);
+	}
+	return transposed;
+}
+
+void field::normalize() {
+	auto normalized = transpose(calculatedField);
+	for (auto i = 0; i < normalized.size(); i++) {
+		auto max = maximum(normalized.at(i));
+		for (auto j = 0; j < normalized.at(0).size(); j++) {
+			normalized.at(i).at(j) /= max;
+		}
+	}
+	calculatedField = transpose(normalized);
 }
 
 void field::shift(double x, double y) {
@@ -89,8 +122,8 @@ void field::rotate(double angle)
 		auto row = std::vector<std::complex<double>>();
 		row.reserve(calculatedField.at(0).size());
 		for (auto j = 0; j < calculatedField.at(0).size(); j++) {
-			auto a = static_cast<int>(std::abs(heightHalf - (i - heightHalf) * sin(angle) + (j - widthHalf) * cos(angle)));
-			auto b = static_cast<int>(std::abs(widthHalf + (i - heightHalf) * cos(angle) + (j - widthHalf) * sin(angle)));
+			auto a = static_cast<int>(std::abs(widthHalf + (i - heightHalf) * cos(angle) + (j - widthHalf) * sin(angle)));
+			auto b = static_cast<int>(std::abs(heightHalf - (i - heightHalf) * sin(angle) + (j - widthHalf) * cos(angle)));
 			row.emplace_back(a < calculatedField.size() && b < calculatedField.at(0).size() ? calculatedField.at(a).at(b) : 0);
 		}
 		rotated.emplace_back(row);
@@ -272,11 +305,12 @@ void field::ovzTransform(double a, double b, int n, double a_z, double b_z, int 
 
 std::vector<std::vector<double>> field::abs(const field& obj) {
 	std::vector<std::vector<double>> absField;
-	absField.reserve(const_cast<field&>(obj).getY().size());
-	for (auto &row : const_cast<field&>(obj).getCalculatedField()) {
+	field data = obj;
+	absField.reserve(data.getY().size());
+	for (auto& row : data.getCalculatedField()) {
 		auto vectorRow = std::vector<double>();
-		vectorRow.reserve(const_cast<field&>(obj).getX().size());
-		for (auto &value : row) {
+		vectorRow.reserve(data.getX().size());
+		for (auto& value : row) {
 			vectorRow.emplace_back(std::abs(value));
 		}
 		absField.emplace_back(vectorRow);
@@ -286,11 +320,12 @@ std::vector<std::vector<double>> field::abs(const field& obj) {
 
 std::vector<std::vector<double>> field::arg(const field& obj) {
 	std::vector<std::vector<double>> argField;
-	argField.reserve(const_cast<field&>(obj).getY().size());
-	for (auto &row : const_cast<field&>(obj).getCalculatedField()) {
+	field data = obj;
+	argField.reserve(data.getY().size());
+	for (auto& row : data.getCalculatedField()) {
 		auto vectorRow = std::vector<double>();
-		vectorRow.reserve(const_cast<field&>(obj).getX().size());
-		for (auto &value : row) {
+		vectorRow.reserve(data.getX().size());
+		for (auto& value : row) {
 			vectorRow.emplace_back((value.imag() < 0) ? (std::arg(value) + 2 * M_PI) : std::arg(value));
 		}
 		argField.emplace_back(vectorRow);
@@ -377,20 +412,24 @@ void field::initialTransverseVelocityAndPowerFactorExpMode(double ksi, double et
 }
 
 field operator+(const field& left, const field& right) {
-	if ((const_cast<field&>(left).getCalculatedField().at(0).size() != const_cast<field&>(right).getCalculatedField().at(0).size()) || (const_cast<field&>(left).getCalculatedField().size() != const_cast<field&>(right).getCalculatedField().size()) || (const_cast<field&>(left).getX() != const_cast<field&>(right).getX()) || (const_cast<field&>(left).getY() != const_cast<field&>(right).getY())) {
+	field leftField = left;
+	field rightField = right;
+	auto leftMatrix = leftField.getCalculatedField();
+	auto rigthMatrix = rightField.getCalculatedField();
+	if ((leftMatrix.at(0).size() != rigthMatrix.at(0).size()) || (leftMatrix.size() != rigthMatrix.size())) {
 		return field();
 	}
 	std::vector<std::vector<std::complex<double>>> sum;
-	sum.reserve(const_cast<field&>(left).getCalculatedField().size());
-	for (auto i = 0; i < const_cast<field&>(left).getCalculatedField().size(); i++) {
+	sum.reserve(leftMatrix.size());
+	for (auto i = 0; i < leftMatrix.size(); i++) {
 		auto row = std::vector<std::complex<double>>();
-		row.reserve(const_cast<field&>(left).getCalculatedField().at(0).size());
-		for (auto j = 0; j < const_cast<field&>(left).getCalculatedField().at(0).size(); j++) {
-			row.emplace_back(const_cast<field&>(left).getCalculatedField().at(i).at(j) + const_cast<field&>(right).getCalculatedField().at(i).at(j));
+		row.reserve(leftMatrix.at(0).size());
+		for (auto j = 0; j < leftMatrix.at(0).size(); j++) {
+			row.emplace_back(leftMatrix.at(i).at(j) + rigthMatrix.at(i).at(j));
 		}
 		sum.emplace_back(row);
 	}
-	return field(sum, const_cast<field&>(left).getX(), const_cast<field&>(left).getY());
+	return field(sum, leftField.getX(), leftField.getY());
 }
 
 field operator+=(field& left, const field& right) {
@@ -399,20 +438,24 @@ field operator+=(field& left, const field& right) {
 }
 
 field operator*(const field& left, const field& right) {
-	if ((const_cast<field&>(left).getCalculatedField().at(0).size() != const_cast<field&>(right).getCalculatedField().at(0).size()) || (const_cast<field&>(left).getCalculatedField().size() != const_cast<field&>(right).getCalculatedField().size()) || (const_cast<field&>(left).getX() != const_cast<field&>(right).getX()) || (const_cast<field&>(left).getY() != const_cast<field&>(right).getY())) {
+	field leftField = left;
+	field rightField = right;
+	auto leftMatrix = leftField.getCalculatedField();
+	auto rigthMatrix = rightField.getCalculatedField();
+	if ((leftMatrix.at(0).size() != rigthMatrix.at(0).size()) || (leftMatrix.size() != rigthMatrix.size())) {
 		return field();
 	}
 	std::vector<std::vector<std::complex<double>>> product;
-	product.reserve(const_cast<field&>(left).getCalculatedField().size());
-	for (auto i = 0; i < const_cast<field&>(left).getCalculatedField().size(); i++) {
+	product.reserve(leftMatrix.size());
+	for (auto i = 0; i < leftMatrix.size(); i++) {
 		auto row = std::vector<std::complex<double>>();
-		row.reserve(const_cast<field&>(left).getCalculatedField().at(0).size());
-		for (auto j = 0; j < const_cast<field&>(left).getCalculatedField().at(0).size(); j++) {
-			row.emplace_back(const_cast<field&>(left).getCalculatedField().at(i).at(j) * const_cast<field&>(right).getCalculatedField().at(i).at(j));
+		product.reserve(leftMatrix.at(0).size());
+		for (auto j = 0; j < leftMatrix.at(0).size(); j++) {
+			row.emplace_back(leftMatrix.at(i).at(j) * rigthMatrix.at(i).at(j));
 		}
 		product.emplace_back(row);
 	}
-	return field(product, const_cast<field&>(left).getX(), const_cast<field&>(left).getY());
+	return field(product, leftField.getX(), leftField.getY());
 }
 
 field operator*=(field& left, const field& right) {
