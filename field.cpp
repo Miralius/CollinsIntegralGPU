@@ -83,6 +83,21 @@ std::vector<std::vector<std::complex<double>>> field::transpose(std::vector<std:
 	return transposed;
 }
 
+void field::transpose() {
+	std::vector<std::vector<std::complex<double>>> transposed;
+	auto &field = calculatedField;
+	transposed.reserve(field.at(0).size());
+	for (auto j = 0; j < field.at(0).size(); j++) {
+		auto column = std::vector<std::complex<double>>();
+		column.reserve(field.size());
+		for (auto i = 0; i < field.size(); i++) {
+			column.emplace_back(field.at(i).at(j));
+		}
+		transposed.emplace_back(column);
+	}
+	calculatedField = transposed;
+}
+
 void field::normalize() {
 	auto normalized = transpose(calculatedField);
 	for (auto i = 0; i < normalized.size(); i++) {
@@ -96,9 +111,9 @@ void field::normalize() {
 
 void field::shift(double x, double y) {
 	auto hx = this->x.at(1) - this->x.at(0);
-	auto hy = this->y.at(1) - this->y.at(0);
+	auto hy = this->y.at(0) - this->y.at(1);
 	auto x_shift_n = static_cast<int>(x / hx);
-	auto y_shift_n = static_cast<int>(-y / hy);
+	auto y_shift_n = static_cast<int>(y / hy);
 	std::vector<std::vector<std::complex<double>>> shifted;
 	shifted.reserve(calculatedField.size());
 	for (unsigned long long j = 0; j < calculatedField.size(); j++) {

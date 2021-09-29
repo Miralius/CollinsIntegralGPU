@@ -75,16 +75,23 @@ __global__ void collinsKernel(cuDoubleComplex* output, const cuDoubleComplex* in
 {
     auto pi = 3.14159265358979323846;
     auto q = blockIdx.x * blockDim.x + threadIdx.x;
+    //printf("\n q = %d", q);
     auto p = blockIdx.y * blockDim.y + threadIdx.y;
+    //printf("\n p = %d", p);
     auto hx = x1[1] - x1[0];
-    auto hy = x2[1] - x2[0];
+    //printf("\n hx = %2.20f", hx);
+    auto hy = x2[0] - x2[1];
+    //printf("\n hy = %2.20f", hy);
     auto wavelength = parameters[0];
     auto z = OxyCrossSection ? parameters[1] : x3[q];
     auto u = OxyCrossSection ? x3[q] : parameters[1];
     auto f = !transformType ? parameters[2] : 0;
     auto k = 2 * pi / wavelength;
+    //printf("\n waveNumber = %2.20f", k);
     auto n1 = dimension[0];
+    //printf("\n n1 = %d", n1);
     auto n2 = dimension[1];
+    //printf("\n n2 = %d", n2);
     auto n3 = OxyCrossSection ? dimension[1] : dimension[2];
     auto A = 0.0;
     auto B = 0.0;
@@ -92,8 +99,11 @@ __global__ void collinsKernel(cuDoubleComplex* output, const cuDoubleComplex* in
     switch (transformType) {
     case 0:
         A = cos(pi * z / (2 * f));
+        //printf("\n A = %2.20f", A);
         B = f * sin(pi * z / (2 * f));
+        //printf("\n B = %2.20f", B);
         D = cos(pi * z / (2 * f));
+        //printf("\n D = %2.20f", D);
         break;
     case 1:
         A = 1.;
@@ -109,12 +119,15 @@ __global__ void collinsKernel(cuDoubleComplex* output, const cuDoubleComplex* in
     for (auto i = 0; i < n1; i++) {
         for (auto j = 0; j < n1; j++) {
             auto arg = (k / (2 * B)) * (A * (x2[i] * x2[i] + x1[j] * x1[j]) - 2 * (x2[i] * x4[p] + x1[j] * u) + D * (x4[p] * x4[p] + u * u));
+            //printf("\narg[%d][%d] = %2.20f", i, j, arg);
             value += input[i * n1 + j] * exp(make_cuDoubleComplex(0, arg));
+            //printf("\nvalue[%d][%d] = %2.20f + i%2.20f", i, j, value.x, value.y);
         }
     }
     atomicAdd(progress, 1);
     processing(*progress, n2 * n3);
     output[p * n3 + q] = make_cuDoubleComplex(0, -(k / (2 * pi * B))) * value * hx * hy;
+    //printf("\noutput[%d][%d] = %2.20f + i%2.20f", q, p, output[p * n2 + q].x, output[p * n2 + q].y);
 }
 
 std::vector<std::vector<std::complex<double>>> calculateCollinsCUDA(const std::vector<std::vector<std::complex<double>>>& input, const std::vector<double>& x1, const std::vector<double>& x2, const std::vector<double>& x3, const std::vector<double>& x4, const std::vector<double>& parameters, const std::vector<int>& dimension, int transformType)
