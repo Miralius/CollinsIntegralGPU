@@ -86,38 +86,39 @@ int main(int argc, char* argv[]) {
 				aperture.gaussMode(sigma, 1);
 				solitone *= aperture;
 				solitone.rotate(angle);
-				std::string absFileName = "input_abs.bmp";
-				std::string argFileName = "input_phase.bmp";
 				std::string absSchemeName = "fire";
 				std::string argSchemeName = "grays";
-				BMP test = solitone.createBMP(absSchemeName, false);
-				BMP test2 = solitone.createBMP(argSchemeName, true);
-				writingFile<BMP>(test, "C:\\Users\\F-Mir\\OneDrive - ssau.ru\\For hei\\Science work\\2021\\Computer Optics\\Modes\\Solitone\\RotatedBeams\\" + angleName + "\\" + parameterName + "\\" + absFileName);
-				writingFile<BMP>(test2, "C:\\Users\\F-Mir\\OneDrive - ssau.ru\\For hei\\Science work\\2021\\Computer Optics\\Modes\\Solitone\\RotatedBeams\\" + angleName + "\\" + parameterName + "\\" + argFileName);
 				auto u = 0.;
 				auto wavelength = 650. / 1000000;
 				auto z_begin = 100.;
 				auto z_end = 1900.;
 				auto z_n = 2000;
 				auto f = 1000.;
-				for (auto i = 100; i <= 1950; i += 50) {
+				for (auto i = 0; i <= 2000; i += 50) {
 					std::cout << "Моделирование ДрПФ пучка при z = " << i << ", angle = " << angleName << ", alpha|beta|alpha0|beta0 = " << parameterName << std::endl;
+					std::string absFileName = "C:\\Users\\F-Mir\\OneDrive - ssau.ru\\For hei\\Science work\\2021\\Computer Optics\\Modes\\Solitone\\RotatedBeams\\" + angleName + "\\" + parameterName + "\\" + "oxy_abs_" + std::to_string(i) + ".bmp";
+					std::string argFileName = "C:\\Users\\F-Mir\\OneDrive - ssau.ru\\For hei\\Science work\\2021\\Computer Optics\\Modes\\Solitone\\RotatedBeams\\" + angleName + "\\" + parameterName + "\\" + "oxy_arg_" + std::to_string(i) + ".bmp";
+					if (std::filesystem::exists(absFileName)) {
+						std::cout << "Данный пучок уже смоделирован!" << std::endl;
+						continue;
+					}
 					field oxy = solitone;
 					oxy.ouvFractionalFourierTransform(a, b, n, wavelength, i, f);
-					absFileName = "oxy_abs_" + std::to_string(i) + ".bmp";
-					argFileName = "oxy_arg_" + std::to_string(i) + ".bmp";
-					test = oxy.createBMP(absSchemeName, false);
-					test2 = oxy.createBMP(argSchemeName, true);
-					writingFile<BMP>(test, "C:\\Users\\F-Mir\\OneDrive - ssau.ru\\For hei\\Science work\\2021\\Computer Optics\\Modes\\Solitone\\RotatedBeams\\" + angleName + "\\" + parameterName + "\\" + absFileName);
-					writingFile<BMP>(test2, "C:\\Users\\F-Mir\\OneDrive - ssau.ru\\For hei\\Science work\\2021\\Computer Optics\\Modes\\Solitone\\RotatedBeams\\" + angleName + "\\" + parameterName + "\\" + argFileName);
+					BMP test = oxy.createBMP(absSchemeName, false);
+					BMP test2 = oxy.createBMP(argSchemeName, true);
+					writingFile<BMP>(test, absFileName);
+					writingFile<BMP>(test2, argFileName);
 				}
 				std::cout << "Моделирование продольного сечения пучка c параметрами angle = " << angleName << ", alpha|beta|alpha0|beta0 = " << parameterName << std::endl;
 				field oxz = solitone;
+				std::string absFileName = "C:\\Users\\F-Mir\\OneDrive - ssau.ru\\For hei\\Science work\\2021\\Computer Optics\\Modes\\Solitone\\RotatedBeams\\" + angleName + "\\" + parameterName + "\\" + "oxz_abs.bmp";
+				if (std::filesystem::exists(absFileName)) {
+					std::cout << "Данный пучок уже смоделирован!" << std::endl;
+					continue;
+				}
 				oxz.ovzFractionalFourierTransform(a, b, n, z_begin, z_end, z_n, wavelength, u, f);
-				//oxz.normalize();
-				absFileName = "oxz_abs.bmp";
-				test = oxz.createBMP(absSchemeName, false);
-				writingFile<BMP>(test, "C:\\Users\\F-Mir\\OneDrive - ssau.ru\\For hei\\Science work\\2021\\Computer Optics\\Modes\\Solitone\\RotatedBeams\\" + angleName + "\\" + parameterName + "\\" + absFileName);
+				BMP test = oxz.createBMP(absSchemeName, false);
+				writingFile<BMP>(test, absFileName);
 			}
 		}
 
@@ -152,46 +153,46 @@ int main(int argc, char* argv[]) {
 					auto alpha0 = parameters.at(2);
 					auto beta0 = parameters.at(3);
 					auto parameterName = std::to_string(static_cast<int>(alpha)) + std::to_string(static_cast<int>(beta)) + std::to_string(static_cast<int>(alpha0)) + std::to_string(static_cast<int>(beta0));
-					std::cout << "Моделирование входного вращающегося набора пучков c параметрами ksi = " << static_cast<int>(ksi) << ", angle = " << angleName << ", alpha|beta|alpha0|beta0 = " << parameterName << std::endl;
+					std::cout << "Моделирование входного повернутого набора пучков c параметрами ksi = " << static_cast<int>(ksi) << ", angle = " << angleName << ", alpha|beta|alpha0|beta0 = " << parameterName << std::endl;
 					solitone.airyMode(alpha, beta, alpha0, beta0);
 					auto aperture = field(a, b, n);
 					aperture.gaussMode(sigma, 1);
 					solitone *= aperture;
 					auto superposition = getRadialSymmetricClusterMode(solitone, sigma, r, number, ksi, eta);
 					superposition.rotate(angle);
-					std::string absFileName = "input_abs.bmp";
-					std::string argFileName = "input_phase.bmp";
 					std::string absSchemeName = "fire";
 					std::string argSchemeName = "grays";
-					BMP test = superposition.createBMP(absSchemeName, false);
-					BMP test2 = superposition.createBMP(argSchemeName, true);
-					writingFile<BMP>(test, "C:\\Users\\F-Mir\\OneDrive - ssau.ru\\For hei\\Science work\\2021\\Computer Optics\\Modes\\Cluster\\RotatedCluster\\" + ksiName + "\\" + angleName + "\\" + parameterName + "\\" + absFileName);
-					writingFile<BMP>(test2, "C:\\Users\\F-Mir\\OneDrive - ssau.ru\\For hei\\Science work\\2021\\Computer Optics\\Modes\\Cluster\\RotatedCluster\\" + ksiName + "\\" + angleName + "\\" + parameterName + "\\" + argFileName);
 					auto u = 0.;
 					auto wavelength = 650. / 1000000;
 					auto z_begin = 100.;
 					auto z_end = 1900.;
 					auto z_n = 2000;
 					auto f = 1000.;
-					for (auto i = 100; i <= 1950; i += 50) {
-						std::cout << "Моделирование ДрПФ вращающегося набора пучков при z = " << i << ", ksi = " << static_cast<int>(ksi) << ", angle = " << angleName << ", alpha|beta|alpha0|beta0 = " << parameterName << std::endl;
-						field oxy = superposition/*solitone*/;
+					for (auto i = 0; i <= 2000; i += 50) {
+						std::cout << "Моделирование ДрПФ повернутого набора пучков при z = " << i << ", ksi = " << static_cast<int>(ksi) << ", angle = " << angleName << ", alpha|beta|alpha0|beta0 = " << parameterName << std::endl;
+						std::string absFileName = "C:\\Users\\F-Mir\\OneDrive - ssau.ru\\For hei\\Science work\\2021\\Computer Optics\\Modes\\Cluster\\RotatedCluster\\" + ksiName + "\\" + angleName + "\\" + parameterName + "\\" + "oxy_abs_" + std::to_string(i) + ".bmp";
+						std::string argFileName = "C:\\Users\\F-Mir\\OneDrive - ssau.ru\\For hei\\Science work\\2021\\Computer Optics\\Modes\\Cluster\\RotatedCluster\\" + ksiName + "\\" + angleName + "\\" + parameterName + "\\" + "oxy_arg_" + std::to_string(i) + ".bmp";
+						if (std::filesystem::exists(absFileName)) {
+							std::cout << "Данный повернутый набор пучков уже смоделирован!" << std::endl;
+							continue;
+						}
+						field oxy = superposition;
 						oxy.ouvFractionalFourierTransform(a, b, n, wavelength, i, f);
-						absFileName = "oxy_abs_" + std::to_string(i) + ".bmp";
-						argFileName = "oxy_arg_" + std::to_string(i) + ".bmp";
-						test = oxy.createBMP(absSchemeName, false);
-						test2 = oxy.createBMP(argSchemeName, true);
-						writingFile<BMP>(test, "C:\\Users\\F-Mir\\OneDrive - ssau.ru\\For hei\\Science work\\2021\\Computer Optics\\Modes\\Cluster\\RotatedCluster\\" + ksiName + "\\" + angleName + "\\" + parameterName + "\\" + absFileName);
-						writingFile<BMP>(test2, "C:\\Users\\F-Mir\\OneDrive - ssau.ru\\For hei\\Science work\\2021\\Computer Optics\\Modes\\Cluster\\RotatedCluster\\" + ksiName + "\\" + angleName + "\\" + parameterName + "\\" + argFileName);
+						BMP test = oxy.createBMP(absSchemeName, false);
+						BMP test2 = oxy.createBMP(argSchemeName, true);
+						writingFile<BMP>(test, absFileName);
+						writingFile<BMP>(test2, argFileName);
 					}
-					std::cout << "Моделирование продольного сечения вращающегося набора пучков c параметрами ksi = " << static_cast<int>(ksi) << ", angle = " << angleName << ", alpha|beta|alpha0|beta0 = " << parameterName << std::endl;
-					field oxz = superposition/*solitone*/;
+					std::cout << "Моделирование продольного сечения повернутого набора пучков c параметрами ksi = " << static_cast<int>(ksi) << ", angle = " << angleName << ", alpha|beta|alpha0|beta0 = " << parameterName << std::endl;
+					field oxz = superposition;
+					std::string absFileName = "C:\\Users\\F-Mir\\OneDrive - ssau.ru\\For hei\\Science work\\2021\\Computer Optics\\Modes\\Cluster\\RotatedCluster\\" + ksiName + "\\" + angleName + "\\" + parameterName + "\\" + "oxz_abs.bmp";
+					if (std::filesystem::exists(absFileName)) {
+						std::cout << "Данный повернутый набор пучков уже смоделирован!" << std::endl;
+						continue;
+					}
 					oxz.ovzFractionalFourierTransform(a, b, n, z_begin, z_end, z_n, wavelength, u, f);
-					//oxz.normalize();
-					absFileName = "oxz_abs.bmp";
-					test = oxz.createBMP(absSchemeName, false);
-					writingFile<BMP>(test, "C:\\Users\\F-Mir\\OneDrive - ssau.ru\\For hei\\Science work\\2021\\Computer Optics\\Modes\\Cluster\\RotatedCluster\\" + ksiName + "\\" + angleName + "\\" + parameterName + "\\" + absFileName);
-					std::cout << std::endl;
+					BMP test = oxz.createBMP(absSchemeName, false);
+					writingFile<BMP>(test, absFileName);
 				}
 			}
 		}
@@ -223,45 +224,46 @@ int main(int argc, char* argv[]) {
 					auto alpha0 = parameters.at(2);
 					auto beta0 = parameters.at(3);
 					auto parameterName = std::to_string(static_cast<int>(alpha)) + std::to_string(static_cast<int>(beta)) + std::to_string(static_cast<int>(alpha0)) + std::to_string(static_cast<int>(beta0));
-					std::cout << "Моделирование входного набора вращающихся пучков c параметрами ksi = " << static_cast<int>(ksi) << ", angle = " << angleName << ", alpha|beta|alpha0|beta0 = " << parameterName << std::endl;
+					std::cout << "Моделирование входного набора повернутых пучков c параметрами ksi = " << static_cast<int>(ksi) << ", angle = " << angleName << ", alpha|beta|alpha0|beta0 = " << parameterName << std::endl;
 					solitone.airyMode(alpha, beta, alpha0, beta0);
 					auto aperture = field(a, b, n);
 					aperture.gaussMode(sigma, 1);
 					solitone *= aperture;
 					solitone.rotate(angle);
 					auto superposition = getRadialSymmetricClusterMode(solitone, sigma, r, number, ksi, eta);
-					std::string absFileName = "input_abs.bmp";
-					std::string argFileName = "input_phase.bmp";
 					std::string absSchemeName = "fire";
 					std::string argSchemeName = "grays";
-					BMP test = superposition.createBMP(absSchemeName, false);
-					BMP test2 = superposition.createBMP(argSchemeName, true);
-					writingFile<BMP>(test, "C:\\Users\\F-Mir\\OneDrive - ssau.ru\\For hei\\Science work\\2021\\Computer Optics\\Modes\\Cluster\\RotatedBeams\\" + ksiName + "\\" + angleName + "\\" + parameterName + "\\" + absFileName);
-					writingFile<BMP>(test2, "C:\\Users\\F-Mir\\OneDrive - ssau.ru\\For hei\\Science work\\2021\\Computer Optics\\Modes\\Cluster\\RotatedBeams\\" + ksiName + "\\" + angleName + "\\" + parameterName + "\\" + argFileName);
 					auto u = 0.;
 					auto wavelength = 650. / 1000000;
 					auto z_begin = 100.;
 					auto z_end = 1900.;
 					auto z_n = 2000;
 					auto f = 1000.;
-					for (auto i = 100; i <= 1950; i += 50) {
-						std::cout << "Моделирование ДрПФ набора вращающихся пучков при z = " << i << ", ksi = " << static_cast<int>(ksi) << ", angle = " << angleName << ", alpha|beta|alpha0|beta0 = " << parameterName << std::endl;
-						field oxy = superposition/*solitone*/;
+					for (auto i = 0; i <= 2000; i += 50) {
+						std::cout << "Моделирование ДрПФ набора повернутых пучков при z = " << i << ", ksi = " << static_cast<int>(ksi) << ", angle = " << angleName << ", alpha|beta|alpha0|beta0 = " << parameterName << std::endl;
+						std::string absFileName = "C:\\Users\\F-Mir\\OneDrive - ssau.ru\\For hei\\Science work\\2021\\Computer Optics\\Modes\\Cluster\\RotatedBeams\\" + ksiName + "\\" + angleName + "\\" + parameterName + "\\" + "oxy_abs_" + std::to_string(i) + ".bmp";
+						std::string argFileName = "C:\\Users\\F-Mir\\OneDrive - ssau.ru\\For hei\\Science work\\2021\\Computer Optics\\Modes\\Cluster\\RotatedBeams\\" + ksiName + "\\" + angleName + "\\" + parameterName + "\\" + "oxy_arg_" + std::to_string(i) + ".bmp";
+						if (std::filesystem::exists(absFileName)) {
+							std::cout << "Данный набор повернутых пучков уже смоделирован!" << std::endl;
+							continue;
+						}
+						field oxy = superposition;
 						oxy.ouvFractionalFourierTransform(a, b, n, wavelength, i, f);
-						absFileName = "oxy_abs_" + std::to_string(i) + ".bmp";
-						argFileName = "oxy_arg_" + std::to_string(i) + ".bmp";
-						test = oxy.createBMP(absSchemeName, false);
-						test2 = oxy.createBMP(argSchemeName, true);
-						writingFile<BMP>(test, "C:\\Users\\F-Mir\\OneDrive - ssau.ru\\For hei\\Science work\\2021\\Computer Optics\\Modes\\Cluster\\RotatedBeams\\" + ksiName + "\\" + angleName + "\\" + parameterName + "\\" + absFileName);
-						writingFile<BMP>(test2, "C:\\Users\\F-Mir\\OneDrive - ssau.ru\\For hei\\Science work\\2021\\Computer Optics\\Modes\\Cluster\\RotatedBeams\\" + ksiName + "\\" + angleName + "\\" + parameterName + "\\" + argFileName);
+						BMP test = oxy.createBMP(absSchemeName, false);
+						BMP test2 = oxy.createBMP(argSchemeName, true);
+						writingFile<BMP>(test, absFileName);
+						writingFile<BMP>(test2, argFileName);
 					}
-					std::cout << "Моделирование продольного сечения набора вращающихся пучков c параметрами ksi = " << static_cast<int>(ksi) << ", angle = " << angleName << ", alpha|beta|alpha0|beta0 = " << parameterName << std::endl;
-					field oxz = superposition/*solitone*/;
+					std::cout << "Моделирование продольного сечения набора повернутых пучков c параметрами ksi = " << static_cast<int>(ksi) << ", angle = " << angleName << ", alpha|beta|alpha0|beta0 = " << parameterName << std::endl;
+					field oxz = superposition;
+					std::string absFileName = "C:\\Users\\F-Mir\\OneDrive - ssau.ru\\For hei\\Science work\\2021\\Computer Optics\\Modes\\Cluster\\RotatedBeams\\" + ksiName + "\\" + angleName + "\\" + parameterName + "\\" + "oxz_abs.bmp";
+					if (std::filesystem::exists(absFileName)) {
+						std::cout << "Данный набор повернутых пучков уже смоделирован!" << std::endl;
+						continue;
+					}
 					oxz.ovzFractionalFourierTransform(a, b, n, z_begin, z_end, z_n, wavelength, u, f);
-					//oxz.normalize();
-					absFileName = "oxz_abs.bmp";
-					test = oxz.createBMP(absSchemeName, false);
-					writingFile<BMP>(test, "C:\\Users\\F-Mir\\OneDrive - ssau.ru\\For hei\\Science work\\2021\\Computer Optics\\Modes\\Cluster\\RotatedBeams\\" + ksiName + "\\" + angleName + "\\" + parameterName + "\\" + absFileName);
+					BMP test = oxz.createBMP(absSchemeName, false);
+					writingFile<BMP>(test, absFileName);
 				}
 			}
 		}

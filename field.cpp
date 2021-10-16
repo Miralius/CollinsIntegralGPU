@@ -163,6 +163,7 @@ void field::collinsSingular(const std::vector<double>& u, const std::vector<doub
 		output.emplace_back(row);
 	}
 	calculatedField = output;
+	std::cout << "Моделирование сингулярного случая выполнено!" << std::endl;
 }
 
 bool field::hasSingularities(const std::vector<double>& z, int transformType, double parameter)
