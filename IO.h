@@ -51,8 +51,7 @@ template <typename T> std::vector<T> loadingData(std::string nameFile) {
 // Запись в файл (data — данные для записи, nameFile — имя файла)
 template <typename T> void writingFile(T& data, std::string nameFile) {
 	if (nameFile.find('\\') != -1) {
-		std::filesystem::path pathFile = nameFile;
-		std::filesystem::create_directories(pathFile.remove_filename());
+		std::filesystem::create_directories(static_cast<std::filesystem::path>(nameFile).remove_filename());
 	}
 	std::ofstream output(nameFile, std::ios::binary | std::ios::trunc | std::ios::out);
 	if (!output) {

@@ -208,6 +208,8 @@ std::vector<std::vector<std::complex<double>>> calculateCollinsCUDA(const std::v
         throw std::runtime_error("Синхронизация данных между хостом и устройством завершилась неудачей!");
     }
 
+    std::cout << "\rВыполнено 100.00%" << std::endl;
+
     // Copy output vector from GPU buffer to host memory.
     cudaStatus = cudaMemcpy(device_output, device_pointer_output, static_cast<unsigned long long>(n2) * n3 * sizeof(cuDoubleComplex), cudaMemcpyDeviceToHost);
     if (cudaStatus != cudaSuccess) {

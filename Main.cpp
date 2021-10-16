@@ -101,7 +101,7 @@ int main(int argc, char* argv[]) {
 				auto z_n = 2000;
 				auto f = 1000.;
 				for (auto i = 100; i <= 1950; i += 50) {
-					std::cout << std::endl << "Моделирование ДрПФ пучка при z = " << i << ", angle = " << angleName << ", alpha|beta|alpha0|beta0 = " << parameterName << std::endl;
+					std::cout << "Моделирование ДрПФ пучка при z = " << i << ", angle = " << angleName << ", alpha|beta|alpha0|beta0 = " << parameterName << std::endl;
 					field oxy = solitone;
 					oxy.ouvFractionalFourierTransform(a, b, n, wavelength, i, f);
 					absFileName = "oxy_abs_" + std::to_string(i) + ".bmp";
@@ -111,7 +111,7 @@ int main(int argc, char* argv[]) {
 					writingFile<BMP>(test, "C:\\Users\\F-Mir\\OneDrive - ssau.ru\\For hei\\Science work\\2021\\Computer Optics\\Modes\\Solitone\\RotatedBeams\\" + angleName + "\\" + parameterName + "\\" + absFileName);
 					writingFile<BMP>(test2, "C:\\Users\\F-Mir\\OneDrive - ssau.ru\\For hei\\Science work\\2021\\Computer Optics\\Modes\\Solitone\\RotatedBeams\\" + angleName + "\\" + parameterName + "\\" + argFileName);
 				}
-				std::cout << std::endl << "Моделирование продольного сечения пучка c параметрами angle = " << angleName << ", alpha|beta|alpha0|beta0 = " << parameterName << std::endl;
+				std::cout << "Моделирование продольного сечения пучка c параметрами angle = " << angleName << ", alpha|beta|alpha0|beta0 = " << parameterName << std::endl;
 				field oxz = solitone;
 				oxz.ovzFractionalFourierTransform(a, b, n, z_begin, z_end, z_n, wavelength, u, f);
 				//oxz.normalize();
@@ -174,7 +174,7 @@ int main(int argc, char* argv[]) {
 					auto z_n = 2000;
 					auto f = 1000.;
 					for (auto i = 100; i <= 1950; i += 50) {
-						std::cout << std::endl << "Моделирование ДрПФ вращающегося набора пучков при z = " << i << ", ksi = " << static_cast<int>(ksi) << ", angle = " << angleName << ", alpha|beta|alpha0|beta0 = " << parameterName << std::endl;
+						std::cout << "Моделирование ДрПФ вращающегося набора пучков при z = " << i << ", ksi = " << static_cast<int>(ksi) << ", angle = " << angleName << ", alpha|beta|alpha0|beta0 = " << parameterName << std::endl;
 						field oxy = superposition/*solitone*/;
 						oxy.ouvFractionalFourierTransform(a, b, n, wavelength, i, f);
 						absFileName = "oxy_abs_" + std::to_string(i) + ".bmp";
@@ -184,7 +184,7 @@ int main(int argc, char* argv[]) {
 						writingFile<BMP>(test, "C:\\Users\\F-Mir\\OneDrive - ssau.ru\\For hei\\Science work\\2021\\Computer Optics\\Modes\\Cluster\\RotatedCluster\\" + ksiName + "\\" + angleName + "\\" + parameterName + "\\" + absFileName);
 						writingFile<BMP>(test2, "C:\\Users\\F-Mir\\OneDrive - ssau.ru\\For hei\\Science work\\2021\\Computer Optics\\Modes\\Cluster\\RotatedCluster\\" + ksiName + "\\" + angleName + "\\" + parameterName + "\\" + argFileName);
 					}
-					std::cout << std::endl << "Моделирование продольного сечения вращающегося набора пучков c параметрами ksi = " << static_cast<int>(ksi) << ", angle = " << angleName << ", alpha|beta|alpha0|beta0 = " << parameterName << std::endl;
+					std::cout << "Моделирование продольного сечения вращающегося набора пучков c параметрами ksi = " << static_cast<int>(ksi) << ", angle = " << angleName << ", alpha|beta|alpha0|beta0 = " << parameterName << std::endl;
 					field oxz = superposition/*solitone*/;
 					oxz.ovzFractionalFourierTransform(a, b, n, z_begin, z_end, z_n, wavelength, u, f);
 					//oxz.normalize();
@@ -245,7 +245,7 @@ int main(int argc, char* argv[]) {
 					auto z_n = 2000;
 					auto f = 1000.;
 					for (auto i = 100; i <= 1950; i += 50) {
-						std::cout << std::endl << "Моделирование ДрПФ набора вращающихся пучков при z = " << i << ", ksi = " << static_cast<int>(ksi) << ", angle = " << angleName << ", alpha|beta|alpha0|beta0 = " << parameterName << std::endl;
+						std::cout << "Моделирование ДрПФ набора вращающихся пучков при z = " << i << ", ksi = " << static_cast<int>(ksi) << ", angle = " << angleName << ", alpha|beta|alpha0|beta0 = " << parameterName << std::endl;
 						field oxy = superposition/*solitone*/;
 						oxy.ouvFractionalFourierTransform(a, b, n, wavelength, i, f);
 						absFileName = "oxy_abs_" + std::to_string(i) + ".bmp";
@@ -255,7 +255,7 @@ int main(int argc, char* argv[]) {
 						writingFile<BMP>(test, "C:\\Users\\F-Mir\\OneDrive - ssau.ru\\For hei\\Science work\\2021\\Computer Optics\\Modes\\Cluster\\RotatedBeams\\" + ksiName + "\\" + angleName + "\\" + parameterName + "\\" + absFileName);
 						writingFile<BMP>(test2, "C:\\Users\\F-Mir\\OneDrive - ssau.ru\\For hei\\Science work\\2021\\Computer Optics\\Modes\\Cluster\\RotatedBeams\\" + ksiName + "\\" + angleName + "\\" + parameterName + "\\" + argFileName);
 					}
-					std::cout << std::endl << "Моделирование продольного сечения набора вращающихся пучков c параметрами ksi = " << static_cast<int>(ksi) << ", angle = " << angleName << ", alpha|beta|alpha0|beta0 = " << parameterName << std::endl;
+					std::cout << "Моделирование продольного сечения набора вращающихся пучков c параметрами ksi = " << static_cast<int>(ksi) << ", angle = " << angleName << ", alpha|beta|alpha0|beta0 = " << parameterName << std::endl;
 					field oxz = superposition/*solitone*/;
 					oxz.ovzFractionalFourierTransform(a, b, n, z_begin, z_end, z_n, wavelength, u, f);
 					//oxz.normalize();
