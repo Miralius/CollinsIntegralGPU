@@ -403,6 +403,14 @@ void field::gaussLaguerreMode(int m, int n, double sigma)
 	createField(gaussLaguerre);
 }
 
+void field::doubledLaguerreMode(double sigma)
+{
+	auto doubledLaguerre = [&](double x, double y) {
+		return exp(std::complex<double>(-(x * x + y * y) / (sigma * sigma), 0)) * std::complex<double>(1 + x, y);
+	};
+	createField(doubledLaguerre);
+}
+
 void field::airyMode(double alpha, double beta, double alpha0, double beta0) {
 	auto airy = [&](double x, double y) {
 		return exp(std::complex<double>(0, alpha * pow(x, 3) + beta * pow(y, 3) + alpha0 * x + beta0 * y));
