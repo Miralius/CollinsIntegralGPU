@@ -1,5 +1,5 @@
 ﻿#include "Main.h"
-#include "ui_main.h"
+#include <Windows.h>
 #include <QtCore/QCoreApplication>
 
 field getRadialSymmetricClusterMode(const field& solitone, double sigma, double radius, int number, double ksi, double eta)
@@ -42,6 +42,7 @@ int main(int argc, char* argv[]) {
 	window.show();
 
 	return a.exec();*/
+
 	SetConsoleCP(1251);
 	SetConsoleOutputCP(1251);
 
