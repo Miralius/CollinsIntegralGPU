@@ -1,6 +1,4 @@
 ﻿#include "Main.h"
-#include <Windows.h>
-#include <QtCore/QCoreApplication>
 
 field getRadialSymmetricClusterMode(const field& solitone, double sigma, double radius, int number, double ksi, double eta)
 {
@@ -24,25 +22,7 @@ field getRadialSymmetricClusterMode(const field& solitone, double sigma, double 
 	return superposition;
 }
 
-//class App : public QMainWindow, Ui_MainWindow
-//{
-//public:
-//	App()
-//	{
-//		this->setupUi(this);
-//	}
-//};
-
 int main(int argc, char* argv[]) {
-
-	/*QCoreApplication a(argc, argv);
-
-	auto window = App();
-	window.setWindowTitle("ыыы");
-	window.show();
-
-	return a.exec();*/
-
 	SetConsoleCP(1251);
 	SetConsoleOutputCP(1251);
 

@@ -1,6 +1,7 @@
 ﻿#ifndef MAIN_H
 #define MAIN_H
 
+#include <Windows.h>
 #include "field.h"
 #include "IO.h"
 
