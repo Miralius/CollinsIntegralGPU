@@ -146,42 +146,31 @@ std::vector<std::vector<std::complex<double>>> calculateCollinsCUDA(const std::v
     cuDoubleComplex* device_pointer_input = 0;
     cudaStatus = cudaMalloc((void**)&device_pointer_input, static_cast<unsigned long long>(n1) * n1 * sizeof(cuDoubleComplex));
     cudaStatus = cudaMemcpy(device_pointer_input, device_input, static_cast<unsigned long long>(n1) * n1 * sizeof(cuDoubleComplex), cudaMemcpyHostToDevice);
+    delete[] device_input;
     
-    std::vector<double> host_x1 = x1;
-    double* pointer_x1 = host_x1.data();
     double* device_pointer_x1 = 0;
     cudaStatus = cudaMalloc((void**)&device_pointer_x1, n1 * sizeof(double));
-    cudaStatus = cudaMemcpy(device_pointer_x1, pointer_x1, n1 * sizeof(double), cudaMemcpyHostToDevice);
+    cudaStatus = cudaMemcpy(device_pointer_x1, x1.data(), n1 * sizeof(double), cudaMemcpyHostToDevice);
 
-    std::vector<double> host_x2 = x2;
-    double* pointer_x2 = host_x2.data();
     double* device_pointer_x2 = 0;
     cudaStatus = cudaMalloc((void**)&device_pointer_x2, n1 * sizeof(double));
-    cudaStatus = cudaMemcpy(device_pointer_x2, pointer_x2, n1 * sizeof(double), cudaMemcpyHostToDevice);
+    cudaStatus = cudaMemcpy(device_pointer_x2, x2.data(), n1 * sizeof(double), cudaMemcpyHostToDevice);
 
-    std::vector<double> host_x3 = x3;
-    double* pointer_x3 = host_x3.data();
     double* device_pointer_x3 = 0;
     cudaStatus = cudaMalloc((void**)&device_pointer_x3, n3 * sizeof(double));
-    cudaStatus = cudaMemcpy(device_pointer_x3, pointer_x3, n3 * sizeof(double), cudaMemcpyHostToDevice);
+    cudaStatus = cudaMemcpy(device_pointer_x3, x3.data(), n3 * sizeof(double), cudaMemcpyHostToDevice);
 
-    std::vector<double> host_x4 = x4;
-    double* pointer_x4 = host_x4.data();
     double* device_pointer_x4 = 0;
     cudaStatus = cudaMalloc((void**)&device_pointer_x4, n2 * sizeof(double));
-    cudaStatus = cudaMemcpy(device_pointer_x4, pointer_x4, n2 * sizeof(double), cudaMemcpyHostToDevice);
+    cudaStatus = cudaMemcpy(device_pointer_x4, x4.data(), n2 * sizeof(double), cudaMemcpyHostToDevice);
 
-    std::vector<double> host_parameters = parameters;
-    double* pointer_parameters = host_parameters.data();
     double* device_pointer_parameters = 0;
-    cudaStatus = cudaMalloc((void**)&device_pointer_parameters, host_parameters.size() * sizeof(double));
-    cudaStatus = cudaMemcpy(device_pointer_parameters, pointer_parameters, host_parameters.size() * sizeof(double), cudaMemcpyHostToDevice);
+    cudaStatus = cudaMalloc((void**)&device_pointer_parameters, parameters.size() * sizeof(double));
+    cudaStatus = cudaMemcpy(device_pointer_parameters, parameters.data(), parameters.size() * sizeof(double), cudaMemcpyHostToDevice);
 
-    std::vector<int> host_dimension = dimension;
-    int* pointer_dimension = host_dimension.data();
     int* device_pointer_dimension = 0;
-    cudaStatus = cudaMalloc((void**)&device_pointer_dimension, host_dimension.size() * sizeof(int));
-    cudaStatus = cudaMemcpy(device_pointer_dimension, pointer_dimension, host_dimension.size() * sizeof(int), cudaMemcpyHostToDevice);
+    cudaStatus = cudaMalloc((void**)&device_pointer_dimension, dimension.size() * sizeof(int));
+    cudaStatus = cudaMemcpy(device_pointer_dimension, dimension.data(), dimension.size() * sizeof(int), cudaMemcpyHostToDevice);
     
     int* device_pointer_progress = 0;
     cudaStatus = cudaMalloc((void**)&device_pointer_progress, sizeof(int));
@@ -236,6 +225,7 @@ std::vector<std::vector<std::complex<double>>> calculateCollinsCUDA(const std::v
         }
         result.emplace_back(row);
     }
+    delete[] device_output;
 
     return result;
 }

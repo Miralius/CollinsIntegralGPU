@@ -49,7 +49,7 @@ int main(int argc, char* argv[]) {
 		std::cout << "Моделирование продольного сечения пучка" << std::endl;
 		field oxz = cluster;
 		std::string absFileName = "Modes\\Cluster\\oxz_abs.bmp";
-		oxz.ovzFractionalFourierTransform(a, b, n, z_begin, z_end, z_n, wavelength, u, f);
+		oxz.ovzFractionalFourierTransform(a, b, n, z_begin + 200, z_end - 200, z_n, wavelength, u, f);
 		BMP test = oxz.createBMP(absSchemeName, false);
 		writingFile<BMP>(test, absFileName);
 	}
