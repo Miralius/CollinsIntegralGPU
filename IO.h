@@ -6,7 +6,7 @@
 #include <fstream>
 #include <filesystem>
 
-// Загрузка файла (nameFiel — имя файла)
+// Загрузка файла (nameFile — имя файла)
 template <typename T> T loadingFile(std::string nameFile) {
 	std::ifstream in(nameFile, std::ios::binary | std::ios::in);
 	in.unsetf(std::ios_base::skipws);

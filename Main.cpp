@@ -1,40 +1,28 @@
 ﻿#include "Main.h"
 
-field getRadialSymmetricClusterMode(const field& solitone, double sigma, double radius, int number, double ksi, double eta)
-{
-	field superposition = solitone;
-	superposition.shift(radius, 0);
-	auto parameterMode = field(superposition.getY().back(), -superposition.getY().back(), static_cast<int>(superposition.getY().size()));
-	parameterMode.initialTransverseVelocityAndPowerFactorExpMode(ksi, eta, sigma, radius, 0);
-	parameterMode.transpose();
-	superposition *= parameterMode;
-	for (auto i = 1; i < number; i++) {
-		field solitoneShifted = solitone;
-		auto phi_n = M_PI * 2 * i / number;
-		auto c_xn = radius * cos(phi_n);
-		auto c_yn = radius * sin(phi_n);
-		solitoneShifted.shift(c_xn, c_yn);
-		parameterMode.initialTransverseVelocityAndPowerFactorExpMode(ksi, eta, sigma, c_xn, c_yn);
-		parameterMode.transpose();
-		solitoneShifted *= parameterMode;
-		superposition += solitoneShifted;
-	}
-	return superposition;
-}
-
 int main(int argc, char* argv[]) {
 	SetConsoleCP(1251);
 	SetConsoleOutputCP(1251);
 
 	try {
-		auto a = -4.;
-		auto b = 4.;
-		auto n = 500;
-		auto solitone = field(a, b, n);
-		auto sigma = 1.5;
+		auto a = -10.;
+		auto b = 10.;
+		auto r = 5.;
+		auto n = 1000;
+		auto N = 5;
+		auto sigma = 1.;
+		auto cluster = RadialCluster(a, b, r, n, N);
 		
+		auto doubledLaguerre = [sigma](double x, double y, unsigned N) {
+			std::complex<double> sum{};
+			for (unsigned p = 1; p <= N; ++p) {
+				sum += 1. * std::pow(std::complex<double>(x, y), p);
+			}
+			return std::complex<double>(exp(-(x * x + y * y) / (sigma * sigma))) * sum;
+		};
+
 		std::cout << "Моделирование входного пучка " << std::endl;
-		solitone.doubledLaguerreMode(sigma);
+		cluster.setAndCalculateMode(std::move(doubledLaguerre));
 		std::string absSchemeName = "fire";
 		std::string argSchemeName = "grays";
 		auto u = 0.;
@@ -45,13 +33,13 @@ int main(int argc, char* argv[]) {
 		auto f = 1000.;
 		for (auto i = 0; i <= 2000; i += 50) {
 			std::cout << "Моделирование ДрПФ пучка при z = " << i << std::endl;
-			std::string absFileName = "Modes\\Solitone\\oxy_abs_" + std::to_string(i) + ".bmp";
-			std::string argFileName = "Modes\\Solitone\\oxy_arg_" + std::to_string(i) + ".bmp";
+			std::string absFileName = "Modes\\Cluster\\oxy_abs_" + std::to_string(i) + ".bmp";
+			std::string argFileName = "Modes\\Cluster\\oxy_arg_" + std::to_string(i) + ".bmp";
 			if (std::filesystem::exists(absFileName)) {
 				std::cout << "Данный пучок уже смоделирован!" << std::endl;
 				continue;
 			}
-			field oxy = solitone;
+			RadialCluster oxy = cluster;
 			oxy.ouvFractionalFourierTransform(a, b, n, wavelength, i, f);
 			BMP test = oxy.createBMP(absSchemeName, false);
 			BMP test2 = oxy.createBMP(argSchemeName, true);
@@ -59,8 +47,8 @@ int main(int argc, char* argv[]) {
 			writingFile<BMP>(test2, argFileName);
 		}
 		std::cout << "Моделирование продольного сечения пучка" << std::endl;
-		field oxz = solitone;
-		std::string absFileName = "Modes\\Solitone\\oxz_abs.bmp";
+		field oxz = cluster;
+		std::string absFileName = "Modes\\Cluster\\oxz_abs.bmp";
 		oxz.ovzFractionalFourierTransform(a, b, n, z_begin, z_end, z_n, wavelength, u, f);
 		BMP test = oxz.createBMP(absSchemeName, false);
 		writingFile<BMP>(test, absFileName);

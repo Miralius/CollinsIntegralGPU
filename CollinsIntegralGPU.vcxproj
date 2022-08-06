@@ -89,12 +89,14 @@
     <ClInclude Include="IO.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="field.h" />
+    <ClInclude Include="RadialCluster.h" />
     <ClInclude Include="scheme.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BMP.cpp" />
     <ClCompile Include="field.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="RadialCluster.cpp" />
     <ClCompile Include="scheme.cpp" />
   </ItemGroup>
   <ItemGroup>

@@ -69,6 +69,11 @@ std::vector<std::vector<std::complex<double>>> field::getCalculatedField() {
 	return calculatedField;
 }
 
+void field::setCalculatedField(std::vector<std::vector<std::complex<double>>>&& calculatedField)
+{
+	this->calculatedField = std::move(calculatedField);
+}
+
 std::vector<std::vector<std::complex<double>>> field::transpose(std::vector<std::vector<std::complex<double>>>& matrix) {
 	std::vector<std::vector<std::complex<double>>> transposed;
 	transposed.reserve(matrix.at(0).size());

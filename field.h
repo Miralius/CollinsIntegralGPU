@@ -31,7 +31,7 @@ private:
 public:
 	// Конструктор по умолчанию field
 	field();
-	// Конструктор, создающий экземпляр field по параметрам интервалов [a, b] по x и y. Входные параметры: begin — начало интервала (мм), end — конец интервала (мм), count — количество точек в интервале.
+	// Конструктор, создающий экземпляр field по параметрам интервалов [a, b] по x и y. Входные параметры: a — начало интервала (мм), b — конец интервала (мм), n — количество точек в интервале.
 	field(double a, double b, int n);
 	// Конструктор, создающий экземпляр field, записывая в поля готовые матрицы светового поля и векторов x, y. Входные параметры: field — матрица светового поля, x — вектор x, y — вектор y.
 	field(const std::vector<std::vector<std::complex<double>>>& field, const std::vector<double>& x, const std::vector<double>& y);
@@ -41,6 +41,8 @@ public:
 	std::vector<double> getY();
 	// Геттер матрицы светового поля
 	std::vector<std::vector<std::complex<double>>> getCalculatedField();
+	// Сеттер матрицы светового поля
+	void setCalculatedField(std::vector<std::vector<std::complex<double>>>&& calculatedField);
 	// Транспонирование поля.
 	void transpose();
 	// Нормализация светового поля (максимальная интенсивность в каждом столбце равна 1)
